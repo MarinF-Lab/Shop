@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Costos y precios</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --paper: #EDF0F3;
+    --surface: #FFFFFF;
+    --ink: #15202C;
+    --muted: #5C6B7A;
+    --line: #D6DCE3;
+    --line-soft: #E8ECF0;
+    --accent: #0B6E75;
+    --accent-soft: #E0EFF0;
+    --gain: #166B4E;
+    --gain-soft: #E3F1EA;
+    --cost: #8A5A12;
+    --cost-soft: #F4EDDF;
+    --danger: #A32C22;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  .app {
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+    padding-bottom: 40px;
+  }
+
+  .app :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- header ---------- */
+  .bar {
+    background: var(--ink);
+    color: #F2F5F8;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .bar h1 {
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: -0.2px;
+    margin: 0;
+    flex: 1 1 auto;
+  }
+  .bar h1 span { display: block; font-size: 11.5px; font-weight: 400; color: #93A6B6; letter-spacing: 0; }
+  .bar select {
+    background: #22303F;
+    color: #F2F5F8;
+    border: 1px solid #33455A;
+    border-radius: 4px;
+    padding: 7px 8px;
+    font: inherit;
+    font-size: 14px;
+  }
+
+  /* ---------- tabs ---------- */
+  .tabs {
+    display: flex;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    z-index: 5;
+  }
+  .tabs button {
+    flex: 1;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 13px 2px;
+    font: inherit;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
+
+  .wrap { padding: 16px 14px 0; max-width: 760px; margin: 0 auto; }
+
+  /* ---------- totals strip ---------- */
+  .strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .strip div { padding: 11px 10px; border-right: 1px solid var(--line-soft); }
+  .strip div:last-child { border-right: none; }
+  .strip dt { font-size: 11.5px; color: var(--muted); margin: 0 0 3px; }
+  .strip dd { margin: 0; font-family: var(--num); font-size: 15px; font-weight: 600; }
+
+  /* ---------- cards ---------- */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    margin-bottom: 12px;
+    overflow: hidden;
+  }
+  .card.producto { border-left: 4px solid var(--accent); }
+  .card.servicio { border-left: 4px dashed var(--cost); }
+
+  .card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .card-head .caret { color: var(--muted); font-size: 12px; width: 12px; flex: none; transition: transform .18s ease; }
+  .card-head.open .caret { transform: rotate(90deg); }
+  .card-head h3 { margin: 0; font-size: 15px; font-weight: 600; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; padding: 0 12px 12px 38px; }
+  .chip {
+    font-family: var(--num);
+    font-size: 12px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: var(--paper);
+    color: var(--muted);
+  }
+  .chip b { font-weight: 600; }
+  .chip.c { background: var(--cost-soft); color: var(--cost); }
+  .chip.p { background: var(--accent-soft); color: var(--accent); }
+  .chip.g { background: var(--gain-soft); color: var(--gain); }
+  .chip.neg { background: #F7E4E2; color: var(--danger); }
+  .chip.est-pendiente { background: var(--cost-soft); color: var(--cost); font-weight: 600; }
+  .chip.est-proceso { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+  .chip.est-entregado { background: var(--gain-soft); color: var(--gain); font-weight: 600; }
+  .chip.est-cancelado { background: var(--paper); color: var(--muted); font-weight: 600; }
+
+  .card-body { padding: 0 12px 14px; border-top: 1px solid var(--line-soft); }
+  .card-body[hidden] { display: none; }
+
+  /* ---------- sections inside product ---------- */
+  .sec { margin-top: 14px; }
+  .sec > header { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+  .sec > header h4 { margin: 0; font-size: 13px; font-weight: 600; color: var(--ink); }
+  .sec > header .sub { font-family: var(--num); font-size: 12px; color: var(--muted); }
+
+  /* ---------- form controls ---------- */
+  label.field { display: block; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  input[type="text"], input[type="number"], select, textarea {
+    font: inherit;
+    font-size: 16px;
+    color: var(--ink);
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 9px 10px;
+    width: 100%;
+    min-width: 0;
+  }
+  input.num { font-family: var(--num); text-align: right; }
+  input::placeholder { color: #9AA8B5; }
+
+  .row { display: flex; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .row > .grow { flex: 1 1 auto; min-width: 0; }
+  .row > .qty { flex: 0 0 82px; }
+  .row > .amt { flex: 0 0 106px; }
+  .row > .kind { flex: 0 0 104px; }
+  .row .line-total { flex: 0 0 auto; font-family: var(--num); font-size: 12.5px; color: var(--muted); min-width: 62px; text-align: right; }
+
+  .icon-btn {
+    flex: none;
+    width: 34px; height: 38px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    background: var(--surface);
+    color: var(--muted);
+    font: inherit;
+    font-size: 15px;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+  }
+  .icon-btn.confirm { border-color: var(--danger); color: #fff; background: var(--danger); font-size: 11px; width: auto; padding: 0 9px; }
+
+  .btn {
+    font: inherit;
+    font-size: 14px;
+    border-radius: 6px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 9px 13px;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .btn.wide { width: 100%; }
+  .btn.small { padding: 6px 10px; font-size: 13px; }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  .seg { display: flex; background: var(--paper); border-radius: 999px; padding: 3px; gap: 3px; }
+  .seg button {
+    flex: 1;
+    font: inherit;
+    font-size: 13px;
+    border: none;
+    background: none;
+    color: var(--muted);
+    padding: 8px 4px;
+    border-radius: 999px;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(21,32,44,.14); }
+
+  /* ---------- result table ---------- */
+  .result { margin-top: 14px; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .result table { width: 100%; border-collapse: collapse; }
+  .result th, .result td { padding: 8px 11px; font-size: 13px; text-align: left; border-bottom: 1px solid var(--line-soft); }
+  .result th { font-weight: 400; color: var(--muted); }
+  .result td { font-family: var(--num); text-align: right; font-variant-numeric: tabular-nums; }
+  .result tr:last-child th, .result tr:last-child td { border-bottom: none; }
+  .result tr.total { background: var(--paper); }
+  .result tr.total th, .result tr.total td { font-weight: 700; color: var(--ink); }
+  .result td.gain { color: var(--gain); }
+  .result td.loss { color: var(--danger); }
+
+  /* ---------- materials cards ---------- */
+  .mat-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--cost);
+    border-radius: 10px;
+    padding: 11px 11px 12px;
+    margin-bottom: 10px;
+  }
+  .mat-card .row:last-of-type { margin-bottom: 0; }
+  .mat-card .unit { flex: 0 0 104px; }
+  .seg.tiny { margin: 8px 0; }
+  .seg.tiny button { font-size: 12.5px; padding: 7px 4px; }
+
+  .mat-line { border-bottom: 1px solid var(--line-soft); padding-bottom: 8px; margin-bottom: 8px; }
+  .mat-line:last-of-type { border-bottom: none; }
+  .row.measures { align-items: flex-end; gap: 6px; }
+  .row.measures .field { margin-bottom: 3px; font-size: 11px; }
+  .area-note { margin: 0; font-size: 11.5px; color: var(--muted); flex: 1; }
+  .area-note.sheet { color: var(--cost); }
+
+  .sec-title { font-size: 14px; font-weight: 600; margin: 20px 2px 6px; }
+  .unit-cost.low { background: #F7E4E2; color: var(--danger); }
+
+  .plan { margin-top: 8px; border-top: 1px solid var(--line-soft); }
+  .plan-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 8px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 12px;
+  }
+  .plan-row:last-of-type { border-bottom: none; }
+  .plan-name { font-weight: 600; }
+  .plan-use { font-family: var(--num); color: var(--muted); font-size: 11.5px; }
+  .plan-cost { grid-column: 2; grid-row: 1 / span 2; align-self: center; font-family: var(--num); font-size: 11.5px; color: var(--cost); text-align: right; }
+  .plan-row.short .plan-use { color: var(--danger); }
+  .unit-cost {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    background: var(--cost-soft);
+    border-radius: 6px;
+    padding: 8px 10px;
+    margin-top: 8px;
+    font-size: 12.5px;
+    color: var(--cost);
+  }
+  .unit-cost b { font-family: var(--num); font-size: 14.5px; font-weight: 700; }
+
+  .empty {
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    padding: 22px 16px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13.5px;
+    background: var(--surface);
+  }
+  .empty p { margin: 0 0 12px; }
+
+  .note { font-size: 12px; color: var(--muted); margin: 8px 2px 0; }
+  .warn { color: var(--danger); }
+
+  .setting {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+  .setting h4 { margin: 0 0 4px; font-size: 14px; }
+  .setting p { margin: 0 0 10px; font-size: 12.5px; color: var(--muted); }
+  .switch { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 14px; }
+  .switch input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+  /* ---------- export sheet ---------- */
+  .sheet-bg {
+    position: fixed; inset: 0; background: rgba(21,32,44,.5);
+    display: grid; place-items: end center; padding: 12px; z-index: 40;
+  }
+  .sheet {
+    background: var(--surface); border-radius: 14px; width: 100%; max-width: 520px;
+    padding: 16px; max-height: 84vh; overflow: auto;
+  }
+  .sheet h3 { margin: 0 0 10px; font-size: 15px; }
+  .sheet textarea { font-family: var(--num); font-size: 11.5px; height: 150px; resize: vertical; white-space: pre; }
+  .sheet .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .sheet .actions .btn { flex: 1; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+    background: var(--ink); color: #fff; font-size: 13px;
+    padding: 9px 14px; border-radius: 999px; z-index: 60;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card-head .caret { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="bar">
+    <h1>Costos y precios<span id="saveState">Cargando…</span></h1>
+    <select id="currency" aria-label="Moneda"></select>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="productos" aria-selected="true">Productos</button>
+    <button role="tab" data-tab="pedidos" aria-selected="false">Pedidos</button>
+    <button role="tab" data-tab="materiales" aria-selected="false">Materiales</button>
+    <button role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
+    <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
+  </div>
+
+  <div class="wrap">
+    <section id="tab-productos"></section>
+    <section id="tab-pedidos" hidden></section>
+    <section id="tab-materiales" hidden></section>
+    <section id="tab-inventario" hidden></section>
+    <section id="tab-ajustes" hidden></section>
+  </div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var CURRENCIES = {
+    CLP: { symbol: "$",    decimals: 0, label: "CLP · Peso chileno" },
+    USD: { symbol: "US$",  decimals: 2, label: "USD · Dólar" },
+    EUR: { symbol: "€",    decimals: 2, label: "EUR · Euro" },
+    ARS: { symbol: "AR$",  decimals: 0, label: "ARS · Peso argentino" },
+    PEN: { symbol: "S/",   decimals: 2, label: "PEN · Sol" },
+    COP: { symbol: "COP$", decimals: 0, label: "COP · Peso colombiano" },
+    MXN: { symbol: "MX$",  decimals: 2, label: "MXN · Peso mexicano" },
+    BRL: { symbol: "R$",   decimals: 2, label: "BRL · Real" },
+    UYU: { symbol: "$U",   decimals: 2, label: "UYU · Peso uruguayo" },
+    GBP: { symbol: "£",    decimals: 2, label: "GBP · Libra" }
+  };
+
+  var UNITS = ["unidad", "hora", "g", "kg", "ml", "l", "cm", "m", "cm²", "m²", "pliego", "paquete"];
+  var AREA_UNITS = { "cm²": "cm", "m²": "m" };
+
+  /* un CSV editado en Excel puede traer "cm2" o el ² dañado; lo devolvemos a la forma canónica */
+  function normalizeUnit(raw) {
+    var u = String(raw == null ? "" : raw).trim();
+    if (!u) return "unidad";
+    if (AREA_UNITS[u]) return u;
+    var flat = u.toLowerCase().replace(/[\s.]/g, "");
+    if (/^cm(2|²|\u00b2|\ufffd|\u00c2\u00b2)$/.test(flat) || flat === "cm2") return "cm²";
+    if (/^m(2|²|\u00b2|\ufffd|\u00c2\u00b2)$/.test(flat) || flat === "m2") return "m²";
+    for (var i = 0; i < UNITS.length; i++) {
+      if (UNITS[i].toLowerCase() === u.toLowerCase()) return UNITS[i];
+    }
+    return u;
+  }
+
+  function isArea(unit) { return !!AREA_UNITS[unit]; }
+  function sideUnit(unit) { return AREA_UNITS[unit] || ""; }
+
+  var STORAGE_KEY = "costos:v1";
+
+  /* Configuración del proyecto de Firebase. Son valores públicos por diseño:
+     viajan dentro de la página. Lo que protege los datos son las reglas de
+     Firestore, no el secreto de estas claves. */
+  var FIREBASE_DEFAULT = {
+    apiKey: "AIzaSyAAE6l_UwOVE1KB1QiXBNXhunzhJs78tL8",
+    authDomain: "tiendas-f9af9.firebaseapp.com",
+    projectId: "tiendas-f9af9",
+    appId: "1:39811090432:web:9e462dc5388f39265b30e5"
+  };
+
+  var state = {
+    settings: { currency: "CLP", taxEnabled: false, taxRate: 19,
+      tienda: { nombre: "", whatsapp: "" },
+      firebase: Object.assign({}, FIREBASE_DEFAULT) },
+    materials: [],
+    products: [],
+    orders: []
+  };
+
+  var ESTADOS = [
+    { id: "pendiente", label: "Pendiente" },
+    { id: "proceso", label: "En proceso" },
+    { id: "entregado", label: "Entregado" },
+    { id: "cancelado", label: "Cancelado" }
+  ];
+
+  var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
+
+  var ui = { tab: "productos", open: {}, ready: false, confirming: null };
+
+  /* ---------------- utilidades ---------------- */
+
+  function uid() { return Math.random().toString(36).slice(2, 9); }
+
+  function cfg() { return CURRENCIES[state.settings.currency] || CURRENCIES.CLP; }
+
+  function money(n) {
+    if (!isFinite(n)) n = 0;
+    var d = cfg().decimals;
+    var s = Math.abs(n).toLocaleString("es-CL", { minimumFractionDigits: d, maximumFractionDigits: d });
+    return (n < 0 ? "-" : "") + cfg().symbol + " " + s;
+  }
+
+  function pct(n) {
+    if (!isFinite(n)) return "—";
+    return n.toLocaleString("es-CL", { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + "%";
+  }
+
+  function fmtQty(n) {
+    n = parseNum(n);
+    if (!isFinite(n)) return "0";
+    return n.toLocaleString("es-CL", { maximumFractionDigits: 2 });
+  }
+
+  function parseNum(v) {
+    if (typeof v === "number") return v;
+    if (!v) return 0;
+    var s = String(v).replace(/[^0-9,.\-]/g, "");
+    if (s.indexOf(",") > -1 && s.indexOf(".") > -1) {
+      s = s.lastIndexOf(",") > s.lastIndexOf(".") ? s.replace(/\./g, "").replace(",", ".") : s.replace(/,/g, "");
+    } else if (/^-?\d{1,3}(\.\d{3})+$/.test(s)) {
+      /* 2.000 en formato chileno son dos mil, no dos */
+      s = s.replace(/\./g, "");
+    } else {
+      s = s.replace(",", ".");
+    }
+    var n = parseFloat(s);
+    return isFinite(n) ? n : 0;
+  }
+
+  function el(tag, attrs, children) {
+    var node = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === "class") node.className = attrs[k];
+      else if (k === "text") node.textContent = attrs[k];
+      else if (k === "html") node.innerHTML = attrs[k];
+      else if (k.slice(0, 2) === "on") node.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] === true) node.setAttribute(k, "");
+      else if (attrs[k] !== false && attrs[k] != null) node.setAttribute(k, attrs[k]);
+    });
+    (children || []).forEach(function (c) { if (c) node.appendChild(c); });
+    return node;
+  }
+
+  /* ---------------- cálculo ---------------- */
+
+  function sheetArea(m) {
+    return parseNum(m.sheetH) * parseNum(m.sheetW);
+  }
+
+  /* costo por unidad de uso (por cm², m², kg, hora, etc.) */
+  function materialCost(m) {
+    if (!m) return 0;
+    if (m.mode === "compra") {
+      if (isArea(m.unit)) {
+        var qty = parseNum(m.sheetQty) || 1;
+        var total = sheetArea(m) * qty;
+        return total > 0 ? parseNum(m.buyPrice) / total : 0;
+      }
+      var q = parseNum(m.buyQty);
+      return q > 0 ? parseNum(m.buyPrice) / q : 0;
+    }
+    return parseNum(m.cost);
+  }
+
+  function hasSheet(m) {
+    return !!m && isArea(m.unit) && m.mode === "compra" && sheetArea(m) > 0;
+  }
+
+  /* cálculo de una línea de material dentro de un producto */
+  function lineCost(line) {
+    var m = materialById(line.materialId);
+    var out = { cost: 0, area: 0, costArea: 0, costSheets: null, perSheet: 0, sheets: 0, sheetPrice: 0, material: m };
+    if (!m) return out;
+
+    var unitCost = materialCost(m);
+
+    if (!isArea(m.unit)) {
+      out.cost = unitCost * parseNum(line.qty);
+      return out;
+    }
+
+    var h = parseNum(line.h), w = parseNum(line.w);
+    var pieces = parseNum(line.pieces);
+    if (pieces <= 0) pieces = 0;
+
+    out.area = h * w * pieces;
+    out.costArea = out.area * unitCost;
+
+    if (hasSheet(m) && h > 0 && w > 0) {
+      var sh = parseNum(m.sheetH), sw = parseNum(m.sheetW);
+      var fitA = Math.floor(sh / h) * Math.floor(sw / w);
+      var fitB = Math.floor(sh / w) * Math.floor(sw / h);
+      out.perSheet = Math.max(fitA, fitB);
+      out.sheetPrice = sheetArea(m) * unitCost;
+      if (out.perSheet > 0) {
+        out.sheets = Math.ceil(pieces / out.perSheet);
+        out.costSheets = out.sheets * out.sheetPrice;
+      }
+    }
+
+    out.cost = (m.areaMode === "pliego" && out.costSheets != null) ? out.costSheets : out.costArea;
+    return out;
+  }
+
+  function materialById(id) {
+    for (var i = 0; i < state.materials.length; i++) if (state.materials[i].id === id) return state.materials[i];
+    return null;
+  }
+
+  function calc(p) {
+    var mats = 0;
+    p.materials.forEach(function (line) {
+      mats += lineCost(line).cost;
+    });
+    var fijos = 0, variables = 0;
+    p.costs.forEach(function (c) {
+      var v = parseNum(c.amount);
+      if (c.kind === "fijo") fijos += v; else variables += v;
+    });
+    var total = mats + fijos + variables;
+
+    var neto = 0;
+    if (p.pricingMode === "manual") {
+      neto = parseNum(p.manualPrice);
+    } else if (p.pricingMode === "margen") {
+      var m = parseNum(p.pricingValue);
+      neto = m >= 100 ? Infinity : total / (1 - m / 100);
+    } else {
+      neto = total * (1 + parseNum(p.pricingValue) / 100);
+    }
+    if (!isFinite(neto)) neto = 0;
+
+    var ganancia = neto - total;
+    var tax = state.settings.taxEnabled ? neto * parseNum(state.settings.taxRate) / 100 : 0;
+
+    return {
+      mats: mats, fijos: fijos, variables: variables, total: total,
+      neto: neto, tax: tax, final: neto + tax, ganancia: ganancia,
+      margen: neto > 0 ? ganancia / neto * 100 : NaN,
+      markup: total > 0 ? ganancia / total * 100 : NaN
+    };
+  }
+
+  /* ---------------- inventario ---------------- */
+
+  /* el stock se cuenta en pliegos si el material se compra por pliego, y si no en su unidad de uso */
+  function stockUnit(m) { return hasSheet(m) ? "pliego" : (m ? m.unit : ""); }
+
+  function stockUnitValue(m) {
+    if (!m) return 0;
+    return hasSheet(m) ? sheetArea(m) * materialCost(m) : materialCost(m);
+  }
+
+  /* cuánto stock consume una línea del producto, en unidades de stock */
+  function lineStockUse(line) {
+    var r = lineCost(line);
+    var m = r.material;
+    if (!m) return 0;
+    if (hasSheet(m)) {
+      if (m.areaMode === "pliego") return r.sheets;
+      var area = sheetArea(m);
+      return area > 0 ? r.area / area : 0;
+    }
+    if (isArea(m.unit)) return r.area;
+    return parseNum(line.qty);
+  }
+
+  /* cuánto trae un paquete de compra y cuánto cuesta, en unidades de stock */
+  function packSize(m) {
+    if (!m || m.mode !== "compra") return 0;
+    return hasSheet(m) ? (parseNum(m.sheetQty) || 1) : parseNum(m.buyQty);
+  }
+
+  function packPrice(m) {
+    if (!m || m.mode !== "compra") return 0;
+    return parseNum(m.buyPrice);
+  }
+
+  function stockTarget(m) {
+    if (!m) return 0;
+    return parseNum(m.stockTarget != null ? m.stockTarget : m.stockMin);
+  }
+
+  /* reponer se compra por paquetes enteros: no puedes comprar 12 limpiapipas sueltos */
+  function restockCost(m, deficit) {
+    if (deficit <= 1e-9) return { packs: 0, cost: 0, whole: true };
+    var size = packSize(m), price = packPrice(m);
+    if (size > 0 && price > 0) {
+      var packs = Math.ceil(deficit / size - 1e-9);
+      return { packs: packs, cost: packs * price, whole: true };
+    }
+    return { packs: 0, cost: deficit * stockUnitValue(m), whole: false };
+  }
+
+  /* simula producir un lote: qué consume, qué hay que recomprar y cuántas ventas lo pagan */
+  function batchPlan(p, units) {
+    var n = parseNum(units);
+    var lines = [], total = 0, sobra = 0;
+    p.materials.forEach(function (line) {
+      var m = materialById(line.materialId);
+      if (!m) return;
+      var use = lineStockUse(line) * n;
+      if (use <= 0) return;
+      var after = parseNum(m.stock) - use;
+      var deficit = Math.max(0, stockTarget(m) - after);
+      var rc = restockCost(m, deficit);
+      total += rc.cost;
+      if (rc.whole && rc.packs > 0) sobra += rc.packs * packSize(m) - deficit;
+      lines.push({ material: m, use: use, after: after, deficit: deficit,
+        packs: rc.packs, cost: rc.cost, whole: rc.whole });
+    });
+    var r = calc(p);
+    return {
+      units: n, lines: lines, cost: total, sobra: sobra,
+      neto: r.neto, ganancia: r.ganancia,
+      sell: r.neto > 0 ? Math.ceil(total / r.neto - 1e-9) : null
+    };
+  }
+
+  function inventoryTotals() {
+    var valor = 0, reposicion = 0, bajos = 0;
+    state.materials.forEach(function (m) {
+      var v = stockUnitValue(m);
+      var stock = parseNum(m.stock), target = stockTarget(m);
+      valor += stock * v;
+      if (target > 0 && stock < target) { bajos++; reposicion += restockCost(m, target - stock).cost; }
+    });
+    return { valor: valor, reposicion: reposicion, bajos: bajos };
+  }
+
+  /* cuántas unidades del producto alcanzan con el stock actual, y qué material lo limita */
+  function capacity(p) {
+    var limit = Infinity, limiting = null, any = false;
+    p.materials.forEach(function (line) {
+      var m = materialById(line.materialId);
+      if (!m) return;
+      var use = lineStockUse(line);
+      if (use <= 0) return;
+      any = true;
+      var posible = Math.floor(parseNum(m.stock) / use);
+      if (posible < limit) { limit = posible; limiting = m; }
+    });
+    return { units: any ? limit : null, limiting: limiting };
+  }
+
+  function produce(p, units) {
+    var n = parseNum(units);
+    if (n <= 0) return { error: "Indica cuántas unidades produjiste." };
+    var faltantes = [];
+    p.materials.forEach(function (line) {
+      var m = materialById(line.materialId);
+      if (!m) return;
+      var need = lineStockUse(line) * n;
+      if (need > parseNum(m.stock) + 1e-9) faltantes.push(m.name || "sin nombre");
+    });
+    if (faltantes.length) return { error: "No alcanza el stock de: " + faltantes.join(", ") };
+
+    p.materials.forEach(function (line) {
+      var m = materialById(line.materialId);
+      if (!m) return;
+      m.stock = Math.max(0, parseNum(m.stock) - lineStockUse(line) * n);
+    });
+    return { units: n };
+  }
+
+  /* ---------------- pedidos ---------------- */
+
+  function productById(id) {
+    for (var i = 0; i < state.products.length; i++) if (state.products[i].id === id) return state.products[i];
+    return null;
+  }
+
+  /* consumo de material que exige un conjunto de items, sumando todos los productos */
+  function aggregateUse(items) {
+    var use = {};
+    (items || []).forEach(function (it) {
+      var p = productById(it.productId);
+      if (!p) return;
+      var qty = parseNum(it.qty);
+      p.materials.forEach(function (line) {
+        var m = materialById(line.materialId);
+        if (!m) return;
+        use[m.id] = (use[m.id] || 0) + lineStockUse(line) * qty;
+      });
+    });
+    return use;
+  }
+
+  /* qué falta y cuánto cuesta comprarlo, en paquetes enteros */
+  function shoppingFor(items) {
+    var use = aggregateUse(items), lines = [], total = 0, ok = true;
+    Object.keys(use).forEach(function (id) {
+      var m = materialById(id);
+      if (!m) return;
+      var need = use[id], stock = parseNum(m.stock);
+      var falta = Math.max(0, need - stock);
+      var rc = restockCost(m, falta);
+      if (falta > 1e-9) ok = false;
+      total += rc.cost;
+      lines.push({ material: m, need: need, stock: stock, falta: falta, packs: rc.packs, cost: rc.cost });
+    });
+    lines.sort(function (a, b) { return b.falta - a.falta; });
+    return { lines: lines, total: total, ok: ok };
+  }
+
+  function orderTotals(o) {
+    var ingreso = 0, costo = 0, unidades = 0;
+    (o.items || []).forEach(function (it) {
+      var p = productById(it.productId);
+      if (!p) return;
+      var r = calc(p), q = parseNum(it.qty);
+      ingreso += (parseNum(it.price) || r.final) * q;
+      costo += r.total * q;
+      unidades += q;
+    });
+    return { ingreso: ingreso, costo: costo, ganancia: ingreso - costo, unidades: unidades };
+  }
+
+  function pendingOrders() {
+    return state.orders.filter(function (o) { return o.estado === "pendiente" || o.estado === "proceso"; });
+  }
+
+  function pendingItems() {
+    var items = [];
+    pendingOrders().forEach(function (o) { items = items.concat(o.items || []); });
+    return items;
+  }
+
+  /* entregar descuenta el material de todos los items del pedido */
+  function deliverOrder(o) {
+    var plan = shoppingFor(o.items);
+    if (!plan.ok) {
+      var faltan = plan.lines.filter(function (l) { return l.falta > 1e-9; })
+        .map(function (l) { return l.material.name || "sin nombre"; });
+      return { error: "No alcanza el stock de: " + faltan.join(", ") };
+    }
+    var use = aggregateUse(o.items);
+    Object.keys(use).forEach(function (id) {
+      var m = materialById(id);
+      if (m) m.stock = Math.max(0, parseNum(m.stock) - use[id]);
+    });
+    o.estado = "entregado";
+    o.entregado = new Date().toISOString().slice(0, 10);
+    return { ok: true };
+  }
+
+  /* cuántas unidades de un producto se pueden ofrecer al público hoy */
+  function availableUnits(p) {
+    var cap = capacity(p);
+    return cap.units == null ? null : Math.max(0, cap.units);
+  }
+
+  function publicCatalog() {
+    return state.products.filter(function (p) { return p.publicado; }).map(function (p) {
+      var r = calc(p);
+      return {
+        id: p.id,
+        nombre: p.name || "Sin nombre",
+        descripcion: p.descripcionPublica || "",
+        precio: Math.round(r.final),
+        moneda: state.settings.currency,
+        disponible: availableUnits(p)
+      };
+    });
+  }
+
+  /* ---------------- persistencia ---------------- */
+
+  var saveTimer = null, memoryOnly = false;
+
+  function setSaveState(txt) { document.getElementById("saveState").textContent = txt; }
+
+  function save() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      if (memoryOnly || !window.storage) { setSaveState("Sin guardado en este visor"); return; }
+      setSaveState("Guardando…");
+      window.storage.set(STORAGE_KEY, JSON.stringify(state)).then(function () {
+        setSaveState("Guardado");
+      }).catch(function () {
+        setSaveState("No se pudo guardar");
+      });
+    }, 450);
+  }
+
+  function load() {
+    if (!window.storage) { memoryOnly = true; setSaveState("Sin guardado en este visor"); return Promise.resolve(); }
+    return window.storage.get(STORAGE_KEY).then(function (res) {
+      if (res && res.value) {
+        var data = JSON.parse(res.value);
+        if (data.settings) {
+          state.settings = Object.assign(state.settings, data.settings);
+          state.settings.tienda = Object.assign({ nombre: "", whatsapp: "" }, data.settings.tienda || {});
+          var fbSaved = data.settings.firebase || {};
+          var merged = Object.assign({}, FIREBASE_DEFAULT);
+          Object.keys(FIREBASE_DEFAULT).forEach(function (k) {
+            if (fbSaved[k]) merged[k] = fbSaved[k];
+          });
+          state.settings.firebase = merged;
+        }
+        if (Array.isArray(data.materials)) state.materials = data.materials;
+        if (Array.isArray(data.products)) state.products = data.products;
+        if (Array.isArray(data.orders)) state.orders = data.orders;
+        state.materials.forEach(function (m) {
+          if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
+        });
+      }
+      setSaveState("Guardado");
+    }).catch(function () {
+      setSaveState("Listo");
+    });
+  }
+
+  /* ---------------- toast ---------------- */
+
+  var toastTimer = null;
+  function toast(msg) {
+    var old = document.querySelector(".toast");
+    if (old) old.remove();
+    var t = el("div", { class: "toast", text: msg });
+    document.body.appendChild(t);
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.remove(); }, 2200);
+  }
+
+  /* ---------------- borrado en dos pasos ---------------- */
+
+  function deleteButton(label, onDelete) {
+    var btn = el("button", { class: "icon-btn", type: "button", title: label, text: "✕", "aria-label": label });
+    var armed = false, timer = null;
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (armed) { clearTimeout(timer); onDelete(); return; }
+      armed = true;
+      btn.classList.add("confirm");
+      btn.textContent = "Borrar";
+      timer = setTimeout(function () {
+        armed = false; btn.classList.remove("confirm"); btn.textContent = "✕";
+      }, 2600);
+    });
+    return btn;
+  }
+
+  /* ---------------- render: productos ---------------- */
+
+  function productCard(p) {
+    var r = calc(p);
+    var open = !!ui.open[p.id];
+
+    var head = el("div", { class: "card-head" + (open ? " open" : ""), onclick: function () {
+      ui.open[p.id] = !ui.open[p.id];
+      render();
+    } }, [
+      el("span", { class: "caret", text: "▶" }),
+      el("h3", { text: p.name || "Sin nombre" })
+    ]);
+
+    var chips = el("div", { class: "chips" }, [
+      el("span", { class: "chip c", html: "Costo <b>" + money(r.total) + "</b>" }),
+      el("span", { class: "chip p", html: "Precio <b>" + money(r.final) + "</b>" }),
+      el("span", { class: "chip " + (r.ganancia < 0 ? "neg" : "g"), html: "Ganancia <b>" + money(r.ganancia) + "</b> · " + pct(r.margen) })
+    ]);
+
+    var card = el("div", { class: "card " + (p.type === "servicio" ? "servicio" : "producto") }, [head, chips]);
+    if (!open) return card;
+
+    var body = el("div", { class: "card-body" });
+
+    /* nombre + tipo */
+    body.appendChild(el("div", { class: "sec" }, [
+      el("label", { class: "field", text: "Nombre" }),
+      el("input", { type: "text", value: p.name, placeholder: "Ej: Tarjetas de presentación",
+        oninput: function (e) { p.name = e.target.value; head.querySelector("h3").textContent = p.name || "Sin nombre"; save(); } })
+    ]));
+
+    var segTipo = el("div", { class: "seg" });
+    [["producto", "Producto"], ["servicio", "Servicio"]].forEach(function (opt) {
+      segTipo.appendChild(el("button", { type: "button", text: opt[1], "aria-pressed": p.type === opt[0],
+        onclick: function () { p.type = opt[0]; save(); render(); } }));
+    });
+    body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Tipo" }), segTipo]));
+
+    /* materiales */
+    var matSec = el("div", { class: "sec" });
+    matSec.appendChild(el("header", {}, [
+      el("h4", { text: "Materiales / insumos" }),
+      el("span", { class: "sub", text: money(r.mats) })
+    ]));
+
+    if (!state.materials.length) {
+      matSec.appendChild(el("p", { class: "note", text: "Agrega materiales en la pestaña Materiales para poder asignarlos aquí." }));
+    }
+
+    p.materials.forEach(function (line, idx) {
+      var sel = el("select", {});
+      sel.appendChild(el("option", { value: "", text: "Selecciona un material" }));
+      state.materials.forEach(function (m) {
+        sel.appendChild(el("option", { value: m.id, text: (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")" }));
+      });
+      sel.value = line.materialId || "";
+      sel.addEventListener("change", function () { line.materialId = sel.value; save(); render(); });
+
+      var m = materialById(line.materialId);
+      var area = m && isArea(m.unit);
+      var lineBox = el("div", { class: "mat-line" });
+
+      var lineTotal = el("span", { class: "line-total", text: m ? money(lineCost(line).cost) : "—" });
+
+      lineBox.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [sel]),
+        area ? null : el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+          value: line.qty, "aria-label": "Cantidad",
+          oninput: function (e) { line.qty = e.target.value; save(); refreshOutputs(); } })]),
+        area ? null : lineTotal,
+        deleteButton("Quitar material", function () { p.materials.splice(idx, 1); save(); render(); })
+      ]));
+
+      if (area) {
+        var side = sideUnit(m.unit);
+        var detail = el("p", { class: "area-note" });
+
+        function refreshLine() {
+          var r2 = lineCost(line);
+          var parts = [];
+          if (r2.area > 0) parts.push(r2.area.toLocaleString("es-CL", { maximumFractionDigits: 2 }) + " " + m.unit + " = " + money(r2.costArea));
+          if (r2.perSheet > 0) parts.push("entran " + r2.perSheet + " por pliego · usas " + r2.sheets + " = " + money(r2.costSheets));
+          detail.textContent = parts.length ? parts.join(" · ") : "Ingresa alto, ancho y piezas.";
+          detail.className = "area-note" + (m.areaMode === "pliego" && r2.costSheets != null ? " sheet" : "");
+          lineTotal.textContent = money(r2.cost);
+        }
+
+        function measure(label, key) {
+          return el("div", { class: "grow" }, [
+            el("label", { class: "field", text: label }),
+            el("input", { class: "num", type: "text", inputmode: "decimal", value: line[key], placeholder: "0",
+              oninput: function (e) { line[key] = e.target.value; save(); refreshLine(); refreshOutputs(); } })
+          ]);
+        }
+
+        lineBox.appendChild(el("div", { class: "row measures" }, [
+          measure("Alto (" + side + ")", "h"),
+          measure("Ancho (" + side + ")", "w"),
+          measure("Piezas", "pieces")
+        ]));
+
+        lineBox.appendChild(el("div", { class: "row", style: "justify-content:space-between" }, [
+          detail, lineTotal
+        ]));
+        refreshLine();
+      }
+
+      matSec.appendChild(lineBox);
+    });
+
+    matSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Material",
+      onclick: function () { p.materials.push({ materialId: "", qty: 1, h: "", w: "", pieces: 1 }); save(); render(); } }));
+    body.appendChild(matSec);
+
+    /* costos adicionales */
+    var costSec = el("div", { class: "sec" });
+    costSec.appendChild(el("header", {}, [
+      el("h4", { text: "Otros costos" }),
+      el("span", { class: "sub", text: "Fijos " + money(r.fijos) + " · Variables " + money(r.variables) })
+    ]));
+
+    p.costs.forEach(function (c, idx) {
+      var kindSel = el("select", { "aria-label": "Tipo de costo" });
+      [["variable", "Variable"], ["fijo", "Fijo"]].forEach(function (o) {
+        kindSel.appendChild(el("option", { value: o[0], text: o[1] }));
+      });
+      kindSel.value = c.kind;
+      kindSel.addEventListener("change", function () { c.kind = kindSel.value; save(); render(); });
+
+      costSec.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("input", { type: "text", value: c.name, placeholder: "Ej: Mano de obra",
+          oninput: function (e) { c.name = e.target.value; save(); } })]),
+        el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal", value: c.amount, "aria-label": "Monto",
+          oninput: function (e) { c.amount = e.target.value; save(); refreshOutputs(); } })]),
+        el("div", { class: "kind" }, [kindSel]),
+        deleteButton("Quitar costo", function () { p.costs.splice(idx, 1); save(); render(); })
+      ]));
+    });
+
+    costSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Costo",
+      onclick: function () { p.costs.push({ id: uid(), name: "", amount: "", kind: "variable" }); save(); render(); } }));
+    body.appendChild(costSec);
+
+    /* precio */
+    var priceSec = el("div", { class: "sec" });
+    priceSec.appendChild(el("header", {}, [el("h4", { text: "Cómo defines el precio" })]));
+
+    var segPrecio = el("div", { class: "seg" });
+    [["margen", "Margen %"], ["markup", "Markup %"], ["manual", "Precio fijo"]].forEach(function (o) {
+      segPrecio.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": p.pricingMode === o[0],
+        onclick: function () { p.pricingMode = o[0]; save(); render(); } }));
+    });
+    priceSec.appendChild(segPrecio);
+
+    var help = p.pricingMode === "margen" ? "Porcentaje que representa la ganancia dentro del precio de venta."
+      : p.pricingMode === "markup" ? "Porcentaje que se suma sobre el costo total."
+      : "Precio neto que cobras, sin impuesto. La ganancia se calcula sola.";
+    priceSec.appendChild(el("p", { class: "note", text: help }));
+
+    var inputWrap = el("div", { class: "row", style: "margin-top:8px" });
+    if (p.pricingMode === "manual") {
+      inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+        value: p.manualPrice, placeholder: "0", "aria-label": "Precio neto",
+        oninput: function (e) { p.manualPrice = e.target.value; save(); refreshOutputs(); } })]));
+    } else {
+      inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+        value: p.pricingValue, placeholder: "0", "aria-label": "Porcentaje",
+        oninput: function (e) { p.pricingValue = e.target.value; save(); refreshOutputs(); } })]));
+      inputWrap.appendChild(el("span", { class: "line-total", text: "%" }));
+    }
+    priceSec.appendChild(inputWrap);
+    body.appendChild(priceSec);
+
+    /* publicación en la tienda */
+    var pubCheck = el("input", { type: "checkbox" });
+    pubCheck.checked = !!p.publicado;
+    pubCheck.addEventListener("change", function () { p.publicado = pubCheck.checked; save(); render(); });
+
+    var pubSec = el("div", { class: "sec" }, [
+      el("header", {}, [el("h4", { text: "Tienda pública" })]),
+      el("label", { class: "switch" }, [pubCheck, el("span", { text: "Mostrar en el catálogo público" })])
+    ]);
+    if (p.publicado) {
+      var disp = availableUnits(p);
+      pubSec.appendChild(el("div", { class: "sec", style: "margin-top:10px" }, [
+        el("label", { class: "field", text: "Descripción para el cliente" }),
+        el("input", { type: "text", value: p.descripcionPublica || "", placeholder: "Ej: Tulipán artesanal de limpiapipas",
+          oninput: function (e) { p.descripcionPublica = e.target.value; save(); } })
+      ]));
+      pubSec.appendChild(el("p", { class: "note",
+        text: "Se publica como " + money(r.final) + " · " +
+          (disp == null ? "sin stock definido" : disp + (disp === 1 ? " unidad disponible" : " unidades disponibles")) +
+          ". Tus costos y márgenes no salen a la tienda." }));
+    }
+    body.appendChild(pubSec);
+
+    /* resultado */
+    body.appendChild(resultTable(p));
+
+    /* eliminar producto */
+    body.appendChild(el("div", { class: "sec" }, [
+      el("button", { class: "btn small", type: "button", text: "Eliminar producto",
+        onclick: function () {
+          if (ui.confirming === p.id) {
+            state.products = state.products.filter(function (x) { return x.id !== p.id; });
+            ui.confirming = null; save(); render(); toast("Producto eliminado");
+          } else {
+            ui.confirming = p.id;
+            toast("Toca otra vez para eliminar");
+            setTimeout(function () { if (ui.confirming === p.id) ui.confirming = null; }, 3000);
+          }
+        } })
+    ]));
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function resultRow(label, value, cls) {
+    return el("tr", cls === "total" ? { class: "total" } : {}, [
+      el("th", { scope: "row", text: label }),
+      el("td", { class: cls && cls !== "total" ? cls : "", text: value })
+    ]);
+  }
+
+  function resultTable(p) {
+    var r = calc(p);
+    var rows = [
+      resultRow("Materiales", money(r.mats)),
+      resultRow("Costos fijos", money(r.fijos)),
+      resultRow("Costos variables", money(r.variables)),
+      resultRow("Costo total", money(r.total), "total"),
+      resultRow("Precio neto", money(r.neto))
+    ];
+    if (state.settings.taxEnabled) {
+      rows.push(resultRow("Impuesto " + pct(parseNum(state.settings.taxRate)), money(r.tax)));
+      rows.push(resultRow("Precio final", money(r.final), "total"));
+    }
+    rows.push(resultRow("Ganancia", money(r.ganancia), r.ganancia < 0 ? "loss" : "gain"));
+    rows.push(resultRow("Margen sobre venta", pct(r.margen)));
+    rows.push(resultRow("Markup sobre costo", pct(r.markup)));
+
+    var tbody = el("tbody", {}, rows);
+    return el("div", { class: "result", "data-result": p.id }, [el("table", {}, [tbody])]);
+  }
+
+  function refreshOutputs() {
+    /* actualiza chips y tabla de resultado sin re-render (mantiene el foco al escribir) */
+    state.products.forEach(function (p) {
+      var box = document.querySelector('[data-result="' + p.id + '"]');
+      if (box) {
+        var fresh = resultTable(p);
+        box.parentNode.replaceChild(fresh, box);
+      }
+    });
+    renderProductChips();
+    renderStrip();
+  }
+
+  function renderProductChips() {
+    var cards = document.querySelectorAll("#tab-productos .card");
+    for (var i = 0; i < cards.length; i++) {
+      var p = state.products[i];
+      if (!p) continue;
+      var r = calc(p);
+      var chips = cards[i].querySelector(".chips");
+      if (!chips) continue;
+      chips.innerHTML = "";
+      chips.appendChild(el("span", { class: "chip c", html: "Costo <b>" + money(r.total) + "</b>" }));
+      chips.appendChild(el("span", { class: "chip p", html: "Precio <b>" + money(r.final) + "</b>" }));
+      chips.appendChild(el("span", { class: "chip " + (r.ganancia < 0 ? "neg" : "g"),
+        html: "Ganancia <b>" + money(r.ganancia) + "</b> · " + pct(r.margen) }));
+    }
+  }
+
+  function renderStrip() {
+    var strip = document.getElementById("stripTotals");
+    if (!strip) return;
+    var t = { costo: 0, precio: 0, ganancia: 0 };
+    state.products.forEach(function (p) {
+      var r = calc(p);
+      t.costo += r.total; t.precio += r.final; t.ganancia += r.ganancia;
+    });
+    strip.innerHTML = "";
+    [["Costo total", money(t.costo), ""], ["Ingreso total", money(t.precio), ""],
+     ["Ganancia total", money(t.ganancia), t.ganancia < 0 ? "loss" : "gain"]].forEach(function (c) {
+      strip.appendChild(el("div", {}, [
+        el("dt", { text: c[0] }),
+        el("dd", { text: c[1], style: c[2] === "gain" ? "color:var(--gain)" : c[2] === "loss" ? "color:var(--danger)" : "" })
+      ]));
+    });
+  }
+
+  function renderProductos() {
+    var root = document.getElementById("tab-productos");
+    root.innerHTML = "";
+    root.appendChild(el("dl", { class: "strip", id: "stripTotals" }));
+
+    if (!state.products.length) {
+      root.appendChild(el("div", { class: "empty" }, [
+        el("p", { text: "Aún no hay productos ni servicios. Crea el primero y asígnale materiales y costos." }),
+        el("button", { class: "btn primary", type: "button", text: "Crear el primero", onclick: addProduct })
+      ]));
+    } else {
+      state.products.forEach(function (p) { root.appendChild(productCard(p)); });
+      root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo producto o servicio", onclick: addProduct }));
+      root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de productos",
+        style: "margin-top:8px", onclick: exportProducts }));
+    }
+    renderStrip();
+  }
+
+  function addProduct() {
+    var p = { id: uid(), name: "", type: "producto", materials: [], costs: [],
+      pricingMode: "margen", pricingValue: 40, manualPrice: "" };
+    state.products.push(p);
+    ui.open[p.id] = true;
+    save(); render();
+  }
+
+  /* ---------------- render: materiales ---------------- */
+
+  function renderMateriales() {
+    var root = document.getElementById("tab-materiales");
+    root.innerHTML = "";
+
+    root.appendChild(el("p", { class: "note", style: "margin:0 2px 12px",
+      text: "Esta lista se reutiliza en todos los productos. Escribe el costo por unidad, o el precio de compra y las unidades que trae para que se calcule solo." }));
+
+    if (!state.materials.length) {
+      root.appendChild(el("div", { class: "empty" }, [
+        el("p", { text: "Sin materiales todavía. Agrega insumos con su unidad y costo, o con el precio de compra y cuántas unidades trae." }),
+        el("button", { class: "btn primary", type: "button", text: "Agregar material", onclick: addMaterial })
+      ]));
+      return;
+    }
+
+    state.materials.forEach(function (m, idx) {
+      var card = el("div", { class: "mat-card" });
+
+      var unitSel = el("select", { "aria-label": "Unidad" });
+      UNITS.forEach(function (u) { unitSel.appendChild(el("option", { value: u, text: u })); });
+      if (UNITS.indexOf(m.unit) === -1) unitSel.appendChild(el("option", { value: m.unit, text: m.unit }));
+      unitSel.value = m.unit;
+      unitSel.addEventListener("change", function () { m.unit = unitSel.value; save(); render(); });
+
+      var readout = el("div", { class: "unit-cost" }, [
+        el("span", { "data-unitlabel": m.id, text: "Costo por " + m.unit }),
+        el("b", { "data-unitcost": m.id, text: money(materialCost(m)) })
+      ]);
+
+      function refresh() {
+        var node = card.querySelector("[data-unitcost]");
+        if (node) node.textContent = money(materialCost(m));
+        var lbl = card.querySelector("[data-unitlabel]");
+        if (lbl) {
+          lbl.textContent = "Costo por " + m.unit +
+            (hasSheet(m) ? " · pliego de " + sheetArea(m).toLocaleString("es-CL", { maximumFractionDigits: 2 }) + " " + m.unit : "");
+        }
+      }
+
+      card.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("input", { type: "text", value: m.name, placeholder: "Ej: Papel couché 300g",
+          "aria-label": "Nombre del material",
+          oninput: function (e) { m.name = e.target.value; save(); } })]),
+        deleteButton("Eliminar material", function () {
+          var usados = 0;
+          state.products.forEach(function (p) {
+            var antes = p.materials.length;
+            p.materials = p.materials.filter(function (l) { return l.materialId !== m.id; });
+            usados += antes - p.materials.length;
+          });
+          state.materials.splice(idx, 1);
+          save(); render();
+          toast(usados ? "Material eliminado y quitado de " + usados + " línea(s)" : "Material eliminado");
+        })
+      ]));
+
+      card.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidad de uso" })]),
+        el("div", { class: "unit" }, [unitSel])
+      ]));
+
+      var seg = el("div", { class: "seg tiny" });
+      [["directo", "Costo por unidad"], ["compra", "Calcular desde compra"]].forEach(function (o) {
+        seg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.mode || "directo") === o[0],
+          onclick: function () { m.mode = o[0]; save(); render(); } }));
+      });
+      card.appendChild(seg);
+
+      if (m.mode === "compra") {
+        card.appendChild(el("div", { class: "row" }, [
+          el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Precio pagado" })]),
+          el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+            value: m.buyPrice, placeholder: "0", "aria-label": "Precio de compra",
+            oninput: function (e) { m.buyPrice = e.target.value; save(); refresh(); } })])
+        ]));
+
+        if (isArea(m.unit)) {
+          var side = sideUnit(m.unit);
+          card.appendChild(el("div", { class: "row measures" }, [
+            el("div", { class: "grow" }, [
+              el("label", { class: "field", text: "Alto pliego (" + side + ")" }),
+              el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetH, placeholder: "0",
+                oninput: function (e) { m.sheetH = e.target.value; save(); refresh(); } })
+            ]),
+            el("div", { class: "grow" }, [
+              el("label", { class: "field", text: "Ancho pliego (" + side + ")" }),
+              el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetW, placeholder: "0",
+                oninput: function (e) { m.sheetW = e.target.value; save(); refresh(); } })
+            ]),
+            el("div", { class: "grow" }, [
+              el("label", { class: "field", text: "Pliegos" }),
+              el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetQty, placeholder: "1",
+                oninput: function (e) { m.sheetQty = e.target.value; save(); refresh(); } })
+            ])
+          ]));
+        } else {
+          card.appendChild(el("div", { class: "row" }, [
+            el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidades que trae" })]),
+            el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+              value: m.buyQty, placeholder: "0", "aria-label": "Cantidad comprada",
+              oninput: function (e) { m.buyQty = e.target.value; save(); refresh(); } })])
+          ]));
+        }
+      } else {
+        card.appendChild(el("div", { class: "row" }, [
+          el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Costo por " + m.unit })]),
+          el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+            value: m.cost, placeholder: "0", "aria-label": "Costo unitario",
+            oninput: function (e) { m.cost = e.target.value; save(); refresh(); } })])
+        ]));
+      }
+
+      card.appendChild(readout);
+      refresh();
+
+      if (hasSheet(m)) {
+        card.appendChild(el("label", { class: "field", style: "margin:12px 0 0", text: "Cómo se cobra en los productos" }));
+        var segCobro = el("div", { class: "seg tiny", style: "margin-top:4px" });
+        [["area", "Solo el área usada"], ["pliego", "Pliego completo"]].forEach(function (o) {
+          segCobro.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.areaMode || "area") === o[0],
+            onclick: function () { m.areaMode = o[0]; save(); render(); } }));
+        });
+        card.appendChild(segCobro);
+        card.appendChild(el("p", { class: "note", text: m.areaMode === "pliego"
+          ? "Cobra pliegos enteros: el recorte que sobra se cuenta como pérdida."
+          : "Cobra solo la superficie que ocupas; el resto del pliego queda disponible." }));
+      }
+
+      root.appendChild(card);
+    });
+
+    root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Agregar material",
+      style: "margin-top:10px", onclick: addMaterial }));
+    root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de materiales",
+      style: "margin-top:8px", onclick: exportMaterials }));
+  }
+
+  function addMaterial() {
+    state.materials.push({ id: uid(), name: "", unit: "unidad", mode: "directo", cost: "",
+      buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area",
+      stock: "", stockMin: "" });
+    save(); render();
+    var cards = document.querySelectorAll("#tab-materiales .mat-card");
+    if (cards.length) {
+      var input = cards[cards.length - 1].querySelector("input[type=text]");
+      if (input) input.focus();
+    }
+  }
+
+  /* ---------------- render: pedidos ---------------- */
+
+  function estadoLabel(id) {
+    for (var i = 0; i < ESTADOS.length; i++) if (ESTADOS[i].id === id) return ESTADOS[i].label;
+    return id;
+  }
+
+  function renderPedidos() {
+    var root = document.getElementById("tab-pedidos");
+    root.innerHTML = "";
+
+    if (!state.products.length) {
+      root.appendChild(el("div", { class: "empty" }, [
+        el("p", { text: "Los pedidos se arman con tus productos. Crea al menos uno primero." }),
+        el("button", { class: "btn primary", type: "button", text: "Ir a Productos",
+          onclick: function () { ui.tab = "productos"; render(); } })
+      ]));
+      return;
+    }
+
+    /* totales comprometidos */
+    var pend = pendingOrders(), tot = { ingreso: 0, costo: 0, ganancia: 0 };
+    pend.forEach(function (o) {
+      var t = orderTotals(o);
+      tot.ingreso += t.ingreso; tot.costo += t.costo; tot.ganancia += t.ganancia;
+    });
+
+    var strip = el("dl", { class: "strip" });
+    [["Comprometido", money(tot.ingreso), ""],
+     ["Costo material", money(tot.costo), "cost"],
+     ["Ganancia prevista", money(tot.ganancia), tot.ganancia < 0 ? "loss" : "gain"]].forEach(function (c) {
+      strip.appendChild(el("div", {}, [
+        el("dt", { text: c[0] }),
+        el("dd", { text: c[1], style: c[2] === "gain" ? "color:var(--gain)" : c[2] === "loss" ? "color:var(--danger)"
+          : c[2] === "cost" ? "color:var(--cost)" : "" })
+      ]));
+    });
+    root.appendChild(strip);
+
+    /* lista de compra que cubre todos los pendientes de una vez */
+    if (pend.length) {
+      var plan = shoppingFor(pendingItems());
+      var faltan = plan.lines.filter(function (l) { return l.falta > 1e-9; });
+      var compra = el("div", { class: "mat-card" });
+      compra.appendChild(el("h4", { style: "margin:0 0 6px;font-size:14px", text: "Para cubrir los pendientes" }));
+
+      if (!faltan.length) {
+        compra.appendChild(el("div", { class: "unit-cost" }, [
+          el("span", { text: "Tienes material para todos los pedidos pendientes" }),
+          el("b", { text: money(0) })
+        ]));
+      } else {
+        var detalle = el("div", { class: "plan" });
+        faltan.forEach(function (l) {
+          var unidad = stockUnit(l.material);
+          detalle.appendChild(el("div", { class: "plan-row short" }, [
+            el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
+            el("span", { class: "plan-use", text: "necesitas " + fmtQty(l.need) + " " + unidad + " · tienes " + fmtQty(l.stock) }),
+            el("span", { class: "plan-cost", text: l.packs
+              ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
+          ]));
+        });
+        compra.appendChild(detalle);
+        compra.appendChild(el("div", { class: "unit-cost low" }, [
+          el("span", { text: "Comprar antes de producir" }),
+          el("b", { text: money(plan.total) })
+        ]));
+      }
+      root.appendChild(compra);
+    }
+
+    root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo pedido",
+      style: "margin:12px 0 4px", onclick: addOrder }));
+
+    if (!state.orders.length) {
+      root.appendChild(el("div", { class: "empty", style: "margin-top:10px" }, [
+        el("p", { text: "Sin pedidos todavía. Créalos aquí, o llegarán solos desde la tienda cuando conectes Firebase." })
+      ]));
+      return;
+    }
+
+    /* pedidos, pendientes primero */
+    var orden = { pendiente: 0, proceso: 1, entregado: 2, cancelado: 3 };
+    state.orders.slice().sort(function (a, b) {
+      var d = (orden[a.estado] || 0) - (orden[b.estado] || 0);
+      return d !== 0 ? d : String(b.creado || "").localeCompare(String(a.creado || ""));
+    }).forEach(function (o) { root.appendChild(orderCard(o)); });
+  }
+
+  function orderCard(o) {
+    var t = orderTotals(o);
+    var plan = shoppingFor(o.items);
+    var open = !!ui.open[o.id];
+
+    var head = el("div", { class: "card-head" + (open ? " open" : ""), onclick: function () {
+      ui.open[o.id] = !ui.open[o.id]; render();
+    } }, [
+      el("span", { class: "caret", text: "▶" }),
+      el("h3", { text: (o.cliente || "Sin nombre") + " · " + t.unidades + (t.unidades === 1 ? " unidad" : " unidades") })
+    ]);
+
+    var chips = el("div", { class: "chips" }, [
+      el("span", { class: "chip est-" + o.estado, text: estadoLabel(o.estado) }),
+      el("span", { class: "chip p", html: "Ingreso <b>" + money(t.ingreso) + "</b>" }),
+      el("span", { class: "chip " + (t.ganancia < 0 ? "neg" : "g"), html: "Ganancia <b>" + money(t.ganancia) + "</b>" }),
+      el("span", { class: "chip " + (plan.ok ? "g" : "neg"), text: plan.ok ? "Hay material" : "Falta material" })
+    ]);
+
+    var card = el("div", { class: "card " + (plan.ok ? "producto" : "servicio") }, [head, chips]);
+    if (!open) return card;
+
+    var body = el("div", { class: "card-body" });
+
+    /* datos del cliente */
+    function campo(label, key, placeholder) {
+      return el("div", { class: "sec" }, [
+        el("label", { class: "field", text: label }),
+        el("input", { type: "text", value: o[key] || "", placeholder: placeholder || "",
+          oninput: function (e) { o[key] = e.target.value; save(); } })
+      ]);
+    }
+    body.appendChild(campo("Cliente", "cliente", "Nombre"));
+    body.appendChild(campo("WhatsApp", "whatsapp", "+56 9 ..."));
+
+    var metodoSel = el("select", { "aria-label": "Método de entrega" });
+    METODOS.forEach(function (mth) { metodoSel.appendChild(el("option", { value: mth, text: mth })); });
+    metodoSel.value = o.metodo || METODOS[0];
+    metodoSel.addEventListener("change", function () { o.metodo = metodoSel.value; save(); });
+    body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Entrega" }), metodoSel]));
+
+    body.appendChild(campo("Comuna o ciudad", "comuna", "Ej: Ñuñoa"));
+    body.appendChild(campo("Fecha de entrega", "fecha", "Ej: 2026-09-20"));
+    body.appendChild(campo("Notas", "notas", "Colores, dedicatoria, etc."));
+
+    /* items */
+    var itemsSec = el("div", { class: "sec" });
+    itemsSec.appendChild(el("header", {}, [
+      el("h4", { text: "Productos del pedido" }),
+      el("span", { class: "sub", text: money(t.ingreso) })
+    ]));
+
+    (o.items || []).forEach(function (it, idx) {
+      var sel = el("select", {});
+      sel.appendChild(el("option", { value: "", text: "Selecciona un producto" }));
+      state.products.forEach(function (p) {
+        sel.appendChild(el("option", { value: p.id, text: (p.name || "Sin nombre") + " · " + money(calc(p).final) }));
+      });
+      sel.value = it.productId || "";
+      sel.addEventListener("change", function () {
+        it.productId = sel.value;
+        var p = productById(sel.value);
+        if (p) it.price = Math.round(calc(p).final);
+        save(); render();
+      });
+
+      itemsSec.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [sel]),
+        el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+          value: it.qty, "aria-label": "Cantidad",
+          oninput: function (e) { it.qty = e.target.value; save(); render(); } })]),
+        deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(); render(); })
+      ]));
+    });
+
+    itemsSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Producto",
+      onclick: function () {
+        var p = state.products[0];
+        o.items.push({ productId: p ? p.id : "", qty: 1, price: p ? Math.round(calc(p).final) : 0 });
+        save(); render();
+      } }));
+    body.appendChild(itemsSec);
+
+    /* material */
+    if (o.items && o.items.length) {
+      var faltan = plan.lines.filter(function (l) { return l.falta > 1e-9; });
+      var matSec = el("div", { class: "sec" });
+      matSec.appendChild(el("header", {}, [el("h4", { text: "Material" })]));
+      if (!faltan.length) {
+        matSec.appendChild(el("div", { class: "unit-cost" }, [
+          el("span", { text: "Alcanza con el stock actual" }),
+          el("b", { text: money(0) })
+        ]));
+      } else {
+        var det = el("div", { class: "plan" });
+        faltan.forEach(function (l) {
+          det.appendChild(el("div", { class: "plan-row short" }, [
+            el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
+            el("span", { class: "plan-use", text: "faltan " + fmtQty(l.falta) + " " + stockUnit(l.material) }),
+            el("span", { class: "plan-cost", text: l.packs ? l.packs + " paq · " + money(l.cost) : money(l.cost) })
+          ]));
+        });
+        matSec.appendChild(det);
+        matSec.appendChild(el("div", { class: "unit-cost low" }, [
+          el("span", { text: "Comprar para cumplir este pedido" }),
+          el("b", { text: money(plan.total) })
+        ]));
+      }
+      body.appendChild(matSec);
+    }
+
+    /* resultado */
+    body.appendChild(el("div", { class: "result" }, [el("table", {}, [el("tbody", {}, [
+      el("tr", {}, [el("th", { scope: "row", text: "Ingreso" }), el("td", { text: money(t.ingreso) })]),
+      el("tr", {}, [el("th", { scope: "row", text: "Costo" }), el("td", { text: money(t.costo) })]),
+      el("tr", { class: "total" }, [el("th", { scope: "row", text: "Ganancia" }),
+        el("td", { class: t.ganancia < 0 ? "loss" : "gain", text: money(t.ganancia) })])
+    ])])]));
+
+    /* estado */
+    var segEstado = el("div", { class: "seg tiny", style: "margin-top:14px" });
+    ESTADOS.forEach(function (e2) {
+      segEstado.appendChild(el("button", { type: "button", text: e2.label, "aria-pressed": o.estado === e2.id,
+        onclick: function () {
+          if (e2.id === "entregado") {
+            var res = deliverOrder(o);
+            if (res.error) { toast(res.error); return; }
+            sincronizarEstado(o);
+            save(); render(); toast("Entregado y stock descontado");
+            return;
+          }
+          o.estado = e2.id; sincronizarEstado(o); save(); render();
+        } }));
+    });
+    body.appendChild(el("div", { class: "sec" }, [
+      el("label", { class: "field", text: "Estado" }), segEstado,
+      el("p", { class: "note", text: "Marcar entregado descuenta el material del inventario." })
+    ]));
+
+    if (o.whatsapp) {
+      body.appendChild(el("button", { class: "btn small", type: "button", text: "Abrir WhatsApp del cliente",
+        onclick: function () {
+          var num = String(o.whatsapp).replace(/[^0-9]/g, "");
+          window.open("https://wa.me/" + num, "_blank");
+        } }));
+    }
+
+    body.appendChild(el("div", { class: "sec" }, [
+      el("button", { class: "btn small", type: "button", text: "Eliminar pedido", onclick: function () {
+        if (ui.confirming === o.id) {
+          state.orders = state.orders.filter(function (x) { return x.id !== o.id; });
+          ui.confirming = null; save(); render(); toast("Pedido eliminado");
+        } else {
+          ui.confirming = o.id;
+          toast("Toca otra vez para eliminar");
+          setTimeout(function () { if (ui.confirming === o.id) ui.confirming = null; }, 3000);
+        }
+      } })
+    ]));
+
+    card.appendChild(body);
+    return card;
+  }
+
+  function addOrder() {
+    var p = state.products[0];
+    var o = { id: uid(), cliente: "", whatsapp: "", metodo: METODOS[0], comuna: "", fecha: "", notas: "",
+      items: p ? [{ productId: p.id, qty: 1, price: Math.round(calc(p).final) }] : [],
+      estado: "pendiente", creado: new Date().toISOString().slice(0, 10), origen: "manual" };
+    state.orders.push(o);
+    ui.open[o.id] = true;
+    save(); render();
+  }
+
+  /* ---------------- render: inventario ---------------- */
+
+  function renderInventario() {
+    var root = document.getElementById("tab-inventario");
+    root.innerHTML = "";
+
+    if (!state.materials.length) {
+      root.appendChild(el("div", { class: "empty" }, [
+        el("p", { text: "El inventario se arma con tus materiales. Agrega al menos uno para llevar existencias." }),
+        el("button", { class: "btn primary", type: "button", text: "Ir a Materiales",
+          onclick: function () { ui.tab = "materiales"; render(); } })
+      ]));
+      return;
+    }
+
+    var t = inventoryTotals();
+    var strip = el("dl", { class: "strip" });
+    [["Valor en inventario", money(t.valor), ""],
+     ["Bajo el inicial", String(t.bajos) + (t.bajos === 1 ? " material" : " materiales"), t.bajos ? "loss" : ""],
+     ["Reponer cuesta", money(t.reposicion), "cost"]].forEach(function (c) {
+      strip.appendChild(el("div", {}, [
+        el("dt", { text: c[0] }),
+        el("dd", { text: c[1], style: c[2] === "loss" ? "color:var(--danger)" : c[2] === "cost" ? "color:var(--cost)" : "" })
+      ]));
+    });
+    root.appendChild(strip);
+
+    /* existencias por material */
+    root.appendChild(el("h3", { class: "sec-title", text: "Existencias" }));
+    root.appendChild(el("p", { class: "note", style: "margin:0 2px 10px",
+      text: "El stock inicial es el nivel al que quieres volver. Reponer se calcula comprando paquetes enteros." }));
+
+    state.materials.forEach(function (m) {
+      var unidad = stockUnit(m);
+      var valorUnit = stockUnitValue(m);
+      var size = packSize(m), price = packPrice(m);
+      var card = el("div", { class: "mat-card" });
+
+      var estado = el("div", { class: "unit-cost" });
+      function refreshEstado() {
+        var stock = parseNum(m.stock), target = stockTarget(m);
+        var bajo = target > 0 && stock < target;
+        estado.innerHTML = "";
+        estado.className = "unit-cost" + (bajo ? " low" : "");
+        if (bajo) {
+          var rc = restockCost(m, target - stock);
+          estado.appendChild(el("span", { text: rc.packs
+            ? "Faltan " + fmtQty(target - stock) + " " + unidad + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
+            : "Faltan " + fmtQty(target - stock) + " " + unidad }));
+          estado.appendChild(el("b", { text: money(rc.cost) }));
+        } else {
+          estado.appendChild(el("span", { text: "Valor de estas existencias" }));
+          estado.appendChild(el("b", { text: money(stock * valorUnit) }));
+        }
+      }
+
+      card.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [
+          el("h4", { style: "margin:0;font-size:14px", text: m.name || "Sin nombre" }),
+          el("p", { class: "note", style: "margin:2px 0 0",
+            text: size > 0 && price > 0
+              ? "Compras " + fmtQty(size) + " " + unidad + " por " + money(price) + " · " + money(valorUnit) + " cada " + unidad
+              : money(valorUnit) + " por " + unidad })
+        ])
+      ]));
+
+      card.appendChild(el("div", { class: "row measures" }, [
+        el("div", { class: "grow" }, [
+          el("label", { class: "field", text: "Stock actual (" + unidad + ")" }),
+          el("input", { class: "num", type: "text", inputmode: "decimal", value: m.stock, placeholder: "0",
+            oninput: function (e) { m.stock = e.target.value; save(); refreshEstado(); } })
+        ]),
+        el("div", { class: "grow" }, [
+          el("label", { class: "field", text: "Stock inicial" }),
+          el("input", { class: "num", type: "text", inputmode: "decimal", value: stockTarget(m) || "", placeholder: "0",
+            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(); refreshEstado(); } })
+        ])
+      ]));
+
+      card.appendChild(estado);
+      refreshEstado();
+      root.appendChild(card);
+    });
+
+    /* lote por producto */
+    if (!state.products.length) return;
+
+    root.appendChild(el("h3", { class: "sec-title", text: "Cuánto vender para reponer" }));
+    root.appendChild(el("p", { class: "note", style: "margin:0 2px 10px",
+      text: "Simula un lote: cuánto consume, qué paquetes hay que recomprar y cuántas de esas unidades pagan la reposición." }));
+
+    state.products.forEach(function (p) {
+      if (!p.materials.length) return;
+      var cap = capacity(p);
+      var card = el("div", { class: "mat-card" });
+
+      card.appendChild(el("h4", { style: "margin:0 0 4px;font-size:14px", text: p.name || "Sin nombre" }));
+      card.appendChild(el("p", { class: "note", style: "margin:0 0 8px",
+        text: cap.units == null ? "Sin materiales con consumo definido"
+          : "Alcanzas para " + cap.units + (cap.units === 1 ? " unidad" : " unidades") +
+            (cap.limiting ? " · se acaba primero: " + (cap.limiting.name || "sin nombre") : "") }));
+
+      if (cap.units == null) { root.appendChild(card); return; }
+
+      var lote = cap.units > 0 ? cap.units : 1;
+      var input = el("input", { class: "num", type: "text", inputmode: "decimal", value: lote,
+        "aria-label": "Unidades del lote",
+        oninput: function (e) { lote = e.target.value; refreshPlan(); } });
+
+      card.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Lote a producir" })]),
+        el("div", { class: "qty" }, [input])
+      ]));
+
+      var detalle = el("div", { class: "plan" });
+      var resumen = el("div", { class: "unit-cost" });
+
+      function refreshPlan() {
+        var plan = batchPlan(p, lote);
+        detalle.innerHTML = "";
+        resumen.innerHTML = "";
+
+        plan.lines.forEach(function (l) {
+          var unidad = stockUnit(l.material);
+          var txt = fmtQty(l.use) + " " + unidad + " · quedan " + fmtQty(Math.max(0, l.after));
+          var repo = l.deficit > 0
+            ? (l.packs ? "recomprar " + l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost)
+                       : "reponer " + money(l.cost))
+            : "sin reponer";
+          detalle.appendChild(el("div", { class: "plan-row" + (l.after < 0 ? " short" : "") }, [
+            el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
+            el("span", { class: "plan-use", text: txt }),
+            el("span", { class: "plan-cost", text: repo })
+          ]));
+        });
+
+        if (plan.cost <= 0) {
+          resumen.className = "unit-cost";
+          resumen.appendChild(el("span", { text: "Con ese lote no bajas del stock inicial" }));
+          resumen.appendChild(el("b", { text: money(0) }));
+        } else if (plan.sell == null) {
+          resumen.className = "unit-cost low";
+          resumen.appendChild(el("span", { text: "Define un precio de venta para calcular las ventas" }));
+          resumen.appendChild(el("b", { text: money(plan.cost) }));
+        } else {
+          var alcanza = plan.sell <= parseNum(lote);
+          resumen.className = "unit-cost" + (alcanza ? "" : " low");
+          resumen.appendChild(el("span", { text: "Reponer cuesta " + money(plan.cost) +
+            (alcanza ? " · vendes " + plan.sell + " de " + fmtQty(lote) : " · no alcanza con este lote") }));
+          resumen.appendChild(el("b", { text: plan.sell + (plan.sell === 1 ? " unidad" : " unidades") }));
+        }
+
+        if (plan.sobra > 0.001) {
+          detalle.appendChild(el("p", { class: "note", style: "margin:6px 0 0",
+            text: "Los paquetes dejan material de sobra para los siguientes lotes." }));
+        }
+      }
+
+      card.appendChild(detalle);
+      card.appendChild(resumen);
+      refreshPlan();
+
+      card.appendChild(el("button", { class: "btn small", type: "button", text: "Registrar esta producción",
+        style: "margin-top:10px", onclick: function () {
+          var res = produce(p, lote);
+          if (res.error) { toast(res.error); return; }
+          save(); render();
+          toast("Stock descontado por " + res.units + (res.units === 1 ? " unidad" : " unidades"));
+        } }));
+
+      root.appendChild(card);
+    });
+  }
+
+
+  /* ---------------- firebase ---------------- */
+
+  var fb = { app: null, db: null, auth: null, user: null, unsub: null, estado: "apagado" };
+
+  function fbConfigured() {
+    var c = state.settings.firebase || {};
+    return !!(c.apiKey && c.projectId && c.authDomain && c.appId);
+  }
+
+  function loadScript(src) {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = src; s.onload = resolve; s.onerror = function () { reject(new Error("No se pudo cargar " + src)); };
+      document.head.appendChild(s);
+    });
+  }
+
+  var SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+
+  function fbInit() {
+    if (!fbConfigured()) return Promise.reject(new Error("Falta la configuración de Firebase."));
+    if (fb.app) return Promise.resolve();
+    fb.estado = "cargando";
+    return loadScript(SDK + "firebase-app-compat.js")
+      .then(function () { return loadScript(SDK + "firebase-auth-compat.js"); })
+      .then(function () { return loadScript(SDK + "firebase-firestore-compat.js"); })
+      .then(function () {
+        var c = state.settings.firebase;
+        fb.app = window.firebase.initializeApp({
+          apiKey: c.apiKey, authDomain: c.authDomain, projectId: c.projectId, appId: c.appId
+        });
+        fb.auth = window.firebase.auth();
+        fb.db = window.firebase.firestore();
+        fb.estado = "listo";
+        fb.auth.onAuthStateChanged(function (u) {
+          fb.user = u;
+          if (u) escucharPedidos(); else if (fb.unsub) { fb.unsub(); fb.unsub = null; }
+          if (ui.tab === "ajustes") render();
+        });
+      })
+      .catch(function (err) { fb.estado = "error"; throw err; });
+  }
+
+  function fbLogin(email, pass) {
+    return fbInit().then(function () { return fb.auth.signInWithEmailAndPassword(email, pass); });
+  }
+
+  function fbLogout() {
+    if (!fb.auth) return Promise.resolve();
+    return fb.auth.signOut();
+  }
+
+  /* publica solo lo que el cliente puede ver: nombre, precio y disponibilidad */
+  function publicarCatalogo() {
+    if (!fb.user) return Promise.reject(new Error("Inicia sesión primero."));
+    var cat = publicCatalog();
+    var batch = fb.db.batch();
+    cat.forEach(function (item) {
+      batch.set(fb.db.collection("catalogo").doc(item.id), item);
+    });
+    /* saca de la tienda lo que dejó de estar publicado */
+    return fb.db.collection("catalogo").get().then(function (snap) {
+      var vivos = {};
+      cat.forEach(function (i) { vivos[i.id] = true; });
+      snap.forEach(function (doc) { if (!vivos[doc.id]) batch.delete(doc.ref); });
+      return batch.commit();
+    }).then(function () {
+      return fb.db.collection("config").doc("tienda").set({
+        nombre: state.settings.tienda.nombre || "",
+        whatsapp: state.settings.tienda.whatsapp || "",
+        moneda: state.settings.currency,
+        actualizado: new Date().toISOString()
+      });
+    }).then(function () { return cat.length; });
+  }
+
+  /* respalda la gestión privada; las reglas impiden que nadie más la lea */
+  function guardarEnNube() {
+    if (!fb.user) return Promise.reject(new Error("Inicia sesión primero."));
+    return fb.db.collection("gestion").doc(fb.user.uid).set({
+      settings: state.settings, materials: state.materials, products: state.products,
+      actualizado: new Date().toISOString()
+    });
+  }
+
+  function traerDeNube() {
+    if (!fb.user) return Promise.reject(new Error("Inicia sesión primero."));
+    return fb.db.collection("gestion").doc(fb.user.uid).get().then(function (doc) {
+      if (!doc.exists) throw new Error("Todavía no hay respaldo en la nube.");
+      var d = doc.data();
+      if (d.settings) state.settings = Object.assign(state.settings, d.settings);
+      if (Array.isArray(d.materials)) state.materials = d.materials;
+      if (Array.isArray(d.products)) state.products = d.products;
+      save(); render();
+    });
+  }
+
+  /* los pedidos de la tienda entran solos a la agenda */
+  function escucharPedidos() {
+    if (fb.unsub || !fb.db) return;
+    fb.unsub = fb.db.collection("pedidos").orderBy("creado", "desc").limit(200)
+      .onSnapshot(function (snap) {
+        var nuevos = 0;
+        snap.forEach(function (doc) {
+          var d = doc.data();
+          var existe = state.orders.some(function (o) { return o.id === doc.id; });
+          if (existe) return;
+          state.orders.push({
+            id: doc.id,
+            cliente: d.cliente || "", whatsapp: d.whatsapp || "",
+            metodo: d.metodo || METODOS[0], comuna: d.comuna || "",
+            fecha: d.fecha || "", notas: d.notas || "",
+            items: (d.items || []).map(function (i) {
+              return { productId: i.productId, qty: parseNum(i.qty), price: parseNum(i.price) };
+            }),
+            estado: d.estado || "pendiente",
+            creado: (d.creado || "").slice(0, 10),
+            origen: "tienda"
+          });
+          nuevos++;
+        });
+        if (nuevos) {
+          save();
+          if (ui.tab === "pedidos") render();
+          toast(nuevos + (nuevos === 1 ? " pedido nuevo" : " pedidos nuevos"));
+        }
+      }, function () { toast("No pude escuchar los pedidos"); });
+  }
+
+  function sincronizarEstado(o) {
+    if (!fb.user || o.origen !== "tienda") return;
+    fb.db.collection("pedidos").doc(o.id).update({ estado: o.estado }).catch(function () {});
+  }
+
+  /* ---------------- render: ajustes ---------------- */
+
+  function renderAjustes() {
+    var root = document.getElementById("tab-ajustes");
+    root.innerHTML = "";
+
+    var taxCheck = el("input", { type: "checkbox", id: "taxOn" });
+    taxCheck.checked = !!state.settings.taxEnabled;
+    taxCheck.addEventListener("change", function () { state.settings.taxEnabled = taxCheck.checked; save(); render(); });
+
+    var taxCard = el("div", { class: "setting" }, [
+      el("h4", { text: "Impuesto sobre el precio" }),
+      el("p", { text: "Opcional. Si lo activas, se suma al precio neto y aparece como precio final." }),
+      el("label", { class: "switch" }, [taxCheck, el("span", { text: "Aplicar impuesto a todos los precios" })])
+    ]);
+    if (state.settings.taxEnabled) {
+      taxCard.appendChild(el("div", { class: "row", style: "margin-top:10px" }, [
+        el("div", { class: "grow" }, [el("label", { class: "field", text: "Porcentaje" })]),
+        el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+          value: state.settings.taxRate, "aria-label": "Porcentaje de impuesto",
+          oninput: function (e) { state.settings.taxRate = e.target.value; save(); refreshOutputs(); } })])
+      ]));
+      taxCard.appendChild(el("p", { class: "note", text: "En Chile el IVA es 19%." }));
+    }
+    root.appendChild(taxCard);
+
+    /* tienda y firebase */
+    var tiendaCard = el("div", { class: "setting" }, [
+      el("h4", { text: "Tienda pública" }),
+      el("p", { text: "Estos datos aparecen en la página que ven tus clientes." }),
+      el("label", { class: "field", text: "Nombre del emprendimiento" }),
+      el("input", { type: "text", value: state.settings.tienda.nombre, placeholder: "Ej: Flores de limpiapipas",
+        oninput: function (e) { state.settings.tienda.nombre = e.target.value; save(); } }),
+      el("label", { class: "field", style: "margin-top:10px", text: "WhatsApp de contacto" }),
+      el("input", { type: "text", value: state.settings.tienda.whatsapp, placeholder: "+56 9 1234 5678",
+        oninput: function (e) { state.settings.tienda.whatsapp = e.target.value; save(); } }),
+      el("p", { class: "note", text: state.products.filter(function (p) { return p.publicado; }).length +
+        " producto(s) marcado(s) para publicar. El interruptor está dentro de cada producto." })
+    ]);
+    root.appendChild(tiendaCard);
+
+    var fbCard = el("div", { class: "setting" }, [
+      el("h4", { text: "Conexión con Firebase" }),
+      el("p", { text: "Sin esto, la planilla funciona igual y guarda todo en este dispositivo. Al conectarla, los pedidos de la tienda llegan solos." })
+    ]);
+
+    [["apiKey", "apiKey"], ["authDomain", "authDomain"], ["projectId", "projectId"], ["appId", "appId"]]
+      .forEach(function (f) {
+        fbCard.appendChild(el("label", { class: "field", style: "margin-top:8px", text: f[1] }));
+        fbCard.appendChild(el("input", { type: "text", value: state.settings.firebase[f[0]] || "",
+          placeholder: f[1], oninput: function (e) { state.settings.firebase[f[0]] = e.target.value.trim(); save(); } }));
+      });
+
+    if (!fbConfigured()) {
+      fbCard.appendChild(el("p", { class: "note", text: "Pega los cuatro valores de tu app web de Firebase para activar la conexión." }));
+    } else if (!fb.user) {
+      var mail = el("input", { type: "text", value: "", placeholder: "correo@ejemplo.cl", "aria-label": "Correo" });
+      var pass = el("input", { type: "password", placeholder: "contraseña", "aria-label": "Contraseña" });
+      fbCard.appendChild(el("label", { class: "field", style: "margin-top:14px", text: "Entrar como administrador" }));
+      fbCard.appendChild(mail);
+      fbCard.appendChild(el("div", { style: "height:6px" }));
+      fbCard.appendChild(pass);
+      fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Entrar", style: "margin-top:8px",
+        onclick: function () {
+          toast("Conectando…");
+          fbLogin(mail.value.trim(), pass.value).then(function () {
+            render(); toast("Sesión iniciada");
+          }).catch(function (err) { toast(err.message || "No pude entrar"); });
+        } }));
+    } else {
+      fbCard.appendChild(el("div", { class: "unit-cost", style: "margin-top:12px" }, [
+        el("span", { text: "Conectado como" }),
+        el("b", { text: fb.user.email || "admin" })
+      ]));
+      fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Publicar catálogo en la tienda",
+        style: "margin-top:10px", onclick: function () {
+          toast("Publicando…");
+          publicarCatalogo().then(function (n) { toast(n + " producto(s) publicado(s)"); })
+            .catch(function (err) { toast(err.message || "No pude publicar"); });
+        } }));
+      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Respaldar gestión en la nube",
+        style: "margin-top:8px", onclick: function () {
+          guardarEnNube().then(function () { toast("Respaldado"); })
+            .catch(function (err) { toast(err.message || "No pude respaldar"); });
+        } }));
+      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Traer gestión desde la nube",
+        style: "margin-top:8px", onclick: function () {
+          traerDeNube().then(function () { toast("Datos actualizados"); })
+            .catch(function (err) { toast(err.message || "No pude traer los datos"); });
+        } }));
+      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Cerrar sesión",
+        style: "margin-top:14px", onclick: function () { fbLogout().then(function () { render(); toast("Sesión cerrada"); }); } }));
+    }
+    root.appendChild(fbCard);
+
+    root.appendChild(el("div", { class: "setting" }, [
+      el("h4", { text: "Respaldo e importación" }),
+      el("p", { text: "El respaldo .json guarda todo tal cual: úsalo para cambiar de dispositivo o antes de borrar." }),
+      el("button", { class: "btn wide", type: "button", text: "Exportar respaldo (.json)", onclick: exportBackup }),
+      el("button", { class: "btn wide", type: "button", text: "Restaurar respaldo (.json)", style: "margin-top:8px", onclick: importBackupSheet }),
+      el("button", { class: "btn wide", type: "button", text: "Importar materiales (CSV)", style: "margin-top:14px", onclick: importMaterialsSheet }),
+      el("button", { class: "btn wide", type: "button", text: "Importar productos (CSV)", style: "margin-top:8px", onclick: importProductsSheet }),
+      el("p", { class: "note", text: "En cada importación eliges si agregar a lo que ya tienes o reemplazar todo." })
+    ]));
+
+    root.appendChild(el("div", { class: "setting" }, [
+      el("h4", { text: "Tus datos" }),
+      el("p", { text: "Materiales, productos y ajustes se guardan solos y son solo tuyos. Nadie más los ve." }),
+      el("button", { class: "btn small", type: "button", text: "Borrar todo y empezar de cero",
+        onclick: function () {
+          if (ui.confirming === "reset") {
+            state.materials = []; state.products = []; ui.open = {}; ui.confirming = null;
+            save(); render(); toast("Planilla vacía");
+          } else {
+            ui.confirming = "reset";
+            toast("Toca otra vez para borrar todo");
+            setTimeout(function () { if (ui.confirming === "reset") ui.confirming = null; }, 3000);
+          }
+        } })
+    ]));
+
+    root.appendChild(el("div", { class: "setting" }, [
+      el("h4", { text: "Cómo se calcula" }),
+      el("p", { html: "Margen: precio = costo ÷ (1 − margen/100). Markup: precio = costo × (1 + markup/100). " +
+        "Con precio fijo, la ganancia es precio neto − costo total." })
+    ]));
+  }
+
+  /* ---------------- CSV ---------------- */
+
+  function csvCell(v) {
+    var s = String(v == null ? "" : v);
+    if (/[";\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function csvNum(n) {
+    if (!isFinite(n)) return "";
+    return n.toFixed(cfg().decimals).replace(".", ",");
+  }
+
+  /* el costo por unidad puede ser menor a 1 (ej: $0,8 por cm²), así que no se redondea a la moneda */
+  function csvNumPrecise(n) {
+    if (!isFinite(n)) return "";
+    var s = n.toFixed(6).replace(/0+$/, "").replace(/\.$/, "");
+    return s.replace(".", ",");
+  }
+
+  function buildProductsCsv() {
+    var head = ["Nombre", "Tipo", "Materiales", "Costos fijos", "Costos variables", "Costo total",
+      "Modo de precio", "Valor", "Precio neto", "Impuesto %", "Impuesto", "Precio final",
+      "Ganancia", "Margen %", "Markup %", "Moneda"];
+    var lines = [head.map(csvCell).join(";")];
+    state.products.forEach(function (p) {
+      var r = calc(p);
+      lines.push([
+        p.name || "Sin nombre", p.type,
+        csvNum(r.mats), csvNum(r.fijos), csvNum(r.variables), csvNum(r.total),
+        p.pricingMode, p.pricingMode === "manual" ? csvNum(parseNum(p.manualPrice)) : String(parseNum(p.pricingValue)).replace(".", ","),
+        csvNum(r.neto),
+        state.settings.taxEnabled ? String(parseNum(state.settings.taxRate)).replace(".", ",") : "0",
+        csvNum(r.tax), csvNum(r.final), csvNum(r.ganancia),
+        isFinite(r.margen) ? r.margen.toFixed(1).replace(".", ",") : "",
+        isFinite(r.markup) ? r.markup.toFixed(1).replace(".", ",") : "",
+        state.settings.currency
+      ].map(csvCell).join(";"));
+    });
+    return lines.join("\n");
+  }
+
+  function buildMaterialsCsv() {
+    var lines = [["Material", "Unidad", "Origen del costo", "Precio de compra", "Unidades o pliegos",
+      "Alto pliego", "Ancho pliego", "Cobro en producto", "Costo unitario",
+      "Unidad de stock", "Stock", "Stock inicial", "Paquete", "Precio paquete", "Valor en inventario", "Moneda"].map(csvCell).join(";")];
+    state.materials.forEach(function (m) {
+      var compra = m.mode === "compra";
+      var area = isArea(m.unit);
+      lines.push([
+        m.name || "Sin nombre", m.unit,
+        compra ? "compra" : "directo",
+        compra ? csvNum(parseNum(m.buyPrice)) : "",
+        compra ? String(parseNum(area ? (m.sheetQty || 1) : m.buyQty)).replace(".", ",") : "",
+        area && compra ? String(parseNum(m.sheetH)).replace(".", ",") : "",
+        area && compra ? String(parseNum(m.sheetW)).replace(".", ",") : "",
+        hasSheet(m) ? (m.areaMode === "pliego" ? "pliego completo" : "área usada") : "",
+        csvNumPrecise(materialCost(m)),
+        stockUnit(m),
+        String(parseNum(m.stock)).replace(".", ","),
+        String(stockTarget(m)).replace(".", ","),
+        String(packSize(m)).replace(".", ","),
+        csvNum(packPrice(m)),
+        csvNum(parseNum(m.stock) * stockUnitValue(m)),
+        state.settings.currency
+      ].map(csvCell).join(";"));
+    });
+    return lines.join("\n");
+  }
+
+  function exportProducts() { openSheet("Productos en CSV", "productos.csv", buildProductsCsv()); }
+  function exportMaterials() { openSheet("Materiales en CSV", "materiales.csv", buildMaterialsCsv()); }
+  function exportBackup() {
+    openSheet("Respaldo completo", "respaldo-costos.json", JSON.stringify(state, null, 2),
+      "Incluye materiales, productos con sus medidas y ajustes. Guárdalo para restaurar todo tal cual.");
+  }
+
+  function openSheet(title, filename, csv, note) {
+    var ta = el("textarea", { readonly: true });
+    ta.value = csv;
+
+    var bg = el("div", { class: "sheet-bg", onclick: function (e) { if (e.target === bg) bg.remove(); } });
+    var sheet = el("div", { class: "sheet" }, [
+      el("h3", { text: title }),
+      ta,
+      el("div", { class: "actions" }, [
+        el("button", { class: "btn primary", type: "button", text: "Descargar", onclick: function () { download(filename, csv); } }),
+        el("button", { class: "btn", type: "button", text: "Copiar", onclick: function () { copy(ta); } }),
+        el("button", { class: "btn", type: "button", text: "Cerrar", onclick: function () { bg.remove(); } })
+      ]),
+      el("p", { class: "note", text: note || "Separador ; y coma decimal, listo para abrir en Excel." })
+    ]);
+    bg.appendChild(sheet);
+    document.body.appendChild(bg);
+  }
+
+  function download(filename, text) {
+    try {
+      var json = /\.json$/i.test(filename);
+      var blob = new Blob([json ? text : "\ufeff" + text],
+        { type: json ? "application/json;charset=utf-8;" : "text/csv;charset=utf-8;" });
+      var url = URL.createObjectURL(blob);
+      var a = el("a", { href: url, download: filename });
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(url); a.remove(); }, 1500);
+      toast("Descargando " + filename);
+    } catch (err) {
+      toast("La descarga no está disponible aquí, usa Copiar");
+    }
+  }
+
+  function copy(ta) {
+    ta.removeAttribute("readonly");
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length);
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+    ta.setAttribute("readonly", "");
+    if (!ok && navigator.clipboard) {
+      navigator.clipboard.writeText(ta.value).then(function () { toast("Copiado"); }).catch(function () { toast("Selecciona el texto y cópialo"); });
+      return;
+    }
+    toast(ok ? "Copiado" : "Selecciona el texto y cópialo");
+  }
+
+  /* ---------------- importación ---------------- */
+
+  function norm(s) {
+    var t = String(s == null ? "" : s).toLowerCase().trim();
+    if (t.normalize) t = t.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    return t;
+  }
+
+  function parseCsv(text) {
+    text = String(text || "").replace(/^\ufeff/, "");
+    var firstLine = text.split(/\r?\n/)[0] || "";
+    var counts = { ";": 0, ",": 0, "\t": 0 };
+    Object.keys(counts).forEach(function (d) { counts[d] = firstLine.split(d).length - 1; });
+    var delim = ";";
+    if (counts[","] > counts[";"] && counts[","] >= counts["\t"]) delim = ",";
+    else if (counts["\t"] > counts[";"] && counts["\t"] > counts[","]) delim = "\t";
+
+    var rows = [], row = [], field = "", inQ = false, i = 0;
+    while (i < text.length) {
+      var c = text.charAt(i);
+      if (inQ) {
+        if (c === '"') {
+          if (text.charAt(i + 1) === '"') { field += '"'; i += 2; continue; }
+          inQ = false; i++; continue;
+        }
+        field += c; i++; continue;
+      }
+      if (c === '"') { inQ = true; i++; continue; }
+      if (c === delim) { row.push(field); field = ""; i++; continue; }
+      if (c === "\r") { i++; continue; }
+      if (c === "\n") { row.push(field); rows.push(row); row = []; field = ""; i++; continue; }
+      field += c; i++;
+    }
+    row.push(field); rows.push(row);
+    return rows.filter(function (r) {
+      return r.some(function (v) { return String(v).trim() !== ""; });
+    });
+  }
+
+  function headerMap(row) {
+    var map = {};
+    row.forEach(function (h, idx) { map[norm(h)] = idx; });
+    return map;
+  }
+
+  function pick(map, row, names) {
+    for (var i = 0; i < names.length; i++) {
+      var key = norm(names[i]);
+      if (map[key] !== undefined) return String(row[map[key]] || "").trim();
+    }
+    return "";
+  }
+
+  function importMaterialsCsv(text, mode) {
+    var rows = parseCsv(text);
+    if (rows.length < 2) return { error: "El CSV no tiene filas de datos." };
+    var map = headerMap(rows[0]);
+    if (map["material"] === undefined && map["nombre"] === undefined) {
+      return { error: "No encuentro la columna Material. Usa un CSV exportado desde esta planilla." };
+    }
+
+    var nuevos = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      var name = pick(map, row, ["material", "nombre"]);
+      var unit = normalizeUnit(pick(map, row, ["unidad"]));
+      var origen = norm(pick(map, row, ["origen del costo", "origen"]));
+      var m = { id: uid(), name: name, unit: unit, mode: origen.indexOf("compra") > -1 ? "compra" : "directo",
+        cost: "", buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area",
+        stock: parseNum(pick(map, row, ["stock", "existencias"])),
+        stockTarget: parseNum(pick(map, row, ["stock inicial", "stock minimo", "minimo"])),
+        stockMin: parseNum(pick(map, row, ["stock inicial", "stock minimo", "minimo"])) };
+
+      if (m.mode === "compra") {
+        m.buyPrice = parseNum(pick(map, row, ["precio de compra", "precio pagado"]));
+        var cantidad = pick(map, row, ["unidades o pliegos", "unidades compradas", "cantidad"]);
+        if (isArea(unit)) {
+          m.sheetH = parseNum(pick(map, row, ["alto pliego", "alto"]));
+          m.sheetW = parseNum(pick(map, row, ["ancho pliego", "ancho"]));
+          m.sheetQty = parseNum(cantidad) || 1;
+        } else {
+          m.buyQty = parseNum(cantidad);
+        }
+      } else {
+        m.cost = parseNum(pick(map, row, ["costo unitario", "costo"]));
+      }
+      if (norm(pick(map, row, ["cobro en producto"])).indexOf("pliego") > -1) m.areaMode = "pliego";
+
+      if (!name && !m.cost && !m.buyPrice) continue;
+      nuevos.push(m);
+    }
+
+    if (!nuevos.length) return { error: "No encontré materiales válidos en ese CSV." };
+
+    var relinked = 0;
+    if (mode === "reemplazar") {
+      /* el CSV no guarda ids: reconectamos las líneas de los productos por nombre */
+      var byName = {};
+      nuevos.forEach(function (m) { if (m.name) byName[norm(m.name)] = m.id; });
+      var oldNames = {};
+      state.materials.forEach(function (m) { oldNames[m.id] = norm(m.name); });
+      state.products.forEach(function (p) {
+        p.materials.forEach(function (line) {
+          var nuevoId = byName[oldNames[line.materialId]];
+          if (nuevoId) { line.materialId = nuevoId; relinked++; }
+        });
+      });
+      state.materials = nuevos;
+    } else {
+      state.materials = state.materials.concat(nuevos);
+    }
+    return { count: nuevos.length, relinked: relinked };
+  }
+
+  function importProductsCsv(text, mode) {
+    var rows = parseCsv(text);
+    if (rows.length < 2) return { error: "El CSV no tiene filas de datos." };
+    var map = headerMap(rows[0]);
+    if (map["nombre"] === undefined) {
+      return { error: "No encuentro la columna Nombre. Usa un CSV exportado desde esta planilla." };
+    }
+
+    var nuevos = [];
+    for (var i = 1; i < rows.length; i++) {
+      var row = rows[i];
+      var name = pick(map, row, ["nombre", "producto"]);
+      if (!name) continue;
+
+      var modo = norm(pick(map, row, ["modo de precio", "modo"]));
+      var p = {
+        id: uid(), name: name,
+        type: norm(pick(map, row, ["tipo"])).indexOf("servicio") > -1 ? "servicio" : "producto",
+        materials: [], costs: [],
+        pricingMode: modo.indexOf("markup") > -1 ? "markup" : modo.indexOf("manual") > -1 ? "manual" : "margen",
+        pricingValue: 40, manualPrice: ""
+      };
+
+      if (p.pricingMode === "manual") p.manualPrice = parseNum(pick(map, row, ["precio neto"]));
+      else p.pricingValue = parseNum(pick(map, row, ["valor"]));
+
+      var mats = parseNum(pick(map, row, ["materiales"]));
+      var fijos = parseNum(pick(map, row, ["costos fijos"]));
+      var vars = parseNum(pick(map, row, ["costos variables"]));
+      if (mats) p.costs.push({ id: uid(), name: "Materiales (del CSV)", amount: mats, kind: "variable" });
+      if (vars) p.costs.push({ id: uid(), name: "Costos variables (del CSV)", amount: vars, kind: "variable" });
+      if (fijos) p.costs.push({ id: uid(), name: "Costos fijos (del CSV)", amount: fijos, kind: "fijo" });
+
+      nuevos.push(p);
+    }
+
+    if (!nuevos.length) return { error: "No encontré productos válidos en ese CSV." };
+    state.products = mode === "reemplazar" ? nuevos : state.products.concat(nuevos);
+    return { count: nuevos.length, partial: true };
+  }
+
+  function importBackup(text, mode) {
+    var data;
+    try { data = JSON.parse(text); } catch (e) { return { error: "Ese texto no es un respaldo válido (.json)." }; }
+    if (!data || (!Array.isArray(data.materials) && !Array.isArray(data.products))) {
+      return { error: "El archivo no tiene la estructura de un respaldo de esta planilla." };
+    }
+
+    var mats = Array.isArray(data.materials) ? data.materials : [];
+    var prods = Array.isArray(data.products) ? data.products : [];
+
+    if (mode === "reemplazar") {
+      state.materials = mats;
+      state.products = prods;
+      if (Array.isArray(data.orders)) state.orders = data.orders;
+      if (data.settings) state.settings = Object.assign(state.settings, data.settings);
+    } else {
+      var idMap = {};
+      mats.forEach(function (m) {
+        var nuevo = Object.assign({}, m, { id: uid() });
+        idMap[m.id] = nuevo.id;
+        state.materials.push(nuevo);
+      });
+      prods.forEach(function (p) {
+        var nuevo = Object.assign({}, p, { id: uid() });
+        nuevo.materials = (p.materials || []).map(function (l) {
+          return Object.assign({}, l, { materialId: idMap[l.materialId] || l.materialId });
+        });
+        nuevo.costs = (p.costs || []).map(function (c) { return Object.assign({}, c, { id: uid() }); });
+        state.products.push(nuevo);
+      });
+    }
+    ui.open = {};
+    return { count: mats.length + prods.length };
+  }
+
+  function openImportSheet(opts) {
+    var mode = "agregar";
+    var ta = el("textarea", { placeholder: "Pega aquí el contenido del archivo…" });
+
+    var seg = el("div", { class: "seg tiny" });
+    var segOpts = [["agregar", "Agregar a lo actual"], ["reemplazar", "Reemplazar todo"]];
+    segOpts.forEach(function (o, i) {
+      seg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": mode === o[0],
+        onclick: function () {
+          mode = o[0];
+          var btns = seg.querySelectorAll("button");
+          for (var j = 0; j < btns.length; j++) btns[j].setAttribute("aria-pressed", j === i ? "true" : "false");
+        } }));
+    });
+
+    var fileInput = el("input", { type: "file", accept: opts.accept, style: "display:none" });
+    fileInput.addEventListener("change", function () {
+      var f = fileInput.files && fileInput.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () { ta.value = String(reader.result || ""); toast("Archivo cargado: " + f.name); };
+      reader.onerror = function () { toast("No pude leer el archivo"); };
+      reader.readAsText(f, "utf-8");
+    });
+
+    var bg = el("div", { class: "sheet-bg", onclick: function (e) { if (e.target === bg) bg.remove(); } });
+    var sheet = el("div", { class: "sheet" }, [
+      el("h3", { text: opts.title }),
+      el("p", { class: "note", style: "margin:0 0 10px", text: opts.note }),
+      el("button", { class: "btn wide", type: "button", text: "Elegir archivo", style: "margin-bottom:10px",
+        onclick: function () { fileInput.click(); } }),
+      fileInput,
+      ta,
+      seg,
+      el("div", { class: "actions" }, [
+        el("button", { class: "btn primary", type: "button", text: "Importar", onclick: function () {
+          var text = ta.value.trim();
+          if (!text) { toast("Pega el contenido o elige un archivo"); return; }
+          var res = opts.run(text, mode);
+          if (res.error) { toast(res.error); return; }
+          save(); bg.remove(); render();
+          toast(res.count + " registro(s) importado(s)" + (res.partial ? " sin líneas de materiales" : ""));
+        } }),
+        el("button", { class: "btn", type: "button", text: "Cerrar", onclick: function () { bg.remove(); } })
+      ])
+    ]);
+    bg.appendChild(sheet);
+    document.body.appendChild(bg);
+  }
+
+  function importMaterialsSheet() {
+    openImportSheet({
+      title: "Importar materiales",
+      note: "Acepta el CSV de materiales de esta planilla. Recupera unidad, origen del costo, medidas del pliego y modo de cobro.",
+      accept: ".csv,text/csv,text/plain",
+      run: importMaterialsCsv
+    });
+  }
+
+  function importProductsSheet() {
+    openImportSheet({
+      title: "Importar productos",
+      note: "El CSV de productos no guarda qué materiales usa cada uno. Se recuperan nombre, tipo y modo de precio; los costos llegan como líneas de costo, no como materiales con medidas. Para recuperar todo usa el respaldo .json.",
+      accept: ".csv,text/csv,text/plain",
+      run: importProductsCsv
+    });
+  }
+
+  function importBackupSheet() {
+    openImportSheet({
+      title: "Restaurar respaldo",
+      note: "Acepta el archivo .json exportado desde esta planilla. Recupera materiales, productos con sus medidas y ajustes.",
+      accept: ".json,application/json,text/plain",
+      run: importBackup
+    });
+  }
+
+  /* ---------------- render general ---------------- */
+
+  function render() {
+    ["productos", "pedidos", "materiales", "inventario", "ajustes"].forEach(function (t) {
+      document.getElementById("tab-" + t).hidden = ui.tab !== t;
+    });
+    var btns = document.querySelectorAll(".tabs button");
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute("aria-selected", btns[i].dataset.tab === ui.tab ? "true" : "false");
+    }
+    if (ui.tab === "productos") renderProductos();
+    else if (ui.tab === "pedidos") renderPedidos();
+    else if (ui.tab === "materiales") renderMateriales();
+    else if (ui.tab === "inventario") renderInventario();
+    else renderAjustes();
+  }
+
+  /* ---------------- arranque ---------------- */
+
+  var currencySel = document.getElementById("currency");
+  Object.keys(CURRENCIES).forEach(function (code) {
+    currencySel.appendChild(el("option", { value: code, text: CURRENCIES[code].label }));
+  });
+  currencySel.addEventListener("change", function () {
+    state.settings.currency = currencySel.value;
+    save(); render();
+  });
+
+  var tabButtons = document.querySelectorAll(".tabs button");
+  for (var i = 0; i < tabButtons.length; i++) {
+    tabButtons[i].addEventListener("click", function () { ui.tab = this.dataset.tab; render(); });
+  }
+
+  load().then(function () {
+    currencySel.value = state.settings.currency;
+    render();
+    if (fbConfigured()) fbInit().catch(function () { /* la planilla sigue funcionando sin conexión */ });
+  });
+})();
+</script>
+
+</body>
+</html>

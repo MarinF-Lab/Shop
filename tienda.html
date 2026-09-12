@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Tienda</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+
+  :root {
+    --paper: #F6F3EE;
+    --surface: #FFFFFF;
+    --ink: #1E1A16;
+    --muted: #6B625A;
+    --line: #E2DAD0;
+    --line-soft: #EFE9E1;
+    --accent: #7A4A2B;
+    --accent-soft: #F2E7DD;
+    --ok: #3D6B4A;
+    --warn: #8A6512;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    color: var(--ink);
+    background: var(--paper);
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  header.top {
+    padding: 34px 20px 26px;
+    text-align: center;
+    background: var(--surface);
+    border-bottom: 1px solid var(--line);
+  }
+  header.top h1 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.4px; }
+  header.top p { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); }
+
+  main { max-width: 680px; margin: 0 auto; padding: 20px 16px 120px; }
+
+  h2 { font-size: 15px; font-weight: 600; margin: 26px 2px 10px; }
+
+  .item {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 15px;
+    margin-bottom: 12px;
+  }
+  .item h3 { margin: 0; font-size: 16px; font-weight: 600; }
+  .item .desc { margin: 5px 0 0; font-size: 13.5px; color: var(--muted); }
+  .item .foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  .price { font-family: var(--num); font-size: 17px; font-weight: 700; flex: 1; }
+  .tag { font-size: 11.5px; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .tag.ok { background: #E4EFE7; color: var(--ok); }
+  .tag.slow { background: #F5EBD6; color: var(--warn); }
+
+  .stepper { display: flex; align-items: center; gap: 4px; }
+  .stepper button {
+    width: 38px; height: 38px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    border-radius: 8px;
+    font: inherit; font-size: 17px;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .stepper span { font-family: var(--num); min-width: 30px; text-align: center; font-size: 15px; }
+
+  .btn {
+    font: inherit; font-size: 15px;
+    border-radius: 10px;
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink);
+    padding: 11px 16px;
+    cursor: pointer;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  .btn.wide { width: 100%; }
+  .btn:disabled { opacity: .5; cursor: default; }
+
+  label.field { display: block; font-size: 12.5px; color: var(--muted); margin: 12px 0 4px; }
+  input, select, textarea {
+    font: inherit; font-size: 16px;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 11px;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  textarea { min-height: 76px; resize: vertical; }
+
+  .cart {
+    position: fixed; left: 0; right: 0; bottom: 0;
+    background: var(--surface);
+    border-top: 1px solid var(--line);
+    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+    box-shadow: 0 -3px 14px rgba(30,26,22,.09);
+  }
+  .cart-inner { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
+  .cart-sum { flex: 1; font-size: 13px; color: var(--muted); }
+  .cart-sum b { display: block; font-family: var(--num); font-size: 17px; color: var(--ink); font-weight: 700; }
+  .cart[hidden] { display: none; }
+
+  dialog.sheet {
+    border: none; border-radius: 16px 16px 0 0;
+    padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
+    width: 100%; max-width: 680px;
+    margin: auto auto 0;
+    background: var(--surface);
+    color: var(--ink);
+  }
+  dialog.sheet::backdrop { background: rgba(30,26,22,.5); }
+  dialog.sheet h3 { margin: 0 0 4px; font-size: 17px; }
+  .resumen { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 12px 0 4px; }
+  .resumen div { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; padding: 3px 0; }
+  .resumen div.total { border-top: 1px solid var(--line-soft); margin-top: 6px; padding-top: 8px; font-weight: 700; }
+  .resumen span.n { font-family: var(--num); }
+
+  .msg { text-align: center; color: var(--muted); font-size: 14px; padding: 40px 10px; }
+  .note { font-size: 12px; color: var(--muted); margin: 10px 2px 0; }
+  .error { color: #A32C22; }
+
+  .done { text-align: center; padding: 10px 0 4px; }
+  .done h3 { font-size: 18px; margin-bottom: 8px; }
+  .done p { font-size: 14px; color: var(--muted); margin: 0 0 16px; }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <h1 id="tiendaNombre">Tienda</h1>
+  <p id="tiendaSub">Cargando catálogo…</p>
+</header>
+
+<main>
+  <div id="catalogo"></div>
+</main>
+
+<div class="cart" id="cart" hidden>
+  <div class="cart-inner">
+    <div class="cart-sum">
+      <span id="cartCount">0 productos</span>
+      <b id="cartTotal"></b>
+    </div>
+    <button class="btn primary" type="button" id="btnPedir">Hacer pedido</button>
+  </div>
+</div>
+
+<dialog class="sheet" id="sheet"></dialog>
+
+<script>
+(function () {
+  "use strict";
+
+  /* =======================================================================
+     CONFIGURACIÓN
+     Pega aquí los mismos cuatro valores que pusiste en la planilla.
+     Mientras estén vacíos, la tienda usa CATALOGO_LOCAL y el pedido
+     se envía por WhatsApp.
+     ======================================================================= */
+  var FIREBASE = {
+    apiKey: "AIzaSyAAE6l_UwOVE1KB1QiXBNXhunzhJs78tL8",
+    authDomain: "tiendas-f9af9.firebaseapp.com",
+    projectId: "tiendas-f9af9",
+    appId: "1:39811090432:web:9e462dc5388f39265b30e5"
+  };
+
+  /* Datos de respaldo mientras no conectas Firebase. */
+  var TIENDA_LOCAL = { nombre: "Tienda", whatsapp: "", moneda: "CLP" };
+  var CATALOGO_LOCAL = [
+    /* Ejemplo. Reemplázalo o bórralo cuando conectes Firebase:
+    { id: "demo1", nombre: "Tulipán", descripcion: "Flor artesanal de limpiapipas",
+      precio: 2000, moneda: "CLP", disponible: 8 }
+    */
+  ];
+
+  var MONEDAS = { CLP: ["$", 0], USD: ["US$", 2], EUR: ["€", 2], ARS: ["AR$", 0], PEN: ["S/", 2],
+    COP: ["COP$", 0], MXN: ["MX$", 2], BRL: ["R$", 2], UYU: ["$U", 2], GBP: ["£", 2] };
+
+  var tienda = Object.assign({}, TIENDA_LOCAL);
+  var catalogo = [];
+  var carrito = {};
+  var fb = null;
+
+  function conectado() { return !!(FIREBASE.apiKey && FIREBASE.projectId && FIREBASE.authDomain && FIREBASE.appId); }
+
+  function money(n) {
+    var m = MONEDAS[tienda.moneda] || MONEDAS.CLP;
+    return m[0] + " " + Number(n || 0).toLocaleString("es-CL",
+      { minimumFractionDigits: m[1], maximumFractionDigits: m[1] });
+  }
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === "class") n.className = attrs[k];
+      else if (k === "text") n.textContent = attrs[k];
+      else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), attrs[k]);
+      else if (attrs[k] === true) n.setAttribute(k, "");
+      else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+    });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
+    return n;
+  }
+
+  /* ---------------- carga ---------------- */
+
+  function loadScript(src) {
+    return new Promise(function (res, rej) {
+      var s = document.createElement("script");
+      s.src = src; s.onload = res; s.onerror = function () { rej(new Error("script")); };
+      document.head.appendChild(s);
+    });
+  }
+
+  var SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
+
+  function iniciar() {
+    if (!conectado()) {
+      catalogo = CATALOGO_LOCAL.slice();
+      pintar();
+      return;
+    }
+    loadScript(SDK + "firebase-app-compat.js")
+      .then(function () { return loadScript(SDK + "firebase-firestore-compat.js"); })
+      .then(function () {
+        fb = window.firebase.initializeApp(FIREBASE);
+        var db = window.firebase.firestore();
+        return db.collection("config").doc("tienda").get().then(function (doc) {
+          if (doc.exists) tienda = Object.assign(tienda, doc.data());
+          return db.collection("catalogo").get();
+        }).then(function (snap) {
+          catalogo = [];
+          snap.forEach(function (d) { catalogo.push(Object.assign({ id: d.id }, d.data())); });
+          window._db = db;
+          pintar();
+        });
+      })
+      .catch(function () {
+        catalogo = CATALOGO_LOCAL.slice();
+        pintar();
+        document.getElementById("tiendaSub").innerHTML =
+          '<span class="error">No pude cargar el catálogo en línea. Se muestra la versión guardada.</span>';
+      });
+  }
+
+  /* ---------------- catálogo ---------------- */
+
+  function pintar() {
+    document.getElementById("tiendaNombre").textContent = tienda.nombre || "Tienda";
+    var sub = document.getElementById("tiendaSub");
+    var root = document.getElementById("catalogo");
+    root.innerHTML = "";
+
+    if (!catalogo.length) {
+      sub.textContent = "";
+      root.appendChild(el("p", { class: "msg", text: "Todavía no hay productos publicados. Vuelve pronto." }));
+      return;
+    }
+
+    sub.textContent = "Elige lo que quieras y envía tu pedido.";
+
+    catalogo.forEach(function (p) {
+      var disp = p.disponible;
+      var agotado = disp === 0;
+      var card = el("div", { class: "item" }, [
+        el("h3", { text: p.nombre }),
+        p.descripcion ? el("p", { class: "desc", text: p.descripcion }) : null
+      ]);
+
+      var etiqueta = disp == null ? el("span", { class: "tag", text: "A pedido" })
+        : agotado ? el("span", { class: "tag slow", text: "Por encargo" })
+        : el("span", { class: "tag ok", text: disp === 1 ? "Queda 1" : "Quedan " + disp });
+
+      var stepper = el("div", { class: "stepper" });
+      var out = el("span", { text: String(carrito[p.id] || 0) });
+      stepper.appendChild(el("button", { type: "button", text: "−", "aria-label": "Quitar uno",
+        onclick: function () { cambiar(p, -1, out); } }));
+      stepper.appendChild(out);
+      stepper.appendChild(el("button", { type: "button", text: "+", "aria-label": "Agregar uno",
+        onclick: function () { cambiar(p, 1, out); } }));
+
+      card.appendChild(el("div", { class: "foot" }, [
+        el("span", { class: "price", text: money(p.precio) }), etiqueta, stepper
+      ]));
+      root.appendChild(card);
+    });
+
+    refrescarCarrito();
+  }
+
+  function cambiar(p, delta, out) {
+    var n = (carrito[p.id] || 0) + delta;
+    if (n < 0) n = 0;
+    if (n === 0) delete carrito[p.id]; else carrito[p.id] = n;
+    out.textContent = String(n);
+    refrescarCarrito();
+  }
+
+  function itemsCarrito() {
+    return Object.keys(carrito).map(function (id) {
+      var p = catalogo.filter(function (x) { return x.id === id; })[0];
+      return p ? { productId: id, nombre: p.nombre, qty: carrito[id], price: p.precio } : null;
+    }).filter(Boolean);
+  }
+
+  function refrescarCarrito() {
+    var items = itemsCarrito();
+    var unidades = items.reduce(function (a, i) { return a + i.qty; }, 0);
+    var total = items.reduce(function (a, i) { return a + i.qty * i.price; }, 0);
+    document.getElementById("cart").hidden = unidades === 0;
+    document.getElementById("cartCount").textContent = unidades + (unidades === 1 ? " producto" : " productos");
+    document.getElementById("cartTotal").textContent = money(total);
+  }
+
+  /* ---------------- pedido ---------------- */
+
+  document.getElementById("btnPedir").addEventListener("click", abrirFormulario);
+
+  function abrirFormulario() {
+    var items = itemsCarrito();
+    if (!items.length) return;
+    var total = items.reduce(function (a, i) { return a + i.qty * i.price; }, 0);
+    var sheet = document.getElementById("sheet");
+    sheet.innerHTML = "";
+
+    var resumen = el("div", { class: "resumen" });
+    items.forEach(function (i) {
+      resumen.appendChild(el("div", {}, [
+        el("span", { text: i.qty + " × " + i.nombre }),
+        el("span", { class: "n", text: money(i.qty * i.price) })
+      ]));
+    });
+    resumen.appendChild(el("div", { class: "total" }, [
+      el("span", { text: "Total" }), el("span", { class: "n", text: money(total) })
+    ]));
+
+    var nombre = el("input", { type: "text", placeholder: "Tu nombre", autocomplete: "name" });
+    var wsp = el("input", { type: "tel", placeholder: "+56 9 1234 5678", autocomplete: "tel" });
+    var metodo = el("select", {});
+    ["Retiro", "Punto de encuentro", "Envío"].forEach(function (m) {
+      metodo.appendChild(el("option", { value: m, text: m }));
+    });
+    var comuna = el("input", { type: "text", placeholder: "Comuna o ciudad" });
+    var fecha = el("input", { type: "date" });
+    var notas = el("textarea", { placeholder: "Colores, dedicatoria, cualquier detalle" });
+    var aviso = el("p", { class: "note" });
+
+    var enviar = el("button", { class: "btn primary wide", type: "button", text: "Enviar pedido",
+      style: "margin-top:16px", onclick: function () {
+        if (!nombre.value.trim()) { aviso.className = "note error"; aviso.textContent = "Falta tu nombre."; return; }
+        if (!wsp.value.trim()) { aviso.className = "note error"; aviso.textContent = "Falta tu WhatsApp."; return; }
+        enviar.disabled = true;
+        aviso.className = "note";
+        aviso.textContent = "Enviando…";
+        mandarPedido({
+          cliente: nombre.value.trim(), whatsapp: wsp.value.trim(),
+          metodo: metodo.value, comuna: comuna.value.trim(),
+          fecha: fecha.value, notas: notas.value.trim(),
+          items: items.map(function (i) { return { productId: i.productId, nombre: i.nombre, qty: i.qty, price: i.price }; }),
+          total: total, estado: "pendiente", creado: new Date().toISOString()
+        }, total).catch(function () {
+          enviar.disabled = false;
+          aviso.className = "note error";
+          aviso.textContent = "No pude enviarlo. Intenta de nuevo o escríbenos por WhatsApp.";
+        });
+      } });
+
+    sheet.appendChild(el("h3", { text: "Tu pedido" }));
+    sheet.appendChild(resumen);
+    sheet.appendChild(el("label", { class: "field", text: "Nombre" })); sheet.appendChild(nombre);
+    sheet.appendChild(el("label", { class: "field", text: "WhatsApp" })); sheet.appendChild(wsp);
+    sheet.appendChild(el("label", { class: "field", text: "Cómo lo recibes" })); sheet.appendChild(metodo);
+    sheet.appendChild(el("label", { class: "field", text: "Comuna o ciudad" })); sheet.appendChild(comuna);
+    sheet.appendChild(el("label", { class: "field", text: "Fecha que te acomoda" })); sheet.appendChild(fecha);
+    sheet.appendChild(el("label", { class: "field", text: "Notas" })); sheet.appendChild(notas);
+    sheet.appendChild(el("p", { class: "note", text: "La dirección exacta la coordinamos después por WhatsApp." }));
+    sheet.appendChild(aviso);
+    sheet.appendChild(enviar);
+    sheet.appendChild(el("button", { class: "btn wide", type: "button", text: "Volver", style: "margin-top:8px",
+      onclick: function () { sheet.close(); } }));
+
+    sheet.showModal();
+  }
+
+  function mandarPedido(pedido, total) {
+    if (conectado() && window._db) {
+      return window._db.collection("pedidos").add(pedido).then(function () { listo(pedido, total); });
+    }
+    /* sin Firebase el pedido sale por WhatsApp */
+    return new Promise(function (res) {
+      var txt = "Hola! Quiero hacer un pedido:\n\n" +
+        pedido.items.map(function (i) { return "• " + i.qty + " × " + i.nombre; }).join("\n") +
+        "\n\nTotal: " + money(total) +
+        "\nNombre: " + pedido.cliente +
+        "\nWhatsApp: " + pedido.whatsapp +
+        "\nEntrega: " + pedido.metodo + (pedido.comuna ? " · " + pedido.comuna : "") +
+        (pedido.fecha ? "\nFecha: " + pedido.fecha : "") +
+        (pedido.notas ? "\nNotas: " + pedido.notas : "");
+      var num = String(tienda.whatsapp || "").replace(/[^0-9]/g, "");
+      window.open("https://wa.me/" + num + "?text=" + encodeURIComponent(txt), "_blank");
+      listo(pedido, total);
+      res();
+    });
+  }
+
+  function listo(pedido, total) {
+    var sheet = document.getElementById("sheet");
+    sheet.innerHTML = "";
+    sheet.appendChild(el("div", { class: "done" }, [
+      el("h3", { text: "¡Pedido enviado!" }),
+      el("p", { text: "Gracias " + pedido.cliente + ". Te escribimos por WhatsApp para confirmar la entrega y coordinar el pago." }),
+      el("button", { class: "btn primary wide", type: "button", text: "Cerrar", onclick: function () {
+        sheet.close();
+        carrito = {};
+        pintar();
+      } })
+    ]));
+  }
+
+  iniciar();
+})();
+</script>
+
+</body>
+</html>
