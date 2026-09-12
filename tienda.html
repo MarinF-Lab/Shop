@@ -190,7 +190,18 @@
   var carrito = {};
   var fb = null;
 
-  function conectado() { return !!(FIREBASE.apiKey && FIREBASE.projectId && FIREBASE.authDomain && FIREBASE.appId); }
+  /* La tienda pertenece a una cuenta de Google: su uid viaja en la
+     dirección (?tienda=UID). La planilla entrega ese enlace ya armado. */
+  function tiendaId() {
+    var m = /[?&]tienda=([^&]+)/.exec(location.search);
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
+  function conectado() {
+    return !!(FIREBASE.apiKey && FIREBASE.projectId && FIREBASE.authDomain && FIREBASE.appId && tiendaId());
+  }
+
+  function tiendaRef(db) { return db.collection("tiendas").doc(tiendaId()); }
 
   function money(n) {
     var m = MONEDAS[tienda.moneda] || MONEDAS.CLP;
@@ -234,9 +245,10 @@
       .then(function () {
         fb = window.firebase.initializeApp(FIREBASE);
         var db = window.firebase.firestore();
-        return db.collection("config").doc("tienda").get().then(function (doc) {
+        var ref = tiendaRef(db);
+        return ref.collection("publico").doc("tienda").get().then(function (doc) {
           if (doc.exists) tienda = Object.assign(tienda, doc.data());
-          return db.collection("catalogo").get();
+          return ref.collection("catalogo").get();
         }).then(function (snap) {
           catalogo = [];
           snap.forEach(function (d) { catalogo.push(Object.assign({ id: d.id }, d.data())); });
@@ -366,7 +378,7 @@
           metodo: metodo.value, comuna: comuna.value.trim(),
           fecha: fecha.value, notas: notas.value.trim(),
           items: items.map(function (i) { return { productId: i.productId, nombre: i.nombre, qty: i.qty, price: i.price }; }),
-          total: total, estado: "pendiente", creado: new Date().toISOString()
+          total: total, estado: "pendiente", origen: "tienda", creado: new Date().toISOString()
         }, total).catch(function () {
           enviar.disabled = false;
           aviso.className = "note error";
@@ -393,7 +405,9 @@
 
   function mandarPedido(pedido, total) {
     if (conectado() && window._db) {
-      return window._db.collection("pedidos").add(pedido).then(function () { listo(pedido, total); });
+      /* el pedido entra directo a la agenda de esa cuenta */
+      return tiendaRef(window._db).collection("pedidos").add(pedido)
+        .then(function () { listo(pedido, total); });
     }
     /* sin Firebase el pedido sale por WhatsApp */
     return new Promise(function (res) {

@@ -815,15 +815,25 @@
 
   function setSaveState(txt) { document.getElementById("saveState").textContent = txt; }
 
+  /* escritura inmediata en el dispositivo: caché de lo que hay en la nube */
+  function guardarLocal() {
+    if (memoryOnly || !window.storage) return Promise.resolve();
+    return window.storage.set(STORAGE_KEY, JSON.stringify(state)).catch(function () {});
+  }
+
+  /* Con sesión iniciada, Firestore es la fuente de verdad y el dispositivo
+     queda como caché. Sin sesión, se guarda solo aquí. */
   function save() {
+    if (fb && fb.aplicando) return;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       if (memoryOnly || !window.storage) { setSaveState("Sin guardado en este visor"); return; }
       setSaveState("Guardando…");
-      window.storage.set(STORAGE_KEY, JSON.stringify(state)).then(function () {
-        setSaveState("Guardado");
+      guardarLocal().then(function () {
+        if (!fb.user) { setSaveState("Guardado en este dispositivo"); return; }
+        return subirTodo().then(function () { setSaveState("Sincronizado"); });
       }).catch(function () {
-        setSaveState("No se pudo guardar");
+        setSaveState("Guardado aquí, pendiente de subir");
       });
     }, 450);
   }
@@ -1798,7 +1808,8 @@
 
   /* ---------------- firebase ---------------- */
 
-  var fb = { app: null, db: null, auth: null, user: null, unsub: null, estado: "apagado" };
+  var fb = { app: null, db: null, auth: null, user: null, unsubs: [], estado: "apagado",
+    aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {} } };
 
   function fbConfigured() {
     var c = state.settings.firebase || {};
@@ -1830,13 +1841,32 @@
         fb.auth = window.firebase.auth();
         fb.db = window.firebase.firestore();
         fb.estado = "listo";
+        /* caché offline: la planilla sigue viva sin señal y reenvía al volver */
+        fb.db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
         fb.auth.onAuthStateChanged(function (u) {
           fb.user = u;
-          if (u) escucharPedidos(); else if (fb.unsub) { fb.unsub(); fb.unsub = null; }
-          if (ui.tab === "ajustes") render();
+          if (u) arrancarSync(); else pararSync();
+          render();
         });
+        /* resultado del login por redirección (móvil) */
+        return fb.auth.getRedirectResult().catch(function () {});
       })
       .catch(function (err) { fb.estado = "error"; throw err; });
+  }
+
+  /* ---------------- sesión ---------------- */
+
+  function fbLoginGoogle() {
+    return fbInit().then(function () {
+      var prov = new window.firebase.auth.GoogleAuthProvider();
+      prov.setCustomParameters({ prompt: "select_account" });
+      return fb.auth.signInWithPopup(prov).catch(function (err) {
+        /* en móvil o con popups bloqueados, se cae a redirección */
+        var caeARedirect = err && /popup|cancelled|operation-not-supported/i.test(err.code || "");
+        if (caeARedirect) return fb.auth.signInWithRedirect(prov);
+        throw err;
+      });
+    });
   }
 
   function fbLogin(email, pass) {
@@ -1845,89 +1875,167 @@
 
   function fbLogout() {
     if (!fb.auth) return Promise.resolve();
+    pararSync();
     return fb.auth.signOut();
   }
 
-  /* publica solo lo que el cliente puede ver: nombre, precio y disponibilidad */
+  /* ---------------- rutas por usuario ---------------- */
+
+  function tiendaRef() { return fb.db.collection("tiendas").doc(fb.user.uid); }
+  function colRef(nombre) { return tiendaRef().collection(nombre); }
+  function publicoRef() { return tiendaRef().collection("publico").doc("tienda"); }
+
+  var COLECCIONES = [
+    { nombre: "materiales", campo: "materials" },
+    { nombre: "productos", campo: "products" },
+    { nombre: "pedidos", campo: "orders" }
+  ];
+
+  /* ---------------- sincronización ---------------- */
+
+  function pararSync() {
+    fb.unsubs.forEach(function (u) { try { u(); } catch (e) {} });
+    fb.unsubs = [];
+    fb.remotos = { materiales: {}, productos: {}, pedidos: {} };
+  }
+
+  /* Firestore es la fuente de verdad: al entrar bajamos la nube; si está
+     vacía, subimos lo que ya había en este dispositivo (migración). */
+  function arrancarSync() {
+    if (fb.unsubs.length) return;
+    setSaveState("Sincronizando…");
+    Promise.all(COLECCIONES.map(function (c) { return colRef(c.nombre).get(); }))
+      .then(function (snaps) {
+        var vacia = snaps.every(function (s) { return s.empty; });
+        if (vacia) return subirTodo().then(function () { toast("Datos subidos a tu cuenta"); });
+        return tiendaRef().get().then(function (doc) {
+          if (doc.exists && doc.data().settings) aplicarSettings(doc.data().settings);
+        });
+      })
+      .then(escucharNube)
+      .catch(function (err) { setSaveState("Sin conexión"); toast(err.message || "No pude sincronizar"); });
+  }
+
+  function aplicarSettings(s) {
+    var fbCfg = state.settings.firebase;
+    state.settings = Object.assign(state.settings, s);
+    state.settings.firebase = fbCfg; /* la config local manda: es de este dispositivo */
+    state.settings.tienda = Object.assign({ nombre: "", whatsapp: "" }, s.tienda || {});
+  }
+
+  function escucharNube() {
+    COLECCIONES.forEach(function (c) {
+      fb.unsubs.push(colRef(c.nombre).onSnapshot(function (snap) {
+        var items = [], mapa = {};
+        snap.forEach(function (d) {
+          var item = Object.assign({ id: d.id }, d.data());
+          items.push(item); mapa[d.id] = true;
+        });
+        fb.remotos[c.nombre] = mapa;
+        fb.aplicando = true;
+        state[c.campo] = items;
+        if (c.campo === "materials") {
+          state.materials.forEach(function (m) {
+            if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
+          });
+        }
+        if (c.campo === "orders") normalizarPedidos();
+        guardarLocal();
+        fb.aplicando = false;
+        setSaveState("Sincronizado");
+        render();
+      }, function () { setSaveState("Sin conexión"); }));
+    });
+
+    fb.unsubs.push(tiendaRef().onSnapshot(function (doc) {
+      if (!doc.exists || doc.metadata.hasPendingWrites) return;
+      var d = doc.data();
+      if (!d.settings) return;
+      fb.aplicando = true;
+      aplicarSettings(d.settings);
+      guardarLocal();
+      fb.aplicando = false;
+      render();
+    }, function () {}));
+  }
+
+  /* los pedidos que entran desde la tienda traen fechas y números en crudo */
+  function normalizarPedidos() {
+    state.orders.forEach(function (o) {
+      o.estado = o.estado || "pendiente";
+      o.metodo = o.metodo || METODOS[0];
+      o.origen = o.origen || "tienda";
+      if (o.creado) o.creado = String(o.creado).slice(0, 10);
+      o.items = (o.items || []).map(function (i) {
+        return { productId: i.productId, qty: parseNum(i.qty), price: parseNum(i.price) };
+      });
+    });
+    state.orders.sort(function (a, b) { return String(b.creado || "").localeCompare(String(a.creado || "")); });
+  }
+
+  /* sube todo el estado; borra en la nube lo que ya no existe aquí */
+  function subirTodo() {
+    if (!fb.user) return Promise.resolve();
+    var batch = fb.db.batch();
+    COLECCIONES.forEach(function (c) {
+      var vivos = {};
+      (state[c.campo] || []).forEach(function (item) {
+        if (!item.id) item.id = uid();
+        vivos[item.id] = true;
+        batch.set(colRef(c.nombre).doc(item.id), limpiar(item));
+      });
+      Object.keys(fb.remotos[c.nombre] || {}).forEach(function (id) {
+        if (!vivos[id]) batch.delete(colRef(c.nombre).doc(id));
+      });
+    });
+    var settings = Object.assign({}, state.settings);
+    delete settings.firebase; /* las claves del proyecto no viajan a la nube */
+    batch.set(tiendaRef(), { settings: settings, actualizado: new Date().toISOString() }, { merge: true });
+    return batch.commit();
+  }
+
+  /* Firestore no acepta undefined ni el id duplicado dentro del documento */
+  function limpiar(item) {
+    var out = {};
+    Object.keys(item).forEach(function (k) {
+      if (k === "id" || item[k] === undefined) return;
+      out[k] = item[k] === null ? null : item[k];
+    });
+    return out;
+  }
+
+  /* ---------------- publicación de la tienda ---------------- */
+
   function publicarCatalogo() {
     if (!fb.user) return Promise.reject(new Error("Inicia sesión primero."));
     var cat = publicCatalog();
     var batch = fb.db.batch();
     cat.forEach(function (item) {
-      batch.set(fb.db.collection("catalogo").doc(item.id), item);
+      batch.set(colRef("catalogo").doc(item.id), item);
     });
-    /* saca de la tienda lo que dejó de estar publicado */
-    return fb.db.collection("catalogo").get().then(function (snap) {
+    return colRef("catalogo").get().then(function (snap) {
       var vivos = {};
       cat.forEach(function (i) { vivos[i.id] = true; });
       snap.forEach(function (doc) { if (!vivos[doc.id]) batch.delete(doc.ref); });
-      return batch.commit();
-    }).then(function () {
-      return fb.db.collection("config").doc("tienda").set({
+      batch.set(publicoRef(), {
         nombre: state.settings.tienda.nombre || "",
         whatsapp: state.settings.tienda.whatsapp || "",
         moneda: state.settings.currency,
         actualizado: new Date().toISOString()
       });
+      return batch.commit();
     }).then(function () { return cat.length; });
   }
 
-  /* respalda la gestión privada; las reglas impiden que nadie más la lea */
-  function guardarEnNube() {
-    if (!fb.user) return Promise.reject(new Error("Inicia sesión primero."));
-    return fb.db.collection("gestion").doc(fb.user.uid).set({
-      settings: state.settings, materials: state.materials, products: state.products,
-      actualizado: new Date().toISOString()
-    });
+  function urlTienda() {
+    if (!fb.user) return "";
+    return location.href.replace(/[^/]*$/, "") + "tienda.html?tienda=" + fb.user.uid;
   }
 
-  function traerDeNube() {
-    if (!fb.user) return Promise.reject(new Error("Inicia sesión primero."));
-    return fb.db.collection("gestion").doc(fb.user.uid).get().then(function (doc) {
-      if (!doc.exists) throw new Error("Todavía no hay respaldo en la nube.");
-      var d = doc.data();
-      if (d.settings) state.settings = Object.assign(state.settings, d.settings);
-      if (Array.isArray(d.materials)) state.materials = d.materials;
-      if (Array.isArray(d.products)) state.products = d.products;
-      save(); render();
-    });
-  }
-
-  /* los pedidos de la tienda entran solos a la agenda */
-  function escucharPedidos() {
-    if (fb.unsub || !fb.db) return;
-    fb.unsub = fb.db.collection("pedidos").orderBy("creado", "desc").limit(200)
-      .onSnapshot(function (snap) {
-        var nuevos = 0;
-        snap.forEach(function (doc) {
-          var d = doc.data();
-          var existe = state.orders.some(function (o) { return o.id === doc.id; });
-          if (existe) return;
-          state.orders.push({
-            id: doc.id,
-            cliente: d.cliente || "", whatsapp: d.whatsapp || "",
-            metodo: d.metodo || METODOS[0], comuna: d.comuna || "",
-            fecha: d.fecha || "", notas: d.notas || "",
-            items: (d.items || []).map(function (i) {
-              return { productId: i.productId, qty: parseNum(i.qty), price: parseNum(i.price) };
-            }),
-            estado: d.estado || "pendiente",
-            creado: (d.creado || "").slice(0, 10),
-            origen: "tienda"
-          });
-          nuevos++;
-        });
-        if (nuevos) {
-          save();
-          if (ui.tab === "pedidos") render();
-          toast(nuevos + (nuevos === 1 ? " pedido nuevo" : " pedidos nuevos"));
-        }
-      }, function () { toast("No pude escuchar los pedidos"); });
-  }
-
+  /* los estados de pedido viajan con el resto del estado */
   function sincronizarEstado(o) {
-    if (!fb.user || o.origen !== "tienda") return;
-    fb.db.collection("pedidos").doc(o.id).update({ estado: o.estado }).catch(function () {});
+    if (!fb.user || !o || !o.id) return;
+    colRef("pedidos").doc(o.id).set({ estado: o.estado }, { merge: true }).catch(function () {});
   }
 
   /* ---------------- render: ajustes ---------------- */
@@ -1986,13 +2094,20 @@
     if (!fbConfigured()) {
       fbCard.appendChild(el("p", { class: "note", text: "Pega los cuatro valores de tu app web de Firebase para activar la conexión." }));
     } else if (!fb.user) {
+      fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Entrar con Google",
+        style: "margin-top:14px", onclick: function () {
+          toast("Abriendo Google…");
+          fbLoginGoogle().then(function () { render(); })
+            .catch(function (err) { toast(err.message || "No pude entrar con Google"); });
+        } }));
+
       var mail = el("input", { type: "text", value: "", placeholder: "correo@ejemplo.cl", "aria-label": "Correo" });
       var pass = el("input", { type: "password", placeholder: "contraseña", "aria-label": "Contraseña" });
-      fbCard.appendChild(el("label", { class: "field", style: "margin-top:14px", text: "Entrar como administrador" }));
+      fbCard.appendChild(el("label", { class: "field", style: "margin-top:14px", text: "O entra con correo y contraseña" }));
       fbCard.appendChild(mail);
       fbCard.appendChild(el("div", { style: "height:6px" }));
       fbCard.appendChild(pass);
-      fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Entrar", style: "margin-top:8px",
+      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Entrar", style: "margin-top:8px",
         onclick: function () {
           toast("Conectando…");
           fbLogin(mail.value.trim(), pass.value).then(function () {
@@ -2002,26 +2117,33 @@
     } else {
       fbCard.appendChild(el("div", { class: "unit-cost", style: "margin-top:12px" }, [
         el("span", { text: "Conectado como" }),
-        el("b", { text: fb.user.email || "admin" })
+        el("b", { text: fb.user.email || fb.user.displayName || "admin" })
       ]));
+      fbCard.appendChild(el("p", { class: "note", text: "Materiales, inventario, productos y pedidos se guardan solos en tu cuenta y aparecen igual en cualquier dispositivo donde entres con este mismo Google." }));
       fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Publicar catálogo en la tienda",
         style: "margin-top:10px", onclick: function () {
           toast("Publicando…");
           publicarCatalogo().then(function (n) { toast(n + " producto(s) publicado(s)"); })
             .catch(function (err) { toast(err.message || "No pude publicar"); });
         } }));
-      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Respaldar gestión en la nube",
-        style: "margin-top:8px", onclick: function () {
-          guardarEnNube().then(function () { toast("Respaldado"); })
-            .catch(function (err) { toast(err.message || "No pude respaldar"); });
+
+      var link = el("input", { type: "text", value: urlTienda(), readonly: true, "aria-label": "Dirección de tu tienda" });
+      fbCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Dirección de tu tienda" }));
+      fbCard.appendChild(link);
+      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Copiar dirección", style: "margin-top:8px",
+        onclick: function () {
+          link.select();
+          if (navigator.clipboard) navigator.clipboard.writeText(link.value).then(function () { toast("Copiada"); });
+          else toast("Copia la dirección desde el campo");
         } }));
-      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Traer gestión desde la nube",
-        style: "margin-top:8px", onclick: function () {
-          traerDeNube().then(function () { toast("Datos actualizados"); })
-            .catch(function (err) { toast(err.message || "No pude traer los datos"); });
+
+      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Forzar subida de todo",
+        style: "margin-top:14px", onclick: function () {
+          subirTodo().then(function () { toast("Todo sincronizado"); })
+            .catch(function (err) { toast(err.message || "No pude subir"); });
         } }));
       fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Cerrar sesión",
-        style: "margin-top:14px", onclick: function () { fbLogout().then(function () { render(); toast("Sesión cerrada"); }); } }));
+        style: "margin-top:8px", onclick: function () { fbLogout().then(function () { render(); toast("Sesión cerrada"); }); } }));
     }
     root.appendChild(fbCard);
 
@@ -2466,6 +2588,8 @@
     else if (ui.tab === "materiales") renderMateriales();
     else if (ui.tab === "inventario") renderInventario();
     else renderAjustes();
+    var sel = document.getElementById("currency");
+    if (sel && sel.value !== state.settings.currency) sel.value = state.settings.currency;
   }
 
   /* ---------------- arranque ---------------- */
