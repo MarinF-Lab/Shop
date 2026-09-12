@@ -327,6 +327,61 @@
   .sheet .actions { display: flex; gap: 8px; margin-top: 10px; }
   .sheet .actions .btn { flex: 1; }
 
+  /* ---------- acceso ---------- */
+  .gate {
+    font-family: var(--sans);
+    color: var(--ink);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 18px;
+    background: var(--paper);
+  }
+  .gate[hidden] { display: none; }
+  .gate-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 28px 22px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+  }
+  .gate-card h1 { margin: 0 0 6px; font-size: 20px; letter-spacing: -0.3px; }
+  .gate-card p { margin: 0 0 20px; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+  .gate-card .aviso { margin: 16px 0 0; font-size: 12.5px; min-height: 18px; }
+  .gate-card .aviso.error { color: var(--danger); }
+  .btn-google {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font: inherit;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    cursor: pointer;
+  }
+  .btn-google:hover { background: var(--paper); }
+  .btn-google:disabled { opacity: .6; cursor: default; }
+  .btn-google svg { width: 18px; height: 18px; flex: none; }
+
+  .bar .cuenta {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 12.5px; color: #93A6B6;
+  }
+  .bar .cuenta button {
+    background: #22303F; color: #F2F5F8; border: 1px solid #33455A;
+    border-radius: 4px; padding: 6px 9px; font: inherit; font-size: 12.5px; cursor: pointer;
+  }
+  .bar .cuenta img { width: 26px; height: 26px; border-radius: 50%; }
+
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     background: var(--ink); color: #fff; font-size: 13px;
@@ -340,10 +395,28 @@
 </head>
 <body>
 
-<div class="app">
+<div class="gate" id="gate">
+  <div class="gate-card">
+    <h1>Costos y precios</h1>
+    <p>Calcula cuánto te cuesta lo que haces, ponle precio y lleva tus pedidos e inventario. Entra con tu cuenta de Google: tus datos quedan guardados y disponibles en cualquier dispositivo.</p>
+    <button class="btn-google" type="button" id="btnGoogle">
+      <svg viewBox="0 0 18 18" aria-hidden="true">
+        <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62z"/>
+        <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.34A9 9 0 0 0 9 18z"/>
+        <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.94H.96a9 9 0 0 0 0 8.12l3.01-2.34z"/>
+        <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.94l3.01 2.34C4.68 5.16 6.66 3.58 9 3.58z"/>
+      </svg>
+      <span id="btnGoogleTxt">Entrar con Google</span>
+    </button>
+    <p class="aviso" id="gateAviso"></p>
+  </div>
+</div>
+
+<div class="app" hidden>
   <div class="bar">
     <h1>Costos y precios<span id="saveState">Cargando…</span></h1>
     <select id="currency" aria-label="Moneda"></select>
+    <div class="cuenta" id="cuenta"></div>
   </div>
 
   <div class="tabs" role="tablist">
@@ -400,26 +473,32 @@
   function isArea(unit) { return !!AREA_UNITS[unit]; }
   function sideUnit(unit) { return AREA_UNITS[unit] || ""; }
 
-  var STORAGE_KEY = "costos:v1";
+  /* La caché del dispositivo se separa por cuenta: en un equipo compartido
+     nadie ve, ni por un instante, los datos de otra persona. */
+  var STORAGE_BASE = "costos:v1";
+  var storageKey = STORAGE_BASE;
 
   /* Configuración del proyecto de Firebase. Son valores públicos por diseño:
      viajan dentro de la página. Lo que protege los datos son las reglas de
      Firestore, no el secreto de estas claves. */
-  var FIREBASE_DEFAULT = {
+  var FIREBASE = {
     apiKey: "AIzaSyAAE6l_UwOVE1KB1QiXBNXhunzhJs78tL8",
     authDomain: "tiendas-f9af9.firebaseapp.com",
     projectId: "tiendas-f9af9",
     appId: "1:39811090432:web:9e462dc5388f39265b30e5"
   };
 
-  var state = {
-    settings: { currency: "CLP", taxEnabled: false, taxRate: 19,
-      tienda: { nombre: "", whatsapp: "" },
-      firebase: Object.assign({}, FIREBASE_DEFAULT) },
-    materials: [],
-    products: [],
-    orders: []
-  };
+  function estadoInicial() {
+    return {
+      settings: { currency: "CLP", taxEnabled: false, taxRate: 19,
+        tienda: { nombre: "", whatsapp: "" } },
+      materials: [],
+      products: [],
+      orders: []
+    };
+  }
+
+  var state = estadoInicial();
 
   var ESTADOS = [
     { id: "pendiente", label: "Pendiente" },
@@ -811,60 +890,74 @@
 
   /* ---------------- persistencia ---------------- */
 
-  var saveTimer = null, memoryOnly = false;
+  var saveTimer = null, memoryOnly = false, pendiente = false;
 
-  function setSaveState(txt) { document.getElementById("saveState").textContent = txt; }
+  function setSaveState(txt) {
+    var n = document.getElementById("saveState");
+    if (n) n.textContent = txt;
+  }
 
   /* escritura inmediata en el dispositivo: caché de lo que hay en la nube */
   function guardarLocal() {
     if (memoryOnly || !window.storage) return Promise.resolve();
-    return window.storage.set(STORAGE_KEY, JSON.stringify(state)).catch(function () {});
+    return window.storage.set(storageKey, JSON.stringify(state)).catch(function () {});
   }
 
-  /* Con sesión iniciada, Firestore es la fuente de verdad y el dispositivo
-     queda como caché. Sin sesión, se guarda solo aquí. */
+  /* Firestore es la fuente de verdad; el dispositivo guarda una copia para
+     seguir trabajando sin señal. Lo que quede sin subir se marca pendiente. */
   function save() {
     if (fb && fb.aplicando) return;
+    pendiente = true;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
-      if (memoryOnly || !window.storage) { setSaveState("Sin guardado en este visor"); return; }
       setSaveState("Guardando…");
       guardarLocal().then(function () {
-        if (!fb.user) { setSaveState("Guardado en este dispositivo"); return; }
-        return subirTodo().then(function () { setSaveState("Sincronizado"); });
+        if (!fb.user) { pendiente = false; setSaveState("Sin sesión"); return; }
+        return subirTodo().then(function () {
+          pendiente = false;
+          setSaveState("Sincronizado");
+        });
       }).catch(function () {
-        setSaveState("Guardado aquí, pendiente de subir");
+        setSaveState("Pendiente de subir");
       });
     }, 450);
   }
 
+  /* lee la caché de esta cuenta para pintar algo mientras baja la nube */
   function load() {
     if (!window.storage) { memoryOnly = true; setSaveState("Sin guardado en este visor"); return Promise.resolve(); }
-    return window.storage.get(STORAGE_KEY).then(function (res) {
-      if (res && res.value) {
-        var data = JSON.parse(res.value);
-        if (data.settings) {
-          state.settings = Object.assign(state.settings, data.settings);
-          state.settings.tienda = Object.assign({ nombre: "", whatsapp: "" }, data.settings.tienda || {});
-          var fbSaved = data.settings.firebase || {};
-          var merged = Object.assign({}, FIREBASE_DEFAULT);
-          Object.keys(FIREBASE_DEFAULT).forEach(function (k) {
-            if (fbSaved[k]) merged[k] = fbSaved[k];
-          });
-          state.settings.firebase = merged;
-        }
-        if (Array.isArray(data.materials)) state.materials = data.materials;
-        if (Array.isArray(data.products)) state.products = data.products;
-        if (Array.isArray(data.orders)) state.orders = data.orders;
-        state.materials.forEach(function (m) {
-          if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
-        });
+    return window.storage.get(storageKey).then(function (res) {
+      if (!res || !res.value) return;
+      var data = JSON.parse(res.value);
+      if (data.settings) {
+        state.settings = Object.assign(state.settings, data.settings);
+        state.settings.tienda = Object.assign({ nombre: "", whatsapp: "" }, data.settings.tienda || {});
+        delete state.settings.firebase; /* la configuración del proyecto ya no se guarda */
       }
-      setSaveState("Guardado");
-    }).catch(function () {
-      setSaveState("Listo");
-    });
+      if (Array.isArray(data.materials)) state.materials = data.materials;
+      if (Array.isArray(data.products)) state.products = data.products;
+      if (Array.isArray(data.orders)) state.orders = data.orders;
+      state.materials.forEach(function (m) {
+        if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
+      });
+    }).catch(function () {});
   }
+
+  /* al cambiar de cuenta se vacía todo antes de cargar lo de la nueva */
+  function limpiarEstado() {
+    clearTimeout(saveTimer);
+    pendiente = false;
+    state = estadoInicial();
+    ui.open = {};
+    ui.confirming = null;
+    ui.tab = "productos";
+  }
+
+  window.addEventListener("beforeunload", function (e) {
+    if (!pendiente) return;
+    e.preventDefault();
+    e.returnValue = "";
+  });
 
   /* ---------------- toast ---------------- */
 
@@ -1811,15 +1904,10 @@
   var fb = { app: null, db: null, auth: null, user: null, unsubs: [], estado: "apagado",
     aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {} } };
 
-  function fbConfigured() {
-    var c = state.settings.firebase || {};
-    return !!(c.apiKey && c.projectId && c.authDomain && c.appId);
-  }
-
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
       var s = document.createElement("script");
-      s.src = src; s.onload = resolve; s.onerror = function () { reject(new Error("No se pudo cargar " + src)); };
+      s.src = src; s.onload = resolve; s.onerror = function () { reject(new Error("sin_red")); };
       document.head.appendChild(s);
     });
   }
@@ -1827,56 +1915,130 @@
   var SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
 
   function fbInit() {
-    if (!fbConfigured()) return Promise.reject(new Error("Falta la configuración de Firebase."));
     if (fb.app) return Promise.resolve();
     fb.estado = "cargando";
     return loadScript(SDK + "firebase-app-compat.js")
       .then(function () { return loadScript(SDK + "firebase-auth-compat.js"); })
       .then(function () { return loadScript(SDK + "firebase-firestore-compat.js"); })
       .then(function () {
-        var c = state.settings.firebase;
-        fb.app = window.firebase.initializeApp({
-          apiKey: c.apiKey, authDomain: c.authDomain, projectId: c.projectId, appId: c.appId
-        });
+        fb.app = window.firebase.initializeApp(FIREBASE);
         fb.auth = window.firebase.auth();
         fb.db = window.firebase.firestore();
         fb.estado = "listo";
         /* caché offline: la planilla sigue viva sin señal y reenvía al volver */
         fb.db.enablePersistence({ synchronizeTabs: true }).catch(function () {});
-        fb.auth.onAuthStateChanged(function (u) {
-          fb.user = u;
-          if (u) arrancarSync(); else pararSync();
-          render();
-        });
-        /* resultado del login por redirección (móvil) */
-        return fb.auth.getRedirectResult().catch(function () {});
+        /* la sesión sobrevive al cierre del navegador */
+        return fb.auth.setPersistence(window.firebase.auth.Auth.Persistence.LOCAL).catch(function () {});
+      })
+      .then(function () {
+        fb.auth.onAuthStateChanged(sesionCambio);
+        /* si se entró por redirección (móvil), aquí llega el resultado */
+        return fb.auth.getRedirectResult().catch(function (err) { mostrarErrorAcceso(err); });
       })
       .catch(function (err) { fb.estado = "error"; throw err; });
   }
 
-  /* ---------------- sesión ---------------- */
+  /* ---------------- pantalla de acceso ---------------- */
 
-  function fbLoginGoogle() {
-    return fbInit().then(function () {
+  var uidActual = null;
+
+  function verGate(ver) {
+    document.getElementById("gate").hidden = !ver;
+    document.querySelector(".app").hidden = ver;
+  }
+
+  function gateOcupado(ocupado, txt) {
+    var b = document.getElementById("btnGoogle");
+    b.disabled = ocupado;
+    document.getElementById("btnGoogleTxt").textContent = txt || "Entrar con Google";
+  }
+
+  var ERRORES = {
+    "auth/popup-blocked": "Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes de este sitio e intenta otra vez.",
+    "auth/popup-closed-by-user": "Cerraste la ventana de Google antes de terminar.",
+    "auth/cancelled-popup-request": "Quedó otra ventana de acceso abierta. Ciérrala e intenta de nuevo.",
+    "auth/unauthorized-domain": "Este sitio todavía no está autorizado en Firebase. Agrega su dominio en Authentication → Settings → Authorized domains.",
+    "auth/operation-not-allowed": "El acceso con Google no está habilitado en Firebase. Actívalo en Authentication → Sign-in method.",
+    "auth/network-request-failed": "Sin conexión. Revisa tu internet e intenta otra vez.",
+    "auth/user-disabled": "Esta cuenta está deshabilitada.",
+    "auth/too-many-requests": "Demasiados intentos seguidos. Espera un momento y vuelve a probar.",
+    "sin_red": "No pude cargar Firebase. Revisa tu conexión y recarga la página."
+  };
+
+  function textoError(err) {
+    if (!err) return "No pude entrar. Intenta otra vez.";
+    return ERRORES[err.code] || ERRORES[err.message] || "No pude entrar. Intenta otra vez.";
+  }
+
+  function mostrarErrorAcceso(err) {
+    if (!err) return;
+    var n = document.getElementById("gateAviso");
+    n.className = "aviso error";
+    n.textContent = textoError(err);
+    gateOcupado(false);
+  }
+
+  function entrarConGoogle() {
+    document.getElementById("gateAviso").textContent = "";
+    gateOcupado(true, "Conectando…");
+    fbInit().then(function () {
       var prov = new window.firebase.auth.GoogleAuthProvider();
       prov.setCustomParameters({ prompt: "select_account" });
       return fb.auth.signInWithPopup(prov).catch(function (err) {
-        /* en móvil o con popups bloqueados, se cae a redirección */
-        var caeARedirect = err && /popup|cancelled|operation-not-supported/i.test(err.code || "");
-        if (caeARedirect) return fb.auth.signInWithRedirect(prov);
+        /* en móvil o con emergentes bloqueadas se entra por redirección */
+        var code = (err && err.code) || "";
+        if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
+          gateOcupado(true, "Redirigiendo…");
+          return fb.auth.signInWithRedirect(prov);
+        }
         throw err;
       });
+    }).catch(mostrarErrorAcceso);
+  }
+
+  /* ---------------- sesión ---------------- */
+
+  function sesionCambio(u) {
+    if (u && uidActual === u.uid) return;
+
+    pararSync();
+    limpiarEstado();
+    fb.user = u || null;
+    uidActual = u ? u.uid : null;
+
+    if (!u) {
+      storageKey = STORAGE_BASE;
+      pintarCuenta();
+      gateOcupado(false);
+      verGate(true);
+      return;
+    }
+
+    storageKey = STORAGE_BASE + ":" + u.uid;
+    verGate(false);
+    setSaveState("Cargando…");
+    load().then(function () {
+      pintarCuenta();
+      render();
+      arrancarSync();
     });
   }
 
-  function fbLogin(email, pass) {
-    return fbInit().then(function () { return fb.auth.signInWithEmailAndPassword(email, pass); });
+  function pintarCuenta() {
+    var n = document.getElementById("cuenta");
+    n.innerHTML = "";
+    if (!fb.user) return;
+    if (fb.user.photoURL) {
+      n.appendChild(el("img", { src: fb.user.photoURL, alt: "" }));
+    }
+    n.appendChild(el("span", { text: fb.user.email || fb.user.displayName || "Mi cuenta" }));
+    n.appendChild(el("button", { type: "button", text: "Salir", onclick: cerrarSesion }));
   }
 
-  function fbLogout() {
-    if (!fb.auth) return Promise.resolve();
+  function cerrarSesion() {
+    if (pendiente && !window.confirm("Hay cambios sin subir. ¿Cerrar sesión de todas formas?")) return;
     pararSync();
-    return fb.auth.signOut();
+    fb.auth.signOut().catch(function () {});
   }
 
   /* ---------------- rutas por usuario ---------------- */
@@ -1917,9 +2079,8 @@
   }
 
   function aplicarSettings(s) {
-    var fbCfg = state.settings.firebase;
     state.settings = Object.assign(state.settings, s);
-    state.settings.firebase = fbCfg; /* la config local manda: es de este dispositivo */
+    delete state.settings.firebase; /* quedó en respaldos antiguos; ya no se usa */
     state.settings.tienda = Object.assign({ nombre: "", whatsapp: "" }, s.tienda || {});
   }
 
@@ -1989,7 +2150,7 @@
       });
     });
     var settings = Object.assign({}, state.settings);
-    delete settings.firebase; /* las claves del proyecto no viajan a la nube */
+    delete settings.firebase; /* pudo venir de un respaldo antiguo */
     batch.set(tiendaRef(), { settings: settings, actualizado: new Date().toISOString() }, { merge: true });
     return batch.commit();
   }
@@ -2064,7 +2225,7 @@
     }
     root.appendChild(taxCard);
 
-    /* tienda y firebase */
+    /* tienda pública y cuenta */
     var tiendaCard = el("div", { class: "setting" }, [
       el("h4", { text: "Tienda pública" }),
       el("p", { text: "Estos datos aparecen en la página que ven tus clientes." }),
@@ -2080,71 +2241,39 @@
     root.appendChild(tiendaCard);
 
     var fbCard = el("div", { class: "setting" }, [
-      el("h4", { text: "Conexión con Firebase" }),
-      el("p", { text: "Sin esto, la planilla funciona igual y guarda todo en este dispositivo. Al conectarla, los pedidos de la tienda llegan solos." })
+      el("h4", { text: "Tu cuenta" }),
+      el("div", { class: "unit-cost", style: "margin-top:4px" }, [
+        el("span", { text: "Sesión iniciada como" }),
+        el("b", { text: fb.user ? (fb.user.email || fb.user.displayName || "Mi cuenta") : "—" })
+      ]),
+      el("p", { class: "note", style: "margin-top:8px",
+        text: "Materiales, inventario, productos y pedidos se guardan solos en tu cuenta y aparecen igual en cualquier dispositivo donde entres con este mismo Google." })
     ]);
 
-    [["apiKey", "apiKey"], ["authDomain", "authDomain"], ["projectId", "projectId"], ["appId", "appId"]]
-      .forEach(function (f) {
-        fbCard.appendChild(el("label", { class: "field", style: "margin-top:8px", text: f[1] }));
-        fbCard.appendChild(el("input", { type: "text", value: state.settings.firebase[f[0]] || "",
-          placeholder: f[1], oninput: function (e) { state.settings.firebase[f[0]] = e.target.value.trim(); save(); } }));
-      });
+    fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Publicar catálogo en la tienda",
+      style: "margin-top:12px", onclick: function () {
+        toast("Publicando…");
+        publicarCatalogo().then(function (n) { toast(n + " producto(s) publicado(s)"); })
+          .catch(function (err) { toast(err.message || "No pude publicar"); });
+      } }));
 
-    if (!fbConfigured()) {
-      fbCard.appendChild(el("p", { class: "note", text: "Pega los cuatro valores de tu app web de Firebase para activar la conexión." }));
-    } else if (!fb.user) {
-      fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Entrar con Google",
-        style: "margin-top:14px", onclick: function () {
-          toast("Abriendo Google…");
-          fbLoginGoogle().then(function () { render(); })
-            .catch(function (err) { toast(err.message || "No pude entrar con Google"); });
-        } }));
+    var link = el("input", { type: "text", value: urlTienda(), readonly: true, "aria-label": "Dirección de tu tienda" });
+    fbCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Dirección de tu tienda" }));
+    fbCard.appendChild(link);
+    fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Copiar dirección", style: "margin-top:8px",
+      onclick: function () {
+        link.select();
+        if (navigator.clipboard) navigator.clipboard.writeText(link.value).then(function () { toast("Copiada"); });
+        else toast("Copia la dirección desde el campo");
+      } }));
 
-      var mail = el("input", { type: "text", value: "", placeholder: "correo@ejemplo.cl", "aria-label": "Correo" });
-      var pass = el("input", { type: "password", placeholder: "contraseña", "aria-label": "Contraseña" });
-      fbCard.appendChild(el("label", { class: "field", style: "margin-top:14px", text: "O entra con correo y contraseña" }));
-      fbCard.appendChild(mail);
-      fbCard.appendChild(el("div", { style: "height:6px" }));
-      fbCard.appendChild(pass);
-      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Entrar", style: "margin-top:8px",
-        onclick: function () {
-          toast("Conectando…");
-          fbLogin(mail.value.trim(), pass.value).then(function () {
-            render(); toast("Sesión iniciada");
-          }).catch(function (err) { toast(err.message || "No pude entrar"); });
-        } }));
-    } else {
-      fbCard.appendChild(el("div", { class: "unit-cost", style: "margin-top:12px" }, [
-        el("span", { text: "Conectado como" }),
-        el("b", { text: fb.user.email || fb.user.displayName || "admin" })
-      ]));
-      fbCard.appendChild(el("p", { class: "note", text: "Materiales, inventario, productos y pedidos se guardan solos en tu cuenta y aparecen igual en cualquier dispositivo donde entres con este mismo Google." }));
-      fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Publicar catálogo en la tienda",
-        style: "margin-top:10px", onclick: function () {
-          toast("Publicando…");
-          publicarCatalogo().then(function (n) { toast(n + " producto(s) publicado(s)"); })
-            .catch(function (err) { toast(err.message || "No pude publicar"); });
-        } }));
-
-      var link = el("input", { type: "text", value: urlTienda(), readonly: true, "aria-label": "Dirección de tu tienda" });
-      fbCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Dirección de tu tienda" }));
-      fbCard.appendChild(link);
-      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Copiar dirección", style: "margin-top:8px",
-        onclick: function () {
-          link.select();
-          if (navigator.clipboard) navigator.clipboard.writeText(link.value).then(function () { toast("Copiada"); });
-          else toast("Copia la dirección desde el campo");
-        } }));
-
-      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Forzar subida de todo",
-        style: "margin-top:14px", onclick: function () {
-          subirTodo().then(function () { toast("Todo sincronizado"); })
-            .catch(function (err) { toast(err.message || "No pude subir"); });
-        } }));
-      fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Cerrar sesión",
-        style: "margin-top:8px", onclick: function () { fbLogout().then(function () { render(); toast("Sesión cerrada"); }); } }));
-    }
+    fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Forzar subida de todo",
+      style: "margin-top:14px", onclick: function () {
+        subirTodo().then(function () { pendiente = false; toast("Todo sincronizado"); })
+          .catch(function () { toast("No pude subir. Revisa tu conexión."); });
+      } }));
+    fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Cerrar sesión",
+      style: "margin-top:8px", onclick: cerrarSesion }));
     root.appendChild(fbCard);
 
     root.appendChild(el("div", { class: "setting" }, [
@@ -2608,10 +2737,13 @@
     tabButtons[i].addEventListener("click", function () { ui.tab = this.dataset.tab; render(); });
   }
 
-  load().then(function () {
-    currencySel.value = state.settings.currency;
-    render();
-    if (fbConfigured()) fbInit().catch(function () { /* la planilla sigue funcionando sin conexión */ });
+  document.getElementById("btnGoogle").addEventListener("click", entrarConGoogle);
+  gateOcupado(true, "Comprobando sesión…");
+
+  /* nada se muestra hasta saber si hay sesión: la cuenta es obligatoria */
+  fbInit().catch(function (err) {
+    verGate(true);
+    mostrarErrorAcceso(err);
   });
 })();
 </script>
