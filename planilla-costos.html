@@ -382,6 +382,30 @@
   }
   .bar .cuenta img { width: 26px; height: 26px; border-radius: 50%; }
 
+  /* ---------- asistente ---------- */
+  .wiz { max-width: 460px; }
+  .wiz h1 { margin: 0 0 4px; font-size: 19px; text-align: left; }
+  .wiz .paso { font-size: 12px; color: var(--muted); text-align: left; margin: 0 0 14px; }
+  .wiz p.intro { text-align: left; margin: 0 0 16px; }
+  .wiz .campos { text-align: left; }
+  .wiz .opciones { display: grid; gap: 8px; margin-top: 4px; }
+  .opcion {
+    display: flex; gap: 10px; align-items: flex-start; text-align: left;
+    border: 1px solid var(--line); border-radius: 8px;
+    padding: 12px 13px; background: var(--surface);
+    font: inherit; color: var(--ink); cursor: pointer; width: 100%;
+  }
+  .opcion:hover { background: var(--paper); }
+  .opcion[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+  .opcion .emoji { font-size: 19px; line-height: 1.2; flex: none; }
+  .opcion b { display: block; font-size: 14px; font-weight: 600; }
+  .opcion small { display: block; font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-top: 2px; }
+  .wiz .acciones { display: flex; gap: 8px; margin-top: 20px; }
+  .wiz .acciones .btn { flex: 1; }
+  .barra-paso { display: flex; gap: 4px; margin-bottom: 16px; }
+  .barra-paso i { height: 3px; flex: 1; border-radius: 2px; background: var(--line); }
+  .barra-paso i.on { background: var(--accent); }
+
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     background: var(--ink); color: #fff; font-size: 13px;
@@ -410,6 +434,10 @@
     </button>
     <p class="aviso" id="gateAviso"></p>
   </div>
+</div>
+
+<div class="gate" id="wizard" hidden>
+  <div class="gate-card wiz" id="wizardCard"></div>
 </div>
 
 <div class="app" hidden>
@@ -1031,17 +1059,17 @@
     /* materiales */
     var matSec = el("div", { class: "sec" });
     matSec.appendChild(el("header", {}, [
-      el("h4", { text: "Materiales / insumos" }),
+      el("h4", { text: rubro().receta }),
       el("span", { class: "sub", text: money(r.mats) })
     ]));
 
     if (!state.materials.length) {
-      matSec.appendChild(el("p", { class: "note", text: "Agrega materiales en la pestaña Materiales para poder asignarlos aquí." }));
+      matSec.appendChild(el("p", { class: "note", text: "Agrega " + rubro().insumoPlural + " en la pestaña " + rubro().insumos + " para poder asignarlos aquí." }));
     }
 
     p.materials.forEach(function (line, idx) {
       var sel = el("select", {});
-      sel.appendChild(el("option", { value: "", text: "Selecciona un material" }));
+      sel.appendChild(el("option", { value: "", text: "Selecciona un " + rubro().insumo.toLowerCase() }));
       state.materials.forEach(function (m) {
         sel.appendChild(el("option", { value: m.id, text: (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")" }));
       });
@@ -1100,7 +1128,7 @@
       matSec.appendChild(lineBox);
     });
 
-    matSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Material",
+    matSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ " + rubro().insumo,
       onclick: function () { p.materials.push({ materialId: "", qty: 1, h: "", w: "", pieces: 1 }); save(); render(); } }));
     body.appendChild(matSec);
 
@@ -1290,7 +1318,7 @@
 
     if (!state.products.length) {
       root.appendChild(el("div", { class: "empty" }, [
-        el("p", { text: "Aún no hay productos ni servicios. Crea el primero y asígnale materiales y costos." }),
+        el("p", { text: "Aún no hay productos ni servicios. Crea el primero y asígnale " + rubro().insumoPlural + " y costos." }),
         el("button", { class: "btn primary", type: "button", text: "Crear el primero", onclick: addProduct })
       ]));
     } else {
@@ -1321,8 +1349,8 @@
 
     if (!state.materials.length) {
       root.appendChild(el("div", { class: "empty" }, [
-        el("p", { text: "Sin materiales todavía. Agrega insumos con su unidad y costo, o con el precio de compra y cuántas unidades trae." }),
-        el("button", { class: "btn primary", type: "button", text: "Agregar material", onclick: addMaterial })
+        el("p", { text: "Sin " + rubro().insumoPlural + " todavía. Agrégalos con su unidad y costo, o con el precio de compra y cuántas unidades trae." }),
+        el("button", { class: "btn primary", type: "button", text: "Agregar " + rubro().insumo.toLowerCase(), onclick: addMaterial })
       ]));
       return;
     }
@@ -1443,9 +1471,9 @@
       root.appendChild(card);
     });
 
-    root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Agregar material",
+    root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Agregar " + rubro().insumo.toLowerCase(),
       style: "margin-top:10px", onclick: addMaterial }));
-    root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de materiales",
+    root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de " + rubro().insumoPlural,
       style: "margin-top:8px", onclick: exportMaterials }));
   }
 
@@ -1509,7 +1537,7 @@
 
       if (!faltan.length) {
         compra.appendChild(el("div", { class: "unit-cost" }, [
-          el("span", { text: "Tienes material para todos los pedidos pendientes" }),
+          el("span", { text: "Te alcanzan los " + rubro().insumoPlural + " para todos los pedidos pendientes" }),
           el("b", { text: money(0) })
         ]));
       } else {
@@ -1637,7 +1665,7 @@
     if (o.items && o.items.length) {
       var faltan = plan.lines.filter(function (l) { return l.falta > 1e-9; });
       var matSec = el("div", { class: "sec" });
-      matSec.appendChild(el("header", {}, [el("h4", { text: "Material" })]));
+      matSec.appendChild(el("header", {}, [el("h4", { text: rubro().insumo })]));
       if (!faltan.length) {
         matSec.appendChild(el("div", { class: "unit-cost" }, [
           el("span", { text: "Alcanza con el stock actual" }),
@@ -1686,7 +1714,7 @@
     });
     body.appendChild(el("div", { class: "sec" }, [
       el("label", { class: "field", text: "Estado" }), segEstado,
-      el("p", { class: "note", text: "Marcar entregado descuenta el material del inventario." })
+      el("p", { class: "note", text: "Marcar entregado descuenta los " + rubro().insumoPlural + " del inventario." })
     ]));
 
     if (o.whatsapp) {
@@ -1732,8 +1760,8 @@
 
     if (!state.materials.length) {
       root.appendChild(el("div", { class: "empty" }, [
-        el("p", { text: "El inventario se arma con tus materiales. Agrega al menos uno para llevar existencias." }),
-        el("button", { class: "btn primary", type: "button", text: "Ir a Materiales",
+        el("p", { text: "El inventario se arma con tus " + rubro().insumoPlural + ". Agrega al menos uno para llevar existencias." }),
+        el("button", { class: "btn primary", type: "button", text: "Ir a " + rubro().insumos,
           onclick: function () { ui.tab = "materiales"; render(); } })
       ]));
       return;
@@ -1878,7 +1906,7 @@
 
         if (plan.sobra > 0.001) {
           detalle.appendChild(el("p", { class: "note", style: "margin:6px 0 0",
-            text: "Los paquetes dejan material de sobra para los siguientes lotes." }));
+            text: "Los paquetes dejan sobra para los siguientes lotes." }));
         }
       }
 
@@ -2019,6 +2047,7 @@
     setSaveState("Cargando…");
     load().then(function () {
       pintarCuenta();
+      aplicarLenguaje();
       render();
       arrancarSync();
     });
@@ -2069,13 +2098,24 @@
     Promise.all(COLECCIONES.map(function (c) { return colRef(c.nombre).get(); }))
       .then(function (snaps) {
         var vacia = snaps.every(function (s) { return s.empty; });
-        if (vacia) return subirTodo().then(function () { toast("Datos subidos a tu cuenta"); });
         return tiendaRef().get().then(function (doc) {
           if (doc.exists && doc.data().settings) aplicarSettings(doc.data().settings);
+          /* una cuenta que ya venía trabajando no pasa por el asistente */
+          if (!vacia && !state.settings.configurado) state.settings.configurado = true;
+          if (vacia && state.settings.configurado) return subirTodo();
         });
       })
-      .then(escucharNube)
-      .catch(function (err) { setSaveState("Sin conexión"); toast(err.message || "No pude sincronizar"); });
+      .then(function () {
+        escucharNube();
+        revisarAsistente();
+      })
+      .catch(function () { setSaveState("Sin conexión"); toast("No pude sincronizar. Reintentaré al volver la señal."); });
+  }
+
+  /* el asistente solo aparece la primera vez, con la nube ya consultada */
+  function revisarAsistente() {
+    if (necesitaAsistente()) abrirAsistente();
+    else { aplicarLenguaje(); render(); }
   }
 
   function aplicarSettings(s) {
@@ -2199,6 +2239,234 @@
     colRef("pedidos").doc(o.id).set({ estado: o.estado }, { merge: true }).catch(function () {});
   }
 
+  /* ---------------- rubros, módulos y lenguaje ---------------- */
+
+  /* El rubro decide qué módulos se activan y cómo se llaman las cosas:
+     nadie debería tener que entender una pantalla de ajustes para empezar. */
+  var RUBROS = {
+    manualidades: {
+      emoji: "🧶",
+      label: "Hecho a mano",
+      detalle: "Tejido, joyería, decoración, papelería, velas.",
+      insumo: "Material", insumos: "Materiales", insumoPlural: "materiales",
+      receta: "Materiales que lleva",
+      modulos: { inventario: true, tienda: true, lotes: false }
+    },
+    comida: {
+      emoji: "🧁",
+      label: "Comida y repostería",
+      detalle: "Tortas, panadería, conservas, catering.",
+      insumo: "Ingrediente", insumos: "Ingredientes", insumoPlural: "ingredientes",
+      receta: "Receta",
+      modulos: { inventario: true, tienda: true, lotes: true }
+    },
+    general: {
+      emoji: "📦",
+      label: "Otro rubro",
+      detalle: "Cualquier cosa que produzcas con insumos.",
+      insumo: "Insumo", insumos: "Insumos", insumoPlural: "insumos",
+      receta: "Insumos que lleva",
+      modulos: { inventario: true, tienda: true, lotes: false }
+    }
+  };
+
+  function rubro() { return RUBROS[state.settings.rubro] || RUBROS.general; }
+
+  function modulos() {
+    return Object.assign({}, rubro().modulos, state.settings.modulos || {});
+  }
+
+  function moduloActivo(nombre) { return modulos()[nombre] !== false; }
+
+  /* ---------------- asistente de configuración ---------------- */
+
+  var wiz = null;
+
+  function necesitaAsistente() { return !state.settings.configurado; }
+
+  function abrirAsistente() {
+    wiz = {
+      paso: 0,
+      nombre: state.settings.tienda.nombre || "",
+      rubro: state.settings.rubro || "",
+      currency: state.settings.currency || "CLP",
+      taxEnabled: !!state.settings.taxEnabled,
+      taxRate: state.settings.taxRate || 19,
+      modo: state.settings.modo || "",
+      tienda: state.settings.modulos ? state.settings.modulos.tienda !== false : true
+    };
+    document.getElementById("wizard").hidden = false;
+    document.querySelector(".app").hidden = true;
+    pintarAsistente();
+  }
+
+  var PASOS = ["negocio", "rubro", "dinero", "venta"];
+
+  function pintarAsistente() {
+    var card = document.getElementById("wizardCard");
+    card.innerHTML = "";
+
+    var barra = el("div", { class: "barra-paso" });
+    PASOS.forEach(function (_, i) {
+      barra.appendChild(el("i", { class: i <= wiz.paso ? "on" : "" }));
+    });
+    card.appendChild(barra);
+    card.appendChild(el("p", { class: "paso", text: "Paso " + (wiz.paso + 1) + " de " + PASOS.length }));
+
+    if (PASOS[wiz.paso] === "negocio") pasoNegocio(card);
+    else if (PASOS[wiz.paso] === "rubro") pasoRubro(card);
+    else if (PASOS[wiz.paso] === "dinero") pasoDinero(card);
+    else pasoVenta(card);
+
+    var acciones = el("div", { class: "acciones" });
+    if (wiz.paso > 0) {
+      acciones.appendChild(el("button", { class: "btn", type: "button", text: "Atrás",
+        onclick: function () { wiz.paso--; pintarAsistente(); } }));
+    }
+    var ultimo = wiz.paso === PASOS.length - 1;
+    acciones.appendChild(el("button", { class: "btn primary", type: "button",
+      text: ultimo ? "Empezar" : "Continuar",
+      disabled: !pasoCompleto(),
+      onclick: function () {
+        if (!pasoCompleto()) return;
+        if (ultimo) cerrarAsistente();
+        else { wiz.paso++; pintarAsistente(); }
+      } }));
+    card.appendChild(acciones);
+  }
+
+  function pasoCompleto() {
+    var p = PASOS[wiz.paso];
+    if (p === "negocio") return !!wiz.nombre.trim();
+    if (p === "rubro") return !!wiz.rubro;
+    if (p === "venta") return !!wiz.modo;
+    return true;
+  }
+
+  function opcion(seleccionado, emoji, titulo, detalle, onclick) {
+    return el("button", { class: "opcion", type: "button", "aria-pressed": seleccionado ? "true" : "false",
+      onclick: onclick }, [
+      el("span", { class: "emoji", text: emoji }),
+      el("span", {}, [el("b", { text: titulo }), el("small", { text: detalle })])
+    ]);
+  }
+
+  function pasoNegocio(card) {
+    card.appendChild(el("h1", { text: "¿Cómo se llama tu emprendimiento?" }));
+    card.appendChild(el("p", { class: "intro", text: "Es el nombre que verán tus clientes. Puedes cambiarlo cuando quieras." }));
+    var campos = el("div", { class: "campos" });
+    var input = el("input", { type: "text", value: wiz.nombre, placeholder: "Ej: Taller Aurora",
+      "aria-label": "Nombre del emprendimiento" });
+    input.addEventListener("input", function () {
+      wiz.nombre = input.value;
+      card.querySelector(".acciones .btn.primary").disabled = !wiz.nombre.trim();
+    });
+    campos.appendChild(input);
+    card.appendChild(campos);
+    setTimeout(function () { input.focus(); }, 30);
+  }
+
+  function pasoRubro(card) {
+    card.appendChild(el("h1", { text: "¿Qué haces?" }));
+    card.appendChild(el("p", { class: "intro", text: "Con esto ajusto la aplicación a tu forma de trabajar: cómo se llaman tus insumos y qué secciones necesitas." }));
+    var ops = el("div", { class: "opciones" });
+    Object.keys(RUBROS).forEach(function (id) {
+      var r = RUBROS[id];
+      ops.appendChild(opcion(wiz.rubro === id, r.emoji, r.label, r.detalle, function () {
+        wiz.rubro = id; pintarAsistente();
+      }));
+    });
+    card.appendChild(ops);
+  }
+
+  function pasoDinero(card) {
+    card.appendChild(el("h1", { text: "¿En qué moneda cobras?" }));
+    card.appendChild(el("p", { class: "intro", text: "Todos los precios y costos se muestran en esta moneda." }));
+    var campos = el("div", { class: "campos" });
+    var sel = el("select", { "aria-label": "Moneda" });
+    Object.keys(CURRENCIES).forEach(function (code) {
+      sel.appendChild(el("option", { value: code, text: CURRENCIES[code].label }));
+    });
+    sel.value = wiz.currency;
+    sel.addEventListener("change", function () { wiz.currency = sel.value; });
+    campos.appendChild(sel);
+
+    var chk = el("input", { type: "checkbox", id: "wizTax" });
+    chk.checked = wiz.taxEnabled;
+    var tasa = el("input", { class: "num", type: "text", inputmode: "decimal", value: wiz.taxRate,
+      "aria-label": "Porcentaje de impuesto" });
+    tasa.addEventListener("input", function () { wiz.taxRate = tasa.value; });
+    var fila = el("div", { class: "row", style: "margin-top:10px" }, [
+      el("div", { class: "grow" }, [el("label", { class: "field", text: "Porcentaje" })]),
+      el("div", { class: "amt" }, [tasa])
+    ]);
+    fila.hidden = !wiz.taxEnabled;
+    chk.addEventListener("change", function () {
+      wiz.taxEnabled = chk.checked;
+      fila.hidden = !chk.checked;
+    });
+    campos.appendChild(el("label", { class: "switch", style: "margin-top:14px" },
+      [chk, el("span", { text: "Cobro impuesto sobre mis precios" })]));
+    campos.appendChild(fila);
+    campos.appendChild(el("p", { class: "note", text: "Si no facturas con impuesto, déjalo apagado." }));
+    card.appendChild(campos);
+  }
+
+  function pasoVenta(card) {
+    card.appendChild(el("h1", { text: "¿Cómo vendes?" }));
+    card.appendChild(el("p", { class: "intro", text: "Esto define si necesitas llevar inventario de lo que tienes guardado." }));
+    var ops = el("div", { class: "opciones" });
+    ops.appendChild(opcion(wiz.modo === "encargo", "📝", "Por encargo",
+      "Produzco cuando alguien me pide. Necesito saber si me alcanzan los " + (RUBROS[wiz.rubro] || RUBROS.general).insumoPlural + " para cada pedido.",
+      function () { wiz.modo = "encargo"; pintarAsistente(); }));
+    ops.appendChild(opcion(wiz.modo === "stock", "🏷️", "Con stock listo",
+      "Produzco antes y vendo lo que tengo hecho.",
+      function () { wiz.modo = "stock"; pintarAsistente(); }));
+    card.appendChild(ops);
+
+    var chk = el("input", { type: "checkbox", id: "wizTienda" });
+    chk.checked = wiz.tienda;
+    chk.addEventListener("change", function () { wiz.tienda = chk.checked; });
+    card.appendChild(el("div", { class: "campos" }, [
+      el("label", { class: "switch", style: "margin-top:16px" },
+        [chk, el("span", { text: "Quiero una página pública para recibir pedidos" })]),
+      el("p", { class: "note", text: "Puedes activarla o apagarla después en Ajustes." })
+    ]));
+  }
+
+  function cerrarAsistente() {
+    var r = RUBROS[wiz.rubro] || RUBROS.general;
+    state.settings.tienda.nombre = wiz.nombre.trim();
+    state.settings.rubro = wiz.rubro || "general";
+    state.settings.currency = wiz.currency;
+    state.settings.taxEnabled = wiz.taxEnabled;
+    state.settings.taxRate = wiz.taxRate;
+    state.settings.modo = wiz.modo;
+    state.settings.modulos = {
+      inventario: r.modulos.inventario,
+      tienda: wiz.tienda,
+      lotes: r.modulos.lotes
+    };
+    state.settings.configurado = true;
+
+    document.getElementById("wizard").hidden = true;
+    document.querySelector(".app").hidden = false;
+    aplicarLenguaje();
+    save();
+    render();
+    toast("Todo listo, " + state.settings.tienda.nombre);
+  }
+
+  /* pone en pantalla las palabras del rubro y esconde lo que no se usa */
+  function aplicarLenguaje() {
+    var r = rubro();
+    var tab = document.querySelector('.tabs button[data-tab="materiales"]');
+    if (tab) tab.textContent = r.insumos;
+    var tabInv = document.querySelector('.tabs button[data-tab="inventario"]');
+    if (tabInv) tabInv.hidden = !moduloActivo("inventario");
+    if (!moduloActivo("inventario") && ui.tab === "inventario") ui.tab = "productos";
+  }
+
   /* ---------------- render: ajustes ---------------- */
 
   function renderAjustes() {
@@ -2225,20 +2493,62 @@
     }
     root.appendChild(taxCard);
 
+    /* negocio: rubro y módulos, lo mismo que definió el asistente */
+    var negocioCard = el("div", { class: "setting" }, [
+      el("h4", { text: "Tu negocio" }),
+      el("label", { class: "field", text: "Nombre" }),
+      el("input", { type: "text", value: state.settings.tienda.nombre, placeholder: "Ej: Taller Aurora",
+        oninput: function (e) { state.settings.tienda.nombre = e.target.value; save(); } }),
+      el("label", { class: "field", style: "margin-top:10px", text: "Rubro" })
+    ]);
+
+    var rubroSel = el("select", { "aria-label": "Rubro" });
+    Object.keys(RUBROS).forEach(function (id) {
+      rubroSel.appendChild(el("option", { value: id, text: RUBROS[id].emoji + "  " + RUBROS[id].label }));
+    });
+    rubroSel.value = state.settings.rubro || "general";
+    rubroSel.addEventListener("change", function () {
+      state.settings.rubro = rubroSel.value;
+      /* el rubro vuelve a mandar sobre los módulos que él decide */
+      var m = state.settings.modulos || {};
+      state.settings.modulos = Object.assign({}, RUBROS[rubroSel.value].modulos, { tienda: m.tienda !== false });
+      save(); aplicarLenguaje(); render();
+      toast("Rubro actualizado");
+    });
+    negocioCard.appendChild(rubroSel);
+    negocioCard.appendChild(el("p", { class: "note",
+      text: "Define cómo se llaman tus " + rubro().insumoPlural + " y qué secciones ves." }));
+
+    var invChk = el("input", { type: "checkbox", id: "modInv" });
+    invChk.checked = moduloActivo("inventario");
+    invChk.addEventListener("change", function () {
+      state.settings.modulos = Object.assign({}, modulos(), { inventario: invChk.checked });
+      save(); aplicarLenguaje(); render();
+    });
+    negocioCard.appendChild(el("label", { class: "switch", style: "margin-top:12px" },
+      [invChk, el("span", { text: "Llevar inventario de existencias" })]));
+
+    var tdaChk = el("input", { type: "checkbox", id: "modTienda" });
+    tdaChk.checked = moduloActivo("tienda");
+    tdaChk.addEventListener("change", function () {
+      state.settings.modulos = Object.assign({}, modulos(), { tienda: tdaChk.checked });
+      save(); render();
+    });
+    negocioCard.appendChild(el("label", { class: "switch", style: "margin-top:8px" },
+      [tdaChk, el("span", { text: "Tener página pública para recibir pedidos" })]));
+    root.appendChild(negocioCard);
+
     /* tienda pública y cuenta */
     var tiendaCard = el("div", { class: "setting" }, [
       el("h4", { text: "Tienda pública" }),
       el("p", { text: "Estos datos aparecen en la página que ven tus clientes." }),
-      el("label", { class: "field", text: "Nombre del emprendimiento" }),
-      el("input", { type: "text", value: state.settings.tienda.nombre, placeholder: "Ej: Flores de limpiapipas",
-        oninput: function (e) { state.settings.tienda.nombre = e.target.value; save(); } }),
-      el("label", { class: "field", style: "margin-top:10px", text: "WhatsApp de contacto" }),
+      el("label", { class: "field", text: "WhatsApp de contacto" }),
       el("input", { type: "text", value: state.settings.tienda.whatsapp, placeholder: "+56 9 1234 5678",
         oninput: function (e) { state.settings.tienda.whatsapp = e.target.value; save(); } }),
       el("p", { class: "note", text: state.products.filter(function (p) { return p.publicado; }).length +
         " producto(s) marcado(s) para publicar. El interruptor está dentro de cada producto." })
     ]);
-    root.appendChild(tiendaCard);
+    if (moduloActivo("tienda")) root.appendChild(tiendaCard);
 
     var fbCard = el("div", { class: "setting" }, [
       el("h4", { text: "Tu cuenta" }),
@@ -2247,9 +2557,10 @@
         el("b", { text: fb.user ? (fb.user.email || fb.user.displayName || "Mi cuenta") : "—" })
       ]),
       el("p", { class: "note", style: "margin-top:8px",
-        text: "Materiales, inventario, productos y pedidos se guardan solos en tu cuenta y aparecen igual en cualquier dispositivo donde entres con este mismo Google." })
+        text: rubro().insumos + ", inventario, productos y pedidos se guardan solos en tu cuenta y aparecen igual en cualquier dispositivo donde entres con este mismo Google." })
     ]);
 
+    if (moduloActivo("tienda")) {
     fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Publicar catálogo en la tienda",
       style: "margin-top:12px", onclick: function () {
         toast("Publicando…");
@@ -2266,6 +2577,7 @@
         if (navigator.clipboard) navigator.clipboard.writeText(link.value).then(function () { toast("Copiada"); });
         else toast("Copia la dirección desde el campo");
       } }));
+    }
 
     fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Forzar subida de todo",
       style: "margin-top:14px", onclick: function () {
@@ -2281,14 +2593,14 @@
       el("p", { text: "El respaldo .json guarda todo tal cual: úsalo para cambiar de dispositivo o antes de borrar." }),
       el("button", { class: "btn wide", type: "button", text: "Exportar respaldo (.json)", onclick: exportBackup }),
       el("button", { class: "btn wide", type: "button", text: "Restaurar respaldo (.json)", style: "margin-top:8px", onclick: importBackupSheet }),
-      el("button", { class: "btn wide", type: "button", text: "Importar materiales (CSV)", style: "margin-top:14px", onclick: importMaterialsSheet }),
+      el("button", { class: "btn wide", type: "button", text: "Importar " + rubro().insumoPlural + " (CSV)", style: "margin-top:14px", onclick: importMaterialsSheet }),
       el("button", { class: "btn wide", type: "button", text: "Importar productos (CSV)", style: "margin-top:8px", onclick: importProductsSheet }),
       el("p", { class: "note", text: "En cada importación eliges si agregar a lo que ya tienes o reemplazar todo." })
     ]));
 
     root.appendChild(el("div", { class: "setting" }, [
       el("h4", { text: "Tus datos" }),
-      el("p", { text: "Materiales, productos y ajustes se guardan solos y son solo tuyos. Nadie más los ve." }),
+      el("p", { text: rubro().insumos + ", productos y ajustes se guardan solos y son solo tuyos. Nadie más los ve." }),
       el("button", { class: "btn small", type: "button", text: "Borrar todo y empezar de cero",
         onclick: function () {
           if (ui.confirming === "reset") {
@@ -2705,6 +3017,7 @@
   /* ---------------- render general ---------------- */
 
   function render() {
+    if (ui.tab === "inventario" && !moduloActivo("inventario")) ui.tab = "productos";
     ["productos", "pedidos", "materiales", "inventario", "ajustes"].forEach(function (t) {
       document.getElementById("tab-" + t).hidden = ui.tab !== t;
     });
