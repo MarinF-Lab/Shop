@@ -1,0 +1,57 @@
+rules_version = '2';
+
+/* Reglas para la planilla de costos y la tienda pública.
+   Cada cuenta de Google es dueña de su propio árbol en tiendas/{uid}:
+   solo ella lee y escribe su gestión; el público únicamente ve el
+   catálogo y los datos de contacto, y puede dejar un pedido. */
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function esDueno(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    function pedidoValido() {
+      let d = request.resource.data;
+      return d.keys().hasAll(['cliente', 'whatsapp', 'items', 'estado'])
+        && d.cliente is string && d.cliente.size() > 0 && d.cliente.size() <= 120
+        && d.whatsapp is string && d.whatsapp.size() > 0 && d.whatsapp.size() <= 40
+        && d.items is list && d.items.size() > 0 && d.items.size() <= 50
+        && d.estado == 'pendiente';
+    }
+
+    match /tiendas/{uid} {
+      /* settings, moneda, impuesto: privados */
+      allow read, write: if esDueno(uid);
+
+      /* materiales e inventario (el stock vive dentro del material) */
+      match /materiales/{docId} {
+        allow read, write: if esDueno(uid);
+      }
+
+      /* productos con costos y márgenes: nunca salen de la cuenta */
+      match /productos/{docId} {
+        allow read, write: if esDueno(uid);
+      }
+
+      /* pedidos: cualquiera puede dejar uno desde la tienda,
+         solo el dueño los lee, corrige o borra */
+      match /pedidos/{docId} {
+        allow read, update, delete: if esDueno(uid);
+        allow create: if esDueno(uid) || pedidoValido();
+      }
+
+      /* catálogo publicado: lectura abierta, escritura del dueño */
+      match /catalogo/{docId} {
+        allow read: if true;
+        allow write: if esDueno(uid);
+      }
+
+      /* nombre y WhatsApp que ve el cliente */
+      match /publico/{docId} {
+        allow read: if true;
+        allow write: if esDueno(uid);
+      }
+    }
+  }
+}
