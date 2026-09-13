@@ -72,14 +72,31 @@ firebase deploy --only hosting
 El acceso con Google **no funciona abriendo el archivo con doble clic**
 (`file://`): necesita un dominio servido por HTTP y autorizado en Firebase.
 
+## Formas de vender
+
+El asistente pregunta cómo trabajas y ajusta la aplicación:
+
+| Modo | Qué lleva | Cómo se descuenta al entregar |
+|---|---|---|
+| Por encargo | Materiales | Se produce contra el pedido, descontando materiales. |
+| Con stock listo | Unidades fabricadas | Se descuenta de lo que ya tienes hecho. |
+| Mixta | Ambos | Se usan primero las unidades hechas; solo lo que falte se fabrica descontando materiales. |
+
+En modo mixto, **Fabricar** descuenta los materiales y suma las unidades a la
+existencia del producto, así que lo ya hecho nunca vuelve a consumir materiales.
+Lo disponible para la tienda pública es la suma de lo fabricado más lo que
+alcanzan a dar los materiales.
+
 ## Uso diario
 
 1. Abre `planilla-costos.html` y entra con Google.
 2. Carga tus materiales con su precio de compra y su unidad.
 3. Crea productos indicando qué materiales lleva cada uno: el costo se calcula
    solo, y tú eliges el margen o el precio final.
-4. Marca los productos que quieras vender y pulsa **Publicar catálogo**.
-5. Copia la dirección de tu tienda (`tienda.html?tienda=TU_UID`) y compártela.
+4. En Inventario llevas tus materiales y, si trabajas con stock, las unidades
+   ya fabricadas.
+5. Marca los productos que quieras vender y pulsa **Publicar catálogo**.
+6. Copia la dirección de tu tienda (`tienda.html?tienda=TU_UID`) y compártela.
    Los pedidos que dejen tus clientes entran solos a tu agenda.
 
 Sin el parámetro `?tienda=`, `tienda.html` muestra su catálogo de ejemplo y

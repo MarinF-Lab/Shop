@@ -323,6 +323,7 @@
     padding: 16px; max-height: 84vh; overflow: auto;
   }
   .sheet h3 { margin: 0 0 10px; font-size: 15px; }
+  .sheet .cuerpo { max-height: 58vh; overflow-y: auto; }
   .sheet textarea { font-family: var(--num); font-size: 11.5px; height: 150px; resize: vertical; white-space: pre; }
   .sheet .actions { display: flex; gap: 8px; margin-top: 10px; }
   .sheet .actions .btn { flex: 1; }
@@ -450,7 +451,6 @@
   <div class="tabs" role="tablist">
     <button role="tab" data-tab="productos" aria-selected="true">Productos</button>
     <button role="tab" data-tab="pedidos" aria-selected="false">Pedidos</button>
-    <button role="tab" data-tab="materiales" aria-selected="false">Materiales</button>
     <button role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
     <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
   </div>
@@ -458,7 +458,6 @@
   <div class="wrap">
     <section id="tab-productos"></section>
     <section id="tab-pedidos" hidden></section>
-    <section id="tab-materiales" hidden></section>
     <section id="tab-inventario" hidden></section>
     <section id="tab-ajustes" hidden></section>
   </div>
@@ -537,7 +536,7 @@
 
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
-  var ui = { tab: "productos", open: {}, ready: false, confirming: null };
+  var ui = { tab: "productos", vista: "materiales", open: {}, ready: false, confirming: null };
 
   /* ---------------- utilidades ---------------- */
 
@@ -795,27 +794,48 @@
     return { units: any ? limit : null, limiting: limiting };
   }
 
-  function produce(p, units) {
+  /* ---------------- existencias de producto terminado ----------------
+     Un producto puede estar ya fabricado (unidades hechas y guardadas) o
+     por fabricar (se produce descontando materiales). Todo consumo pasa
+     por aquí para que las dos cosas nunca se descuadren. */
+
+  function hechos(p) { return Math.max(0, parseNum(p.stock)); }
+
+  function llevaFabricados() { return moduloActivo("fabricados"); }
+  function llevaMateriales() { return moduloActivo("materiales"); }
+
+  function textoFaltantes(plan) {
+    return "No alcanza: " + plan.faltantes.map(function (f) {
+      return f.nombre + " (faltan " + fmtQty(f.falta) + " " + f.unidad + ")";
+    }).join(", ");
+  }
+
+  /* fabricar guarda las unidades como existencia y descuenta materiales */
+  function fabricar(p, units) {
     var n = parseNum(units);
-    if (n <= 0) return { error: "Indica cuántas unidades produjiste." };
-    var faltantes = [];
+    if (n <= 0) return { error: "Indica cuántas unidades vas a fabricar." };
+    if (!llevaMateriales()) {
+      p.stock = hechos(p) + n;
+      return { units: n, sinMateriales: true };
+    }
+
+    var faltantes = [], usos = [];
     p.materials.forEach(function (line) {
       var m = materialById(line.materialId);
       if (!m) return;
       var need = lineStockUse(line) * n;
-      if (need > parseNum(m.stock) + 1e-9) faltantes.push(m.name || "sin nombre");
+      if (need <= 0) return;
+      usos.push({ material: m, use: need });
+      if (need > parseNum(m.stock) + 1e-9) {
+        faltantes.push({ nombre: m.name || "Sin nombre", falta: need - parseNum(m.stock), unidad: stockUnit(m) });
+      }
     });
-    if (faltantes.length) return { error: "No alcanza el stock de: " + faltantes.join(", ") };
+    if (faltantes.length) return { error: textoFaltantes({ faltantes: faltantes }) };
 
-    p.materials.forEach(function (line) {
-      var m = materialById(line.materialId);
-      if (!m) return;
-      m.stock = Math.max(0, parseNum(m.stock) - lineStockUse(line) * n);
-    });
+    usos.forEach(function (u) { u.material.stock = Math.max(0, parseNum(u.material.stock) - u.use); });
+    if (llevaFabricados()) p.stock = hechos(p) + n;
     return { units: n };
   }
-
-  /* ---------------- pedidos ---------------- */
 
   function productById(id) {
     for (var i = 0; i < state.products.length; i++) if (state.products[i].id === id) return state.products[i];
@@ -823,12 +843,18 @@
   }
 
   /* consumo de material que exige un conjunto de items, sumando todos los productos */
+  /* materiales que hacen falta; lo que ya está fabricado no se vuelve a producir */
   function aggregateUse(items) {
-    var use = {};
+    var use = {}, disponible = {};
+    state.products.forEach(function (p) { disponible[p.id] = llevaFabricados() ? hechos(p) : 0; });
     (items || []).forEach(function (it) {
       var p = productById(it.productId);
       if (!p) return;
-      var qty = parseNum(it.qty);
+      var pedidas = parseNum(it.qty);
+      var deHechos = Math.min(disponible[p.id] || 0, pedidas);
+      disponible[p.id] = (disponible[p.id] || 0) - deHechos;
+      var qty = pedidas - deHechos;
+      if (qty <= 0) return;
       p.materials.forEach(function (line) {
         var m = materialById(line.materialId);
         if (!m) return;
@@ -879,27 +905,75 @@
   }
 
   /* entregar descuenta el material de todos los items del pedido */
+  /* qué sale de lo ya hecho y qué hay que fabricar para todo el pedido */
+  function planEntrega(o) {
+    var res = { lineas: [], faltantes: [], ok: true, deHechos: 0, aFabricar: 0 };
+    /* se simula sobre copias: dos líneas del mismo material no deben pisarse */
+    var simStock = {}, simHechos = {};
+    state.materials.forEach(function (m) { simStock[m.id] = parseNum(m.stock); });
+    state.products.forEach(function (p) { simHechos[p.id] = hechos(p); });
+
+    (o.items || []).forEach(function (it) {
+      var p = productById(it.productId);
+      if (!p) return;
+      var n = parseNum(it.qty);
+      if (n <= 0) return;
+
+      var deHechos = llevaFabricados() ? Math.min(simHechos[p.id] || 0, n) : 0;
+      simHechos[p.id] = (simHechos[p.id] || 0) - deHechos;
+      var aFabricar = n - deHechos;
+      res.deHechos += deHechos;
+      res.aFabricar += aFabricar;
+
+      var consumos = [];
+      if (aFabricar > 0) {
+        if (!llevaMateriales()) {
+          res.faltantes.push({ nombre: p.name || "Sin nombre", falta: aFabricar, unidad: "unidad" });
+        } else {
+          p.materials.forEach(function (line) {
+            var m = materialById(line.materialId);
+            if (!m) return;
+            var use = lineStockUse(line) * aFabricar;
+            if (use <= 0) return;
+            simStock[m.id] -= use;
+            consumos.push({ material: m, use: use });
+          });
+        }
+      }
+      res.lineas.push({ producto: p, qty: n, deHechos: deHechos, aFabricar: aFabricar, consumos: consumos });
+    });
+
+    state.materials.forEach(function (m) {
+      if (simStock[m.id] < -1e-9) {
+        res.faltantes.push({ nombre: m.name || "Sin nombre", falta: -simStock[m.id], unidad: stockUnit(m) });
+      }
+    });
+    res.ok = res.faltantes.length === 0;
+    return res;
+  }
+
   function deliverOrder(o) {
-    var plan = shoppingFor(o.items);
-    if (!plan.ok) {
-      var faltan = plan.lines.filter(function (l) { return l.falta > 1e-9; })
-        .map(function (l) { return l.material.name || "sin nombre"; });
-      return { error: "No alcanza el stock de: " + faltan.join(", ") };
-    }
-    var use = aggregateUse(o.items);
-    Object.keys(use).forEach(function (id) {
-      var m = materialById(id);
-      if (m) m.stock = Math.max(0, parseNum(m.stock) - use[id]);
+    var plan = planEntrega(o);
+    if (!plan.ok) return { error: textoFaltantes(plan) };
+
+    plan.lineas.forEach(function (l) {
+      if (l.deHechos > 0) l.producto.stock = hechos(l.producto) - l.deHechos;
+      l.consumos.forEach(function (c) {
+        c.material.stock = Math.max(0, parseNum(c.material.stock) - c.use);
+      });
     });
     o.estado = "entregado";
     o.entregado = new Date().toISOString().slice(0, 10);
-    return { ok: true };
+    return { ok: true, plan: plan };
   }
 
-  /* cuántas unidades de un producto se pueden ofrecer al público hoy */
+  /* lo que se puede ofrecer hoy: lo ya hecho más lo que dan los materiales */
   function availableUnits(p) {
     var cap = capacity(p);
-    return cap.units == null ? null : Math.max(0, cap.units);
+    var desdeMateriales = llevaMateriales() && cap.units != null ? Math.max(0, cap.units) : 0;
+    if (!llevaFabricados()) return cap.units == null ? null : desdeMateriales;
+    if (!llevaMateriales()) return hechos(p);
+    return hechos(p) + desdeMateriales;
   }
 
   function publicCatalog() {
@@ -1332,7 +1406,7 @@
 
   function addProduct() {
     var p = { id: uid(), name: "", type: "producto", materials: [], costs: [],
-      pricingMode: "margen", pricingValue: 40, manualPrice: "" };
+      pricingMode: "margen", pricingValue: 40, manualPrice: "", stock: "" };
     state.products.push(p);
     ui.open[p.id] = true;
     save(); render();
@@ -1340,10 +1414,8 @@
 
   /* ---------------- render: materiales ---------------- */
 
-  function renderMateriales() {
-    var root = document.getElementById("tab-materiales");
-    root.innerHTML = "";
-
+  /* vista de materiales dentro de Inventario: catálogo y existencias juntos */
+  function pintarMateriales(root) {
     root.appendChild(el("p", { class: "note", style: "margin:0 2px 12px",
       text: "Esta lista se reutiliza en todos los productos. Escribe el costo por unidad, o el precio de compra y las unidades que trae para que se calcule solo." }));
 
@@ -1354,6 +1426,18 @@
       ]));
       return;
     }
+
+    var t = inventoryTotals();
+    var strip = el("dl", { class: "strip" });
+    [["Valor en inventario", money(t.valor), ""],
+     ["Bajo el inicial", String(t.bajos) + (t.bajos === 1 ? " ítem" : " ítems"), t.bajos ? "loss" : ""],
+     ["Reponer cuesta", money(t.reposicion), "cost"]].forEach(function (c) {
+      strip.appendChild(el("div", {}, [
+        el("dt", { text: c[0] }),
+        el("dd", { text: c[1], style: c[2] === "loss" ? "color:var(--danger)" : c[2] === "cost" ? "color:var(--cost)" : "" })
+      ]));
+    });
+    root.appendChild(strip);
 
     state.materials.forEach(function (m, idx) {
       var card = el("div", { class: "mat-card" });
@@ -1468,6 +1552,41 @@
           : "Cobra solo la superficie que ocupas; el resto del pliego queda disponible." }));
       }
 
+      /* existencias del material, antes en su propia pestaña */
+      var unidad = stockUnit(m);
+      var estado = el("div", { class: "unit-cost" });
+      function refreshEstado() {
+        var stock = parseNum(m.stock), target = stockTarget(m);
+        var bajo = target > 0 && stock < target;
+        estado.innerHTML = "";
+        estado.className = "unit-cost" + (bajo ? " low" : "");
+        if (bajo) {
+          var rc = restockCost(m, target - stock);
+          estado.appendChild(el("span", { text: rc.packs
+            ? "Faltan " + fmtQty(target - stock) + " " + unidad + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
+            : "Faltan " + fmtQty(target - stock) + " " + unidad }));
+          estado.appendChild(el("b", { text: money(rc.cost) }));
+        } else {
+          estado.appendChild(el("span", { text: "Valor de estas existencias" }));
+          estado.appendChild(el("b", { text: money(stock * stockUnitValue(m)) }));
+        }
+      }
+
+      card.appendChild(el("div", { class: "row measures", style: "margin-top:12px" }, [
+        el("div", { class: "grow" }, [
+          el("label", { class: "field", text: "Stock actual (" + unidad + ")" }),
+          el("input", { class: "num", type: "text", inputmode: "decimal", value: m.stock, placeholder: "0",
+            oninput: function (e) { m.stock = e.target.value; save(); refreshEstado(); } })
+        ]),
+        el("div", { class: "grow" }, [
+          el("label", { class: "field", text: "Stock inicial" }),
+          el("input", { class: "num", type: "text", inputmode: "decimal", value: stockTarget(m) || "", placeholder: "0",
+            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(); refreshEstado(); } })
+        ])
+      ]));
+      card.appendChild(estado);
+      refreshEstado();
+
       root.appendChild(card);
     });
 
@@ -1482,7 +1601,7 @@
       buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area",
       stock: "", stockMin: "" });
     save(); render();
-    var cards = document.querySelectorAll("#tab-materiales .mat-card");
+    var cards = document.querySelectorAll("#tab-inventario .mat-card");
     if (cards.length) {
       var input = cards[cards.length - 1].querySelector("input[type=text]");
       if (input) input.focus();
@@ -1702,19 +1821,16 @@
     ESTADOS.forEach(function (e2) {
       segEstado.appendChild(el("button", { type: "button", text: e2.label, "aria-pressed": o.estado === e2.id,
         onclick: function () {
-          if (e2.id === "entregado") {
-            var res = deliverOrder(o);
-            if (res.error) { toast(res.error); return; }
-            sincronizarEstado(o);
-            save(); render(); toast("Entregado y stock descontado");
-            return;
-          }
+          /* entregar abre su ventana: hay que ver de dónde sale cada unidad */
+          if (e2.id === "entregado") { abrirEntrega(o); return; }
           o.estado = e2.id; sincronizarEstado(o); save(); render();
         } }));
     });
     body.appendChild(el("div", { class: "sec" }, [
       el("label", { class: "field", text: "Estado" }), segEstado,
-      el("p", { class: "note", text: "Marcar entregado descuenta los " + rubro().insumoPlural + " del inventario." })
+      el("p", { class: "note", text: llevaFabricados()
+        ? "Al entregar se usan primero las unidades ya hechas; el resto se descuenta de los " + rubro().insumoPlural + "."
+        : "Marcar entregado descuenta los " + rubro().insumoPlural + " del inventario." })
     ]));
 
     if (o.whatsapp) {
@@ -1754,24 +1870,60 @@
 
   /* ---------------- render: inventario ---------------- */
 
+  function vistasInventario() {
+    var v = [];
+    if (llevaMateriales()) v.push("materiales");
+    if (llevaFabricados()) v.push("fabricados");
+    return v.length ? v : ["materiales"];
+  }
+
+  function vistaValida(v) { return vistasInventario().indexOf(v) > -1; }
+
   function renderInventario() {
     var root = document.getElementById("tab-inventario");
     root.innerHTML = "";
 
-    if (!state.materials.length) {
+    var vistas = vistasInventario();
+    if (!vistaValida(ui.vista)) ui.vista = vistas[0];
+
+    /* con los dos módulos activos (modo mixto) se elige qué mirar */
+    if (vistas.length > 1) {
+      var seg = el("div", { class: "seg", style: "margin-bottom:12px" });
+      var etiquetas = { materiales: rubro().insumos, fabricados: "Fabricados" };
+      vistas.forEach(function (v) {
+        seg.appendChild(el("button", { type: "button", text: etiquetas[v], "aria-pressed": ui.vista === v,
+          onclick: function () { ui.vista = v; render(); } }));
+      });
+      root.appendChild(seg);
+    }
+
+    if (ui.vista === "fabricados") pintarFabricados(root);
+    else pintarMateriales(root);
+  }
+
+  /* vista de productos terminados: lo que ya está hecho y listo para vender */
+  function pintarFabricados(root) {
+    if (!state.products.length) {
       root.appendChild(el("div", { class: "empty" }, [
-        el("p", { text: "El inventario se arma con tus " + rubro().insumoPlural + ". Agrega al menos uno para llevar existencias." }),
-        el("button", { class: "btn primary", type: "button", text: "Ir a " + rubro().insumos,
-          onclick: function () { ui.tab = "materiales"; render(); } })
+        el("p", { text: "Aquí llevas la cuenta de lo que ya tienes hecho. Crea un producto para empezar." }),
+        el("button", { class: "btn primary", type: "button", text: "Ir a Productos",
+          onclick: function () { ui.tab = "productos"; render(); } })
       ]));
       return;
     }
 
-    var t = inventoryTotals();
+    var unidades = 0, valor = 0, sinStock = 0;
+    state.products.forEach(function (p) {
+      var n = hechos(p);
+      unidades += n;
+      valor += n * calc(p).total;
+      if (n <= 0) sinStock++;
+    });
+
     var strip = el("dl", { class: "strip" });
-    [["Valor en inventario", money(t.valor), ""],
-     ["Bajo el inicial", String(t.bajos) + (t.bajos === 1 ? " material" : " materiales"), t.bajos ? "loss" : ""],
-     ["Reponer cuesta", money(t.reposicion), "cost"]].forEach(function (c) {
+    [["Unidades hechas", fmtQty(unidades), ""],
+     ["Sin existencia", String(sinStock) + (sinStock === 1 ? " producto" : " productos"), sinStock ? "loss" : ""],
+     ["Costo inmovilizado", money(valor), "cost"]].forEach(function (c) {
       strip.appendChild(el("div", {}, [
         el("dt", { text: c[0] }),
         el("dd", { text: c[1], style: c[2] === "loss" ? "color:var(--danger)" : c[2] === "cost" ? "color:var(--cost)" : "" })
@@ -1779,153 +1931,82 @@
     });
     root.appendChild(strip);
 
-    /* existencias por material */
-    root.appendChild(el("h3", { class: "sec-title", text: "Existencias" }));
     root.appendChild(el("p", { class: "note", style: "margin:0 2px 10px",
-      text: "El stock inicial es el nivel al que quieres volver. Reponer se calcula comprando paquetes enteros." }));
+      text: llevaMateriales()
+        ? "Al fabricar, las unidades se suman aquí y se descuentan de tus " + rubro().insumoPlural + ". Al entregar un pedido se usan primero estas unidades."
+        : "Ajusta a mano lo que tengas hecho. Al entregar un pedido se descuenta de aquí." }));
 
-    state.materials.forEach(function (m) {
-      var unidad = stockUnit(m);
-      var valorUnit = stockUnitValue(m);
-      var size = packSize(m), price = packPrice(m);
+    var reservado = unidadesComprometidas();
+
+    state.products.forEach(function (p) {
       var card = el("div", { class: "mat-card" });
-
-      var estado = el("div", { class: "unit-cost" });
-      function refreshEstado() {
-        var stock = parseNum(m.stock), target = stockTarget(m);
-        var bajo = target > 0 && stock < target;
-        estado.innerHTML = "";
-        estado.className = "unit-cost" + (bajo ? " low" : "");
-        if (bajo) {
-          var rc = restockCost(m, target - stock);
-          estado.appendChild(el("span", { text: rc.packs
-            ? "Faltan " + fmtQty(target - stock) + " " + unidad + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
-            : "Faltan " + fmtQty(target - stock) + " " + unidad }));
-          estado.appendChild(el("b", { text: money(rc.cost) }));
-        } else {
-          estado.appendChild(el("span", { text: "Valor de estas existencias" }));
-          estado.appendChild(el("b", { text: money(stock * valorUnit) }));
-        }
-      }
+      var pedidas = reservado[p.id] || 0;
 
       card.appendChild(el("div", { class: "row" }, [
         el("div", { class: "grow" }, [
-          el("h4", { style: "margin:0;font-size:14px", text: m.name || "Sin nombre" }),
+          el("h4", { style: "margin:0;font-size:14px", text: p.name || "Sin nombre" }),
           el("p", { class: "note", style: "margin:2px 0 0",
-            text: size > 0 && price > 0
-              ? "Compras " + fmtQty(size) + " " + unidad + " por " + money(price) + " · " + money(valorUnit) + " cada " + unidad
-              : money(valorUnit) + " por " + unidad })
+            text: "Cuesta " + money(calc(p).total) + " cada una" +
+              (pedidas > 0 ? " · " + fmtQty(pedidas) + " comprometidas en pedidos" : "") })
         ])
       ]));
 
-      card.appendChild(el("div", { class: "row measures" }, [
+      var estado = el("div", { class: "unit-cost" });
+      function refreshEstado() {
+        var hay = hechos(p);
+        var falta = pedidas - hay;
+        estado.innerHTML = "";
+        estado.className = "unit-cost" + (falta > 0 ? " low" : "");
+        if (falta > 0) {
+          estado.appendChild(el("span", { text: "Faltan " + fmtQty(falta) + " para cubrir los pedidos" }));
+          estado.appendChild(el("b", { text: fmtQty(hay) + " hechas" }));
+        } else {
+          estado.appendChild(el("span", { text: "Valor de lo fabricado" }));
+          estado.appendChild(el("b", { text: money(hay * calc(p).total) }));
+        }
+      }
+
+      card.appendChild(el("div", { class: "row measures", style: "margin-top:10px" }, [
         el("div", { class: "grow" }, [
-          el("label", { class: "field", text: "Stock actual (" + unidad + ")" }),
-          el("input", { class: "num", type: "text", inputmode: "decimal", value: m.stock, placeholder: "0",
-            oninput: function (e) { m.stock = e.target.value; save(); refreshEstado(); } })
+          el("label", { class: "field", text: "Unidades hechas" }),
+          el("input", { class: "num", type: "text", inputmode: "decimal", value: p.stock == null ? "" : p.stock,
+            placeholder: "0", "aria-label": "Unidades hechas de " + (p.name || "producto"),
+            oninput: function (e) { p.stock = e.target.value; save(); refreshEstado(); } })
         ]),
         el("div", { class: "grow" }, [
-          el("label", { class: "field", text: "Stock inicial" }),
-          el("input", { class: "num", type: "text", inputmode: "decimal", value: stockTarget(m) || "", placeholder: "0",
-            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(); refreshEstado(); } })
+          el("label", { class: "field", text: "Se puede fabricar" }),
+          el("p", { class: "note", style: "margin:6px 0 0", text: textoCapacidad(p) })
         ])
       ]));
 
       card.appendChild(estado);
       refreshEstado();
-      root.appendChild(card);
-    });
 
-    /* lote por producto */
-    if (!state.products.length) return;
-
-    root.appendChild(el("h3", { class: "sec-title", text: "Cuánto vender para reponer" }));
-    root.appendChild(el("p", { class: "note", style: "margin:0 2px 10px",
-      text: "Simula un lote: cuánto consume, qué paquetes hay que recomprar y cuántas de esas unidades pagan la reposición." }));
-
-    state.products.forEach(function (p) {
-      if (!p.materials.length) return;
-      var cap = capacity(p);
-      var card = el("div", { class: "mat-card" });
-
-      card.appendChild(el("h4", { style: "margin:0 0 4px;font-size:14px", text: p.name || "Sin nombre" }));
-      card.appendChild(el("p", { class: "note", style: "margin:0 0 8px",
-        text: cap.units == null ? "Sin materiales con consumo definido"
-          : "Alcanzas para " + cap.units + (cap.units === 1 ? " unidad" : " unidades") +
-            (cap.limiting ? " · se acaba primero: " + (cap.limiting.name || "sin nombre") : "") }));
-
-      if (cap.units == null) { root.appendChild(card); return; }
-
-      var lote = cap.units > 0 ? cap.units : 1;
-      var input = el("input", { class: "num", type: "text", inputmode: "decimal", value: lote,
-        "aria-label": "Unidades del lote",
-        oninput: function (e) { lote = e.target.value; refreshPlan(); } });
-
-      card.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Lote a producir" })]),
-        el("div", { class: "qty" }, [input])
-      ]));
-
-      var detalle = el("div", { class: "plan" });
-      var resumen = el("div", { class: "unit-cost" });
-
-      function refreshPlan() {
-        var plan = batchPlan(p, lote);
-        detalle.innerHTML = "";
-        resumen.innerHTML = "";
-
-        plan.lines.forEach(function (l) {
-          var unidad = stockUnit(l.material);
-          var txt = fmtQty(l.use) + " " + unidad + " · quedan " + fmtQty(Math.max(0, l.after));
-          var repo = l.deficit > 0
-            ? (l.packs ? "recomprar " + l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost)
-                       : "reponer " + money(l.cost))
-            : "sin reponer";
-          detalle.appendChild(el("div", { class: "plan-row" + (l.after < 0 ? " short" : "") }, [
-            el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-            el("span", { class: "plan-use", text: txt }),
-            el("span", { class: "plan-cost", text: repo })
-          ]));
-        });
-
-        if (plan.cost <= 0) {
-          resumen.className = "unit-cost";
-          resumen.appendChild(el("span", { text: "Con ese lote no bajas del stock inicial" }));
-          resumen.appendChild(el("b", { text: money(0) }));
-        } else if (plan.sell == null) {
-          resumen.className = "unit-cost low";
-          resumen.appendChild(el("span", { text: "Define un precio de venta para calcular las ventas" }));
-          resumen.appendChild(el("b", { text: money(plan.cost) }));
-        } else {
-          var alcanza = plan.sell <= parseNum(lote);
-          resumen.className = "unit-cost" + (alcanza ? "" : " low");
-          resumen.appendChild(el("span", { text: "Reponer cuesta " + money(plan.cost) +
-            (alcanza ? " · vendes " + plan.sell + " de " + fmtQty(lote) : " · no alcanza con este lote") }));
-          resumen.appendChild(el("b", { text: plan.sell + (plan.sell === 1 ? " unidad" : " unidades") }));
-        }
-
-        if (plan.sobra > 0.001) {
-          detalle.appendChild(el("p", { class: "note", style: "margin:6px 0 0",
-            text: "Los paquetes dejan sobra para los siguientes lotes." }));
-        }
+      if (llevaMateriales() && p.materials.length) {
+        card.appendChild(el("button", { class: "btn small", type: "button", text: "Fabricar…",
+          style: "margin-top:10px", onclick: function () { abrirProducir(p); } }));
       }
-
-      card.appendChild(detalle);
-      card.appendChild(resumen);
-      refreshPlan();
-
-      card.appendChild(el("button", { class: "btn small", type: "button", text: "Registrar esta producción",
-        style: "margin-top:10px", onclick: function () {
-          var res = produce(p, lote);
-          if (res.error) { toast(res.error); return; }
-          save(); render();
-          toast("Stock descontado por " + res.units + (res.units === 1 ? " unidad" : " unidades"));
-        } }));
 
       root.appendChild(card);
     });
   }
 
+  function textoCapacidad(p) {
+    if (!llevaMateriales()) return "Ajuste manual";
+    var cap = capacity(p);
+    if (cap.units == null) return "Sin consumo definido";
+    return fmtQty(cap.units) + (cap.units === 1 ? " unidad" : " unidades") +
+      (cap.limiting ? " · limita " + (cap.limiting.name || "sin nombre") : "");
+  }
+
+  /* unidades ya prometidas en pedidos que aún no se entregan */
+  function unidadesComprometidas() {
+    var out = {};
+    pendingItems().forEach(function (it) {
+      out[it.productId] = (out[it.productId] || 0) + parseNum(it.qty);
+    });
+    return out;
+  }
 
   /* ---------------- firebase ---------------- */
 
@@ -2250,7 +2331,7 @@
       detalle: "Tejido, joyería, decoración, papelería, velas.",
       insumo: "Material", insumos: "Materiales", insumoPlural: "materiales",
       receta: "Materiales que lleva",
-      modulos: { inventario: true, tienda: true, lotes: false }
+      modulos: { inventario: true, tienda: true, lotes: false, materiales: true, fabricados: false }
     },
     comida: {
       emoji: "🧁",
@@ -2258,7 +2339,7 @@
       detalle: "Tortas, panadería, conservas, catering.",
       insumo: "Ingrediente", insumos: "Ingredientes", insumoPlural: "ingredientes",
       receta: "Receta",
-      modulos: { inventario: true, tienda: true, lotes: true }
+      modulos: { inventario: true, tienda: true, lotes: true, materiales: true, fabricados: false }
     },
     general: {
       emoji: "📦",
@@ -2266,7 +2347,7 @@
       detalle: "Cualquier cosa que produzcas con insumos.",
       insumo: "Insumo", insumos: "Insumos", insumoPlural: "insumos",
       receta: "Insumos que lleva",
-      modulos: { inventario: true, tienda: true, lotes: false }
+      modulos: { inventario: true, tienda: true, lotes: false, materiales: true, fabricados: false }
     }
   };
 
@@ -2422,6 +2503,9 @@
     ops.appendChild(opcion(wiz.modo === "stock", "🏷️", "Con stock listo",
       "Produzco antes y vendo lo que tengo hecho.",
       function () { wiz.modo = "stock"; pintarAsistente(); }));
+    ops.appendChild(opcion(wiz.modo === "mixta", "🔄", "Las dos cosas",
+      "Fabrico por adelantado y además tomo pedidos. Lo ya hecho cuenta como existencia y se descuenta de los " + (RUBROS[wiz.rubro] || RUBROS.general).insumoPlural + " al fabricarlo.",
+      function () { wiz.modo = "mixta"; pintarAsistente(); }));
     card.appendChild(ops);
 
     var chk = el("input", { type: "checkbox", id: "wizTienda" });
@@ -2445,7 +2529,9 @@
     state.settings.modulos = {
       inventario: r.modulos.inventario,
       tienda: wiz.tienda,
-      lotes: r.modulos.lotes
+      lotes: r.modulos.lotes,
+      materiales: wiz.modo !== "stock",
+      fabricados: wiz.modo !== "encargo"
     };
     state.settings.configurado = true;
 
@@ -2460,11 +2546,187 @@
   /* pone en pantalla las palabras del rubro y esconde lo que no se usa */
   function aplicarLenguaje() {
     var r = rubro();
-    var tab = document.querySelector('.tabs button[data-tab="materiales"]');
-    if (tab) tab.textContent = r.insumos;
     var tabInv = document.querySelector('.tabs button[data-tab="inventario"]');
     if (tabInv) tabInv.hidden = !moduloActivo("inventario");
     if (!moduloActivo("inventario") && ui.tab === "inventario") ui.tab = "productos";
+    if (!vistaValida(ui.vista)) ui.vista = vistasInventario()[0];
+  }
+
+  /* ---------------- ventanas de producción y entrega ---------------- */
+
+  function abrirVentana(titulo, construir) {
+    var bg = el("div", { class: "sheet-bg", onclick: function (e) { if (e.target === bg) cerrar(); } });
+    var cuerpo = el("div", { class: "cuerpo" });
+    var sheet = el("div", { class: "sheet" }, [el("h3", { text: titulo }), cuerpo]);
+    function cerrar() { bg.remove(); document.removeEventListener("keydown", esc); }
+    function esc(e) { if (e.key === "Escape") cerrar(); }
+    document.addEventListener("keydown", esc);
+    bg.appendChild(sheet);
+    document.body.appendChild(bg);
+    construir(cuerpo, sheet, cerrar);
+    return cerrar;
+  }
+
+  function filaPlan(nombre, detalle, cls) {
+    return el("div", { class: "plan-row" + (cls ? " " + cls : "") }, [
+      el("span", { class: "plan-name", text: nombre }),
+      el("span", { class: "plan-use", text: detalle })
+    ]);
+  }
+
+  /* fabricar un lote: qué consume, qué falta, cuánto cuesta reponer */
+  function abrirProducir(p) {
+    abrirVentana("Fabricar " + (p.name || "producto"), function (cuerpo, sheet, cerrar) {
+      var cap = capacity(p);
+      var lote = cap.units != null && cap.units > 0 ? String(cap.units) : "1";
+
+      var input = el("input", { class: "num", type: "text", inputmode: "decimal", value: lote,
+        "aria-label": "Unidades a fabricar" });
+      cuerpo.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidades a fabricar" })]),
+        el("div", { class: "qty" }, [input])
+      ]));
+
+      if (llevaFabricados()) {
+        cuerpo.appendChild(el("p", { class: "note", style: "margin:6px 0 0",
+          text: "Tienes " + fmtQty(hechos(p)) + (hechos(p) === 1 ? " unidad hecha" : " unidades hechas") +
+            ". Lo que fabriques se suma a esa existencia." }));
+      }
+
+      var detalle = el("div", { class: "plan" });
+      var resumen = el("div", { class: "unit-cost" });
+      var accion = el("button", { class: "btn primary", type: "button", text: "Registrar fabricación" });
+
+      function refrescar() {
+        var n = parseNum(input.value);
+        detalle.innerHTML = "";
+        resumen.innerHTML = "";
+
+        if (!llevaMateriales()) {
+          resumen.className = "unit-cost";
+          resumen.appendChild(el("span", { text: "Se sumarán a tus existencias" }));
+          resumen.appendChild(el("b", { text: fmtQty(n) + (n === 1 ? " unidad" : " unidades") }));
+          accion.disabled = n <= 0;
+          return;
+        }
+
+        var plan = batchPlan(p, n);
+        plan.lines.forEach(function (l) {
+          var unidad = stockUnit(l.material);
+          detalle.appendChild(filaPlan(l.material.name || "Sin nombre",
+            "usa " + fmtQty(l.use) + " " + unidad + " · quedan " + fmtQty(Math.max(0, l.after)),
+            l.after < 0 ? "short" : ""));
+        });
+        if (!plan.lines.length) {
+          detalle.appendChild(el("p", { class: "note", style: "margin:8px 0 0",
+            text: "Este producto no tiene " + rubro().insumoPlural + " con consumo definido." }));
+        }
+
+        var faltan = plan.lines.filter(function (l) { return l.deficit > 0; });
+        if (faltan.length) {
+          resumen.className = "unit-cost low";
+          resumen.appendChild(el("span", { text: "No alcanza para ese lote · reponer cuesta " + money(plan.cost) }));
+          resumen.appendChild(el("b", { text: faltan.length + (faltan.length === 1 ? " faltante" : " faltantes") }));
+        } else {
+          resumen.className = "unit-cost";
+          resumen.appendChild(el("span", { text: "Costo de los " + rubro().insumoPlural + " que consume" }));
+          resumen.appendChild(el("b", { text: money(costoLote(p, n)) }));
+        }
+        accion.disabled = n <= 0 || faltan.length > 0;
+      }
+
+      input.addEventListener("input", refrescar);
+      cuerpo.appendChild(detalle);
+      cuerpo.appendChild(resumen);
+      refrescar();
+
+      accion.addEventListener("click", function () {
+        var res = fabricar(p, input.value);
+        if (res.error) { toast(res.error); return; }
+        save(); render(); cerrar();
+        toast(llevaFabricados()
+          ? "Fabricadas " + fmtQty(res.units) + (res.units === 1 ? " unidad" : " unidades")
+          : "Descontado el consumo de " + fmtQty(res.units) + (res.units === 1 ? " unidad" : " unidades"));
+      });
+
+      sheet.appendChild(el("div", { class: "actions" }, [
+        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
+        accion
+      ]));
+    });
+  }
+
+  function costoLote(p, n) {
+    var total = 0;
+    p.materials.forEach(function (line) {
+      total += lineCost(line) * parseNum(n);
+    });
+    return total;
+  }
+
+  /* entregar un pedido: qué sale de lo hecho y qué hay que fabricar */
+  function abrirEntrega(o) {
+    abrirVentana("Entregar pedido de " + (o.cliente || "cliente"), function (cuerpo, sheet, cerrar) {
+      var plan = planEntrega(o);
+
+      var detalle = el("div", { class: "plan" });
+      plan.lineas.forEach(function (l) {
+        var partes = [];
+        if (l.deHechos > 0) partes.push(fmtQty(l.deHechos) + " de lo ya hecho");
+        if (l.aFabricar > 0) partes.push(fmtQty(l.aFabricar) + " por fabricar");
+        detalle.appendChild(filaPlan(l.producto.name || "Sin nombre",
+          fmtQty(l.qty) + " × · " + (partes.join(" + ") || "sin consumo")));
+      });
+      if (!plan.lineas.length) {
+        detalle.appendChild(el("p", { class: "note", text: "Este pedido no tiene productos de tu catálogo." }));
+      }
+      cuerpo.appendChild(detalle);
+
+      if (plan.aFabricar > 0 && llevaMateriales()) {
+        var consumo = {};
+        plan.lineas.forEach(function (l) {
+          l.consumos.forEach(function (c) {
+            if (!consumo[c.material.id]) consumo[c.material.id] = { material: c.material, use: 0 };
+            consumo[c.material.id].use += c.use;
+          });
+        });
+        var claves = Object.keys(consumo);
+        if (claves.length) {
+          cuerpo.appendChild(el("h4", { style: "margin:14px 0 0;font-size:13px",
+            text: rubro().insumos + " que se descuentan" }));
+          var mats = el("div", { class: "plan" });
+          claves.forEach(function (k) {
+            var c = consumo[k];
+            var queda = parseNum(c.material.stock) - c.use;
+            mats.appendChild(filaPlan(c.material.name || "Sin nombre",
+              fmtQty(c.use) + " " + stockUnit(c.material) + " · quedan " + fmtQty(Math.max(0, queda)),
+              queda < 0 ? "short" : ""));
+          });
+          cuerpo.appendChild(mats);
+        }
+      }
+
+      var resumen = el("div", { class: "unit-cost" + (plan.ok ? "" : " low") });
+      if (plan.ok) {
+        resumen.appendChild(el("span", { text: "Todo listo para entregar" }));
+        resumen.appendChild(el("b", { text: money(orderTotals(o).ingreso) }));
+      } else {
+        resumen.appendChild(el("span", { text: textoFaltantes(plan) }));
+      }
+      cuerpo.appendChild(resumen);
+
+      sheet.appendChild(el("div", { class: "actions" }, [
+        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
+        el("button", { class: "btn primary", type: "button", text: "Confirmar entrega", disabled: !plan.ok,
+          onclick: function () {
+            var res = deliverOrder(o);
+            if (res.error) { toast(res.error); return; }
+            sincronizarEstado(o);
+            save(); render(); cerrar();
+            toast("Pedido entregado");
+          } })
+      ]));
+    });
   }
 
   /* ---------------- render: ajustes ---------------- */
@@ -2511,13 +2773,40 @@
       state.settings.rubro = rubroSel.value;
       /* el rubro vuelve a mandar sobre los módulos que él decide */
       var m = state.settings.modulos || {};
-      state.settings.modulos = Object.assign({}, RUBROS[rubroSel.value].modulos, { tienda: m.tienda !== false });
+      state.settings.modulos = Object.assign({}, RUBROS[rubroSel.value].modulos, {
+        tienda: m.tienda !== false,
+        materiales: m.materiales !== false,
+        fabricados: m.fabricados === true
+      });
       save(); aplicarLenguaje(); render();
       toast("Rubro actualizado");
     });
     negocioCard.appendChild(rubroSel);
     negocioCard.appendChild(el("p", { class: "note",
       text: "Define cómo se llaman tus " + rubro().insumoPlural + " y qué secciones ves." }));
+
+    negocioCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Cómo vendes" }));
+    var modoSeg = el("div", { class: "seg tiny" });
+    [["encargo", "Por encargo"], ["stock", "Con stock listo"], ["mixta", "Las dos"]].forEach(function (o) {
+      modoSeg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": state.settings.modo === o[0],
+        onclick: function () {
+          state.settings.modo = o[0];
+          state.settings.modulos = Object.assign({}, modulos(), {
+            materiales: o[0] !== "stock",
+            fabricados: o[0] !== "encargo"
+          });
+          if (!vistaValida(ui.vista)) ui.vista = vistasInventario()[0];
+          save(); render();
+          toast("Listo: " + o[1].toLowerCase());
+        } }));
+    });
+    negocioCard.appendChild(modoSeg);
+    negocioCard.appendChild(el("p", { class: "note",
+      text: state.settings.modo === "mixta"
+        ? "Llevas " + rubro().insumoPlural + " y unidades ya fabricadas: al entregar se usan primero las hechas."
+        : state.settings.modo === "stock"
+          ? "Solo llevas la cuenta de lo que tienes hecho."
+          : "Produces al recibir el pedido, descontando " + rubro().insumoPlural + "." }));
 
     var invChk = el("input", { type: "checkbox", id: "modInv" });
     invChk.checked = moduloActivo("inventario");
@@ -3018,7 +3307,7 @@
 
   function render() {
     if (ui.tab === "inventario" && !moduloActivo("inventario")) ui.tab = "productos";
-    ["productos", "pedidos", "materiales", "inventario", "ajustes"].forEach(function (t) {
+    ["productos", "pedidos", "inventario", "ajustes"].forEach(function (t) {
       document.getElementById("tab-" + t).hidden = ui.tab !== t;
     });
     var btns = document.querySelectorAll(".tabs button");
@@ -3027,7 +3316,6 @@
     }
     if (ui.tab === "productos") renderProductos();
     else if (ui.tab === "pedidos") renderPedidos();
-    else if (ui.tab === "materiales") renderMateriales();
     else if (ui.tab === "inventario") renderInventario();
     else renderAjustes();
     var sel = document.getElementById("currency");
