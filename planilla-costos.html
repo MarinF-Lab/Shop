@@ -75,17 +75,23 @@
     position: sticky;
     top: 0;
     z-index: 5;
+    /* con cinco pestañas y contadores, en pantallas angostas se desliza
+       en vez de partir los nombres en dos líneas */
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  .tabs::-webkit-scrollbar { display: none; }
   .tabs button {
-    flex: 1;
+    flex: 1 0 auto;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    padding: 13px 2px;
+    padding: 13px 10px;
     font: inherit;
     font-size: 13px;
     color: var(--muted);
     cursor: pointer;
+    white-space: nowrap;
   }
   .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 
@@ -478,14 +484,16 @@
   </div>
 
   <div class="tabs" role="tablist">
-    <button role="tab" data-tab="productos" aria-selected="true">Productos</button>
+    <button role="tab" data-tab="inicio" aria-selected="true">Inicio</button>
+    <button role="tab" data-tab="productos" aria-selected="false">Productos</button>
     <button role="tab" data-tab="pedidos" aria-selected="false">Pedidos</button>
     <button role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
     <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
   </div>
 
   <div class="wrap">
-    <section id="tab-productos"></section>
+    <section id="tab-inicio"></section>
+    <section id="tab-productos" hidden></section>
     <section id="tab-pedidos" hidden></section>
     <section id="tab-inventario" hidden></section>
     <section id="tab-ajustes" hidden></section>
@@ -565,7 +573,7 @@
 
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
-  var ui = { tab: "productos", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {} };
+  var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {} };
 
   /* ---------------- utilidades ---------------- */
 
@@ -1090,7 +1098,7 @@
     state = estadoInicial();
     ui.open = {};
     ui.confirming = null;
-    ui.tab = "productos";
+    ui.tab = "inicio";
   }
 
   window.addEventListener("beforeunload", function (e) {
@@ -1315,6 +1323,197 @@
       el("button", { class: "btn small", type: "button", text: "Limpiar búsqueda",
         onclick: function () { f.q = ""; f.tag = ""; repintar(); } })
     ]);
+  }
+
+  /* ---------------- render: inicio ----------------
+     Lo que hay que mirar hoy: qué urge, qué falta comprar y cómo va el mes. */
+
+  function mesActual() { return hoy().slice(0, 7); }
+
+  function mesAnterior() {
+    var d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().slice(0, 7);
+  }
+
+  /* ingreso, costo y ganancia de lo entregado en un mes */
+  function balanceMes(mes) {
+    var b = { ingreso: 0, costo: 0, ganancia: 0, pedidos: 0 };
+    state.orders.forEach(function (o) {
+      if (o.estado !== "entregado") return;
+      var fecha = o.entregado || o.fecha || o.creado || "";
+      if (String(fecha).slice(0, 7) !== mes) return;
+      var t = orderTotals(o);
+      b.ingreso += t.ingreso; b.costo += t.costo; b.ganancia += t.ganancia;
+      b.pedidos++;
+    });
+    return b;
+  }
+
+  function diasHasta(fecha) {
+    if (!fecha) return null;
+    var ms = new Date(fecha + "T00:00:00") - new Date(hoy() + "T00:00:00");
+    return Math.round(ms / 86400000);
+  }
+
+  function textoPlazo(o) {
+    var d = diasHasta(o.fecha);
+    if (d == null) return "sin fecha comprometida";
+    if (d < 0) return "atrasado " + Math.abs(d) + (Math.abs(d) === 1 ? " día" : " días");
+    if (d === 0) return "entrega hoy";
+    if (d === 1) return "entrega mañana";
+    return "entrega en " + d + " días";
+  }
+
+  function renderInicio() {
+    var root = document.getElementById("tab-inicio");
+    root.innerHTML = "";
+
+    var abiertos = pendingOrders();
+    var atrasados = state.orders.filter(atrasado);
+
+    /* --- el mes --- */
+    var mes = balanceMes(mesActual()), previo = balanceMes(mesAnterior());
+    var strip = el("dl", { class: "strip" });
+    [["Ingreso del mes", money(mes.ingreso), ""],
+     ["Costo", money(mes.costo), "cost"],
+     ["Ganancia", money(mes.ganancia), mes.ganancia < 0 ? "loss" : "gain"]].forEach(function (c) {
+      strip.appendChild(el("div", {}, [
+        el("dt", { text: c[0] }),
+        el("dd", { text: c[1], style: c[2] === "gain" ? "color:var(--gain)" : c[2] === "loss" ? "color:var(--danger)"
+          : c[2] === "cost" ? "color:var(--cost)" : "" })
+      ]));
+    });
+    root.appendChild(strip);
+
+    var comparacion = el("p", { class: "note", style: "margin:0 2px 14px" });
+    if (!mes.pedidos && !previo.pedidos) {
+      comparacion.textContent = "Cuando marques pedidos como entregados, aquí verás cómo va el mes.";
+    } else if (!previo.ganancia) {
+      comparacion.textContent = mes.pedidos + (mes.pedidos === 1 ? " pedido entregado" : " pedidos entregados") + " este mes.";
+    } else {
+      var dif = mes.ganancia - previo.ganancia;
+      var pct = Math.round(Math.abs(dif) / Math.abs(previo.ganancia) * 100);
+      comparacion.textContent = mes.pedidos + (mes.pedidos === 1 ? " pedido entregado" : " pedidos entregados") +
+        " · ganancia " + (dif >= 0 ? "+" : "−") + pct + "% frente al mes pasado (" + money(previo.ganancia) + ").";
+    }
+    root.appendChild(comparacion);
+
+    /* --- pedidos que urgen --- */
+    var cardPedidos = el("div", { class: "mat-card" });
+    cardPedidos.appendChild(el("div", { class: "row" }, [
+      el("div", { class: "grow" }, [el("h4", { style: "margin:0;font-size:14px", text: "Pedidos que urgen" })]),
+      el("button", { class: "btn small", type: "button", text: "Ver todos",
+        onclick: function () { ui.tab = "pedidos"; render(); } })
+    ]));
+
+    if (!abiertos.length) {
+      cardPedidos.appendChild(el("p", { class: "note", style: "margin:8px 0 0",
+        text: state.orders.length ? "No hay pedidos abiertos. Todo al día." : "Todavía no tienes pedidos." }));
+    } else {
+      var urgentes = abiertos.slice().sort(function (a, b) {
+        return (a.fecha || "9999-12-31").localeCompare(b.fecha || "9999-12-31");
+      }).slice(0, 5);
+
+      var plan = el("div", { class: "plan" });
+      urgentes.forEach(function (o) {
+        var fila = el("div", { class: "plan-row" + (atrasado(o) ? " short" : ""),
+          style: "cursor:pointer", onclick: function () {
+            ui.tab = "pedidos"; ui.open[o.id] = true; render();
+          } }, [
+          el("span", { class: "plan-name", text: o.cliente || "Sin nombre" }),
+          el("span", { class: "plan-use", text: textoPlazo(o) }),
+          el("span", { class: "plan-cost", text: money(orderTotals(o).ingreso) })
+        ]);
+        plan.appendChild(fila);
+      });
+      cardPedidos.appendChild(plan);
+
+      cardPedidos.appendChild(el("div", { class: "unit-cost" + (atrasados.length ? " low" : "") }, [
+        el("span", { text: atrasados.length
+          ? atrasados.length + (atrasados.length === 1 ? " pedido atrasado" : " pedidos atrasados")
+          : abiertos.length + (abiertos.length === 1 ? " pedido abierto" : " pedidos abiertos") }),
+        el("b", { text: money(abiertos.reduce(function (t, o) { return t + orderTotals(o).ingreso; }, 0)) })
+      ]));
+    }
+    root.appendChild(cardPedidos);
+
+    /* --- qué falta comprar --- */
+    if (llevaMateriales()) root.appendChild(tarjetaCompras(abiertos));
+
+    /* --- accesos rápidos --- */
+    var accesos = el("div", { class: "mat-card" });
+    accesos.appendChild(el("h4", { style: "margin:0 0 8px;font-size:14px", text: "Empezar algo" }));
+    accesos.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo pedido",
+      onclick: function () { ui.tab = "pedidos"; render(); addOrder(); } }));
+    accesos.appendChild(el("button", { class: "btn wide", type: "button", text: "+ Nuevo producto",
+      style: "margin-top:8px", onclick: function () { ui.tab = "productos"; render(); addProduct(); } }));
+    if (llevaMateriales()) {
+      accesos.appendChild(el("button", { class: "btn wide", type: "button",
+        text: "+ Nuevo " + rubro().insumo.toLowerCase(), style: "margin-top:8px",
+        onclick: function () { ui.tab = "inventario"; ui.vista = "materiales"; render(); addMaterial(); } }));
+    }
+    root.appendChild(accesos);
+  }
+
+  /* lo que hay que comprar: lo que falta para los pedidos y lo bajo el mínimo */
+  function tarjetaCompras(abiertos) {
+    var card = el("div", { class: "mat-card" });
+    card.appendChild(el("div", { class: "row" }, [
+      el("div", { class: "grow" }, [el("h4", { style: "margin:0;font-size:14px", text: "Qué falta comprar" })]),
+      el("button", { class: "btn small", type: "button", text: "Ver inventario",
+        onclick: function () { ui.tab = "inventario"; ui.vista = "materiales"; render(); } })
+    ]));
+
+    var porPedidos = abiertos.length ? shoppingFor(pendingItems()) : { lines: [], total: 0, ok: true };
+    var faltanPedidos = porPedidos.lines.filter(function (l) { return l.falta > 1e-9; });
+
+    var bajos = state.materials.filter(function (m) { return falta(m) > 0; });
+    var yaListados = {};
+    faltanPedidos.forEach(function (l) { yaListados[l.material.id] = true; });
+
+    if (!faltanPedidos.length && !bajos.length) {
+      card.appendChild(el("div", { class: "unit-cost", style: "margin-top:8px" }, [
+        el("span", { text: "No falta nada por ahora" }),
+        el("b", { text: money(0) })
+      ]));
+      return card;
+    }
+
+    var total = 0;
+    var plan = el("div", { class: "plan" });
+
+    faltanPedidos.forEach(function (l) {
+      total += l.cost;
+      plan.appendChild(el("div", { class: "plan-row short" }, [
+        el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
+        el("span", { class: "plan-use", text: "faltan " + fmtQty(l.falta) + " " + stockUnit(l.material) + " para los pedidos" }),
+        el("span", { class: "plan-cost", text: l.packs
+          ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
+      ]));
+    });
+
+    bajos.forEach(function (m) {
+      if (yaListados[m.id]) return;
+      var rc = restockCost(m, falta(m));
+      total += rc.cost;
+      plan.appendChild(el("div", { class: "plan-row" }, [
+        el("span", { class: "plan-name", text: m.name || "Sin nombre" }),
+        el("span", { class: "plan-use", text: "bajo el mínimo · faltan " + fmtQty(falta(m)) + " " + stockUnit(m) }),
+        el("span", { class: "plan-cost", text: rc.packs
+          ? rc.packs + (rc.packs === 1 ? " paquete " : " paquetes ") + money(rc.cost) : money(rc.cost) })
+      ]));
+    });
+
+    card.appendChild(plan);
+    card.appendChild(el("div", { class: "unit-cost" + (faltanPedidos.length ? " low" : "") }, [
+      el("span", { text: faltanPedidos.length
+        ? "Comprar antes de producir los pedidos"
+        : "Para volver al nivel inicial" }),
+      el("b", { text: money(total) })
+    ]));
+    return card;
   }
 
   /* ---------------- render: productos ---------------- */
@@ -3753,14 +3952,15 @@
 
   function render() {
     if (ui.tab === "inventario" && !moduloActivo("inventario")) ui.tab = "productos";
-    ["productos", "pedidos", "inventario", "ajustes"].forEach(function (t) {
+    ["inicio", "productos", "pedidos", "inventario", "ajustes"].forEach(function (t) {
       document.getElementById("tab-" + t).hidden = ui.tab !== t;
     });
     var btns = document.querySelectorAll(".tabs button");
     for (var i = 0; i < btns.length; i++) {
       btns[i].setAttribute("aria-selected", btns[i].dataset.tab === ui.tab ? "true" : "false");
     }
-    if (ui.tab === "productos") renderProductos();
+    if (ui.tab === "inicio") renderInicio();
+    else if (ui.tab === "productos") renderProductos();
     else if (ui.tab === "pedidos") renderPedidos();
     else if (ui.tab === "inventario") renderInventario();
     else renderAjustes();
