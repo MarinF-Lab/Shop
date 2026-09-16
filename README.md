@@ -89,7 +89,8 @@ alcanzan a dar los materiales.
 
 ## Uso diario
 
-1. Abre `planilla-costos.html` y entra con Google.
+1. Abre `planilla-costos.html` y entra con Google. **Inicio** te muestra los
+   pedidos que urgen, lo que falta comprar y cómo va la ganancia del mes.
 2. Carga tus materiales con su precio de compra y su unidad.
 3. Crea productos indicando qué materiales lleva cada uno: el costo se calcula
    solo, y tú eliges el margen o el precio final.
@@ -98,6 +99,10 @@ alcanzan a dar los materiales.
 5. Marca los productos que quieras vender y pulsa **Publicar catálogo**.
 6. Copia la dirección de tu tienda (`tienda.html?tienda=TU_UID`) y compártela.
    Los pedidos que dejen tus clientes entran solos a tu agenda.
+
+Cada lista (productos, pedidos, materiales) tiene su buscador, sus filtros y
+su orden. Los pedidos se ordenan por urgencia: primero los abiertos, y dentro
+de ellos lo que vence antes.
 
 Sin el parámetro `?tienda=`, `tienda.html` muestra su catálogo de ejemplo y
 envía los pedidos por WhatsApp.

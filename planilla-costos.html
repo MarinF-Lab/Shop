@@ -75,17 +75,23 @@
     position: sticky;
     top: 0;
     z-index: 5;
+    /* con cinco pestañas y contadores, en pantallas angostas se desliza
+       en vez de partir los nombres en dos líneas */
+    overflow-x: auto;
+    scrollbar-width: none;
   }
+  .tabs::-webkit-scrollbar { display: none; }
   .tabs button {
-    flex: 1;
+    flex: 1 0 auto;
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    padding: 13px 2px;
+    padding: 13px 10px;
     font: inherit;
     font-size: 13px;
     color: var(--muted);
     cursor: pointer;
+    white-space: nowrap;
   }
   .tabs button[aria-selected="true"] { color: var(--accent); border-bottom-color: var(--accent); font-weight: 600; }
 
@@ -407,6 +413,35 @@
   .barra-paso i { height: 3px; flex: 1; border-radius: 2px; background: var(--line); }
   .barra-paso i.on { background: var(--accent); }
 
+  /* ---------- buscador ---------- */
+  .buscador { margin-bottom: 12px; }
+  .buscador input[type="search"] {
+    width: 100%; font: inherit; font-size: 15px;
+    padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 6px; background: var(--surface); color: var(--ink);
+    -webkit-appearance: none; appearance: none;
+  }
+  .buscador select.orden {
+    margin-top: 8px; width: 100%; font: inherit; font-size: 13px;
+    padding: 8px 10px; border: 1px solid var(--line);
+    border-radius: 6px; background: var(--surface); color: var(--muted);
+  }
+  .chips-filtro { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+  .chip-filtro {
+    font: inherit; font-size: 12.5px; padding: 6px 11px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 999px;
+    background: var(--surface); color: var(--muted);
+  }
+  .chip-filtro[aria-pressed="true"] {
+    background: var(--accent-soft); border-color: var(--accent);
+    color: var(--accent); font-weight: 600;
+  }
+  .tabs button .cuenta-tab {
+    display: inline-block; margin-left: 5px; font-size: 11px;
+    font-weight: 600; color: var(--muted);
+  }
+  .tabs button[aria-selected="true"] .cuenta-tab { color: var(--accent); }
+
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     background: var(--ink); color: #fff; font-size: 13px;
@@ -449,14 +484,16 @@
   </div>
 
   <div class="tabs" role="tablist">
-    <button role="tab" data-tab="productos" aria-selected="true">Productos</button>
+    <button role="tab" data-tab="inicio" aria-selected="true">Inicio</button>
+    <button role="tab" data-tab="productos" aria-selected="false">Productos</button>
     <button role="tab" data-tab="pedidos" aria-selected="false">Pedidos</button>
     <button role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
     <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
   </div>
 
   <div class="wrap">
-    <section id="tab-productos"></section>
+    <section id="tab-inicio"></section>
+    <section id="tab-productos" hidden></section>
     <section id="tab-pedidos" hidden></section>
     <section id="tab-inventario" hidden></section>
     <section id="tab-ajustes" hidden></section>
@@ -536,7 +573,7 @@
 
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
-  var ui = { tab: "productos", vista: "materiales", open: {}, ready: false, confirming: null };
+  var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {} };
 
   /* ---------------- utilidades ---------------- */
 
@@ -894,6 +931,15 @@
     return { ingreso: ingreso, costo: costo, ganancia: ingreso - costo, unidades: unidades };
   }
 
+  /* un pedido está atrasado si su fecha comprometida ya pasó y sigue abierto */
+  function atrasado(o) {
+    if (!o.fecha) return false;
+    if (o.estado !== "pendiente" && o.estado !== "proceso") return false;
+    return o.fecha < hoy();
+  }
+
+  function hoy() { return new Date().toISOString().slice(0, 10); }
+
   function pendingOrders() {
     return state.orders.filter(function (o) { return o.estado === "pendiente" || o.estado === "proceso"; });
   }
@@ -1052,7 +1098,7 @@
     state = estadoInicial();
     ui.open = {};
     ui.confirming = null;
-    ui.tab = "productos";
+    ui.tab = "inicio";
   }
 
   window.addEventListener("beforeunload", function (e) {
@@ -1091,6 +1137,385 @@
     return btn;
   }
 
+  /* ---------------- duplicar ----------------
+     Un producto parecido al anterior no debería costar diez toques. */
+
+  function copiaNombre(nombre) {
+    var base = (nombre || "Sin nombre").replace(/\s*\(copia( \d+)?\)$/, "");
+    var n = 2, intento = base + " (copia)";
+    var usados = {};
+    state.products.concat(state.materials).forEach(function (x) { usados[x.name] = true; });
+    while (usados[intento]) { intento = base + " (copia " + n + ")"; n++; }
+    return intento;
+  }
+
+  function duplicarProducto(p) {
+    var copia = JSON.parse(JSON.stringify(p));
+    copia.id = uid();
+    copia.name = copiaNombre(p.name);
+    copia.publicado = false;   /* se publica a propósito, nunca por herencia */
+    copia.stock = "";          /* las unidades hechas son del original */
+    copia.materials = (copia.materials || []).map(function (l) {
+      return Object.assign({}, l);
+    });
+    copia.costs = (copia.costs || []).map(function (c) {
+      return Object.assign({}, c, { id: uid() });
+    });
+    var pos = state.products.indexOf(p);
+    state.products.splice(pos + 1, 0, copia);
+    ui.open[copia.id] = true;
+    ui.open[p.id] = false;
+    save(); render();
+    toast("Duplicado como “" + copia.name + "”");
+    enfocarTarjeta(copia.id);
+  }
+
+  function duplicarMaterial(m) {
+    var copia = Object.assign({}, m, { id: uid(), name: copiaNombre(m.name), stock: "" });
+    var pos = state.materials.indexOf(m);
+    state.materials.splice(pos + 1, 0, copia);
+    save(); render();
+    toast("Duplicado como “" + copia.name + "”");
+  }
+
+  /* deja el nombre listo para escribir encima */
+  function enfocarTarjeta(id) {
+    setTimeout(function () {
+      var card = document.querySelector('[data-card="' + id + '"]');
+      var input = card && card.querySelector("input[type=text]");
+      if (input) { input.focus(); input.select(); }
+    }, 60);
+  }
+
+  /* crea el material, lo deja asignado a este producto y pide su nombre */
+  function crearMaterialDesdeProducto(p) {
+    abrirVentana("Nuevo " + rubro().insumo.toLowerCase(), function (cuerpo, sheet, cerrar) {
+      var nombre = el("input", { type: "text", placeholder: "Ej: Papel couché 300g", "aria-label": "Nombre" });
+      var unitSel = el("select", { "aria-label": "Unidad" });
+      UNITS.forEach(function (u) { unitSel.appendChild(el("option", { value: u, text: u })); });
+      unitSel.value = "unidad";
+      var costo = el("input", { class: "num", type: "text", inputmode: "decimal", placeholder: "0",
+        "aria-label": "Costo por unidad" });
+
+      cuerpo.appendChild(el("label", { class: "field", text: "Nombre" }));
+      cuerpo.appendChild(nombre);
+      cuerpo.appendChild(el("label", { class: "field", style: "margin-top:10px", text: "Unidad de uso" }));
+      cuerpo.appendChild(unitSel);
+      cuerpo.appendChild(el("label", { class: "field", style: "margin-top:10px", text: "Costo por unidad" }));
+      cuerpo.appendChild(costo);
+      cuerpo.appendChild(el("p", { class: "note", text: "El resto (existencias, compra por paquete) lo ajustas en Inventario." }));
+      setTimeout(function () { nombre.focus(); }, 40);
+
+      function guardar() {
+        if (!nombre.value.trim()) { toast("Ponle un nombre"); nombre.focus(); return; }
+        var m = { id: uid(), name: nombre.value.trim(), unit: unitSel.value, mode: "directo",
+          cost: costo.value, buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1",
+          areaMode: "area", stock: "", stockMin: "" };
+        state.materials.push(m);
+        p.materials.push({ materialId: m.id, qty: 1, h: "", w: "", pieces: 1 });
+        save(); render(); cerrar();
+        toast(m.name + " agregado al producto");
+        enfocarUltimaLinea(p.id);
+      }
+
+      nombre.addEventListener("keydown", function (e) { if (e.key === "Enter") guardar(); });
+      sheet.appendChild(el("div", { class: "actions" }, [
+        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
+        el("button", { class: "btn primary", type: "button", text: "Agregar", onclick: guardar })
+      ]));
+    });
+  }
+
+  /* tras agregar una línea, el cursor va a la cantidad: es lo que toca escribir */
+  function enfocarUltimaLinea(productId) {
+    setTimeout(function () {
+      var card = document.querySelector('[data-card="' + productId + '"]');
+      if (!card) return;
+      var qtys = card.querySelectorAll(".sec .qty input, .sec .amt input");
+      if (qtys.length) { qtys[qtys.length - 1].focus(); qtys[qtys.length - 1].select(); }
+    }, 60);
+  }
+
+  /* ---------------- buscar, filtrar y ordenar ----------------
+     Una sola barra para todas las listas: al crecer el catálogo, encontrar
+     algo no debería obligar a recorrer la pantalla entera. */
+
+  function norm(txt) {
+    return String(txt == null ? "" : txt).toLowerCase()
+      .normalize("NFD").replace(/[̀-ͯ]/g, "");
+  }
+
+  function coincide(texto, consulta) {
+    if (!consulta) return true;
+    var t = norm(texto);
+    return norm(consulta).split(/\s+/).every(function (palabra) {
+      return !palabra || t.indexOf(palabra) > -1;
+    });
+  }
+
+  /* estado de búsqueda por lista, para no mezclar pestañas */
+  function filtro(lista) {
+    if (!ui.filtros[lista]) ui.filtros[lista] = { q: "", tag: "", orden: "" };
+    return ui.filtros[lista];
+  }
+
+  /* barra con buscador, chips de filtro y selector de orden */
+  function barraBusqueda(opts) {
+    var f = filtro(opts.lista);
+    var caja = el("div", { class: "buscador" });
+
+    var input = el("input", { type: "search", value: f.q, placeholder: opts.placeholder || "Buscar…",
+      "aria-label": opts.placeholder || "Buscar" });
+    /* se repinta solo la lista: repintar todo quitaría el foco */
+    input.addEventListener("input", function () {
+      f.q = input.value;
+      opts.repintar();
+    });
+    caja.appendChild(input);
+
+    if (opts.filtros && opts.filtros.length) {
+      var chips = el("div", { class: "chips-filtro" });
+      [{ id: "", label: "Todos" }].concat(opts.filtros).forEach(function (op) {
+        var n = op.id === "" ? opts.total : op.contar();
+        chips.appendChild(el("button", { type: "button", class: "chip-filtro",
+          "aria-pressed": f.tag === op.id,
+          text: op.label + (n != null ? " · " + n : ""),
+          onclick: function () { f.tag = f.tag === op.id ? "" : op.id; opts.repintar(); } }));
+      });
+      caja.appendChild(chips);
+    }
+
+    if (opts.ordenes && opts.ordenes.length) {
+      var sel = el("select", { class: "orden", "aria-label": "Ordenar" });
+      opts.ordenes.forEach(function (o) {
+        sel.appendChild(el("option", { value: o.id, text: "Orden: " + o.label }));
+      });
+      sel.value = f.orden || opts.ordenes[0].id;
+      sel.addEventListener("change", function () { f.orden = sel.value; opts.repintar(); });
+      caja.appendChild(sel);
+    }
+
+    return caja;
+  }
+
+  /* aplica consulta, chip y orden sobre una lista */
+  function aplicarFiltro(lista, items, opts) {
+    var f = filtro(lista);
+    var out = items.filter(function (it) {
+      if (!coincide(opts.texto(it), f.q)) return false;
+      if (!f.tag) return true;
+      var def = null;
+      (opts.filtros || []).forEach(function (o) { if (o.id === f.tag) def = o; });
+      return def ? def.test(it) : true;
+    });
+
+    var orden = f.orden || (opts.ordenes && opts.ordenes.length ? opts.ordenes[0].id : "");
+    (opts.ordenes || []).forEach(function (o) {
+      if (o.id === orden && o.comparar) out.sort(o.comparar);
+    });
+    return out;
+  }
+
+  function sinResultados(lista, repintar) {
+    var f = filtro(lista);
+    return el("div", { class: "empty" }, [
+      el("p", { text: "Nada coincide con “" + (f.q || "ese filtro") + "”." }),
+      el("button", { class: "btn small", type: "button", text: "Limpiar búsqueda",
+        onclick: function () { f.q = ""; f.tag = ""; repintar(); } })
+    ]);
+  }
+
+  /* ---------------- render: inicio ----------------
+     Lo que hay que mirar hoy: qué urge, qué falta comprar y cómo va el mes. */
+
+  function mesActual() { return hoy().slice(0, 7); }
+
+  function mesAnterior() {
+    var d = new Date();
+    d.setDate(1);
+    d.setMonth(d.getMonth() - 1);
+    return d.toISOString().slice(0, 7);
+  }
+
+  /* ingreso, costo y ganancia de lo entregado en un mes */
+  function balanceMes(mes) {
+    var b = { ingreso: 0, costo: 0, ganancia: 0, pedidos: 0 };
+    state.orders.forEach(function (o) {
+      if (o.estado !== "entregado") return;
+      var fecha = o.entregado || o.fecha || o.creado || "";
+      if (String(fecha).slice(0, 7) !== mes) return;
+      var t = orderTotals(o);
+      b.ingreso += t.ingreso; b.costo += t.costo; b.ganancia += t.ganancia;
+      b.pedidos++;
+    });
+    return b;
+  }
+
+  function diasHasta(fecha) {
+    if (!fecha) return null;
+    var ms = new Date(fecha + "T00:00:00") - new Date(hoy() + "T00:00:00");
+    return Math.round(ms / 86400000);
+  }
+
+  function textoPlazo(o) {
+    var d = diasHasta(o.fecha);
+    if (d == null) return "sin fecha comprometida";
+    if (d < 0) return "atrasado " + Math.abs(d) + (Math.abs(d) === 1 ? " día" : " días");
+    if (d === 0) return "entrega hoy";
+    if (d === 1) return "entrega mañana";
+    return "entrega en " + d + " días";
+  }
+
+  function renderInicio() {
+    var root = document.getElementById("tab-inicio");
+    root.innerHTML = "";
+
+    var abiertos = pendingOrders();
+    var atrasados = state.orders.filter(atrasado);
+
+    /* --- el mes --- */
+    var mes = balanceMes(mesActual()), previo = balanceMes(mesAnterior());
+    var strip = el("dl", { class: "strip" });
+    [["Ingreso del mes", money(mes.ingreso), ""],
+     ["Costo", money(mes.costo), "cost"],
+     ["Ganancia", money(mes.ganancia), mes.ganancia < 0 ? "loss" : "gain"]].forEach(function (c) {
+      strip.appendChild(el("div", {}, [
+        el("dt", { text: c[0] }),
+        el("dd", { text: c[1], style: c[2] === "gain" ? "color:var(--gain)" : c[2] === "loss" ? "color:var(--danger)"
+          : c[2] === "cost" ? "color:var(--cost)" : "" })
+      ]));
+    });
+    root.appendChild(strip);
+
+    var comparacion = el("p", { class: "note", style: "margin:0 2px 14px" });
+    if (!mes.pedidos && !previo.pedidos) {
+      comparacion.textContent = "Cuando marques pedidos como entregados, aquí verás cómo va el mes.";
+    } else if (!previo.ganancia) {
+      comparacion.textContent = mes.pedidos + (mes.pedidos === 1 ? " pedido entregado" : " pedidos entregados") + " este mes.";
+    } else {
+      var dif = mes.ganancia - previo.ganancia;
+      var pct = Math.round(Math.abs(dif) / Math.abs(previo.ganancia) * 100);
+      comparacion.textContent = mes.pedidos + (mes.pedidos === 1 ? " pedido entregado" : " pedidos entregados") +
+        " · ganancia " + (dif >= 0 ? "+" : "−") + pct + "% frente al mes pasado (" + money(previo.ganancia) + ").";
+    }
+    root.appendChild(comparacion);
+
+    /* --- pedidos que urgen --- */
+    var cardPedidos = el("div", { class: "mat-card" });
+    cardPedidos.appendChild(el("div", { class: "row" }, [
+      el("div", { class: "grow" }, [el("h4", { style: "margin:0;font-size:14px", text: "Pedidos que urgen" })]),
+      el("button", { class: "btn small", type: "button", text: "Ver todos",
+        onclick: function () { ui.tab = "pedidos"; render(); } })
+    ]));
+
+    if (!abiertos.length) {
+      cardPedidos.appendChild(el("p", { class: "note", style: "margin:8px 0 0",
+        text: state.orders.length ? "No hay pedidos abiertos. Todo al día." : "Todavía no tienes pedidos." }));
+    } else {
+      var urgentes = abiertos.slice().sort(function (a, b) {
+        return (a.fecha || "9999-12-31").localeCompare(b.fecha || "9999-12-31");
+      }).slice(0, 5);
+
+      var plan = el("div", { class: "plan" });
+      urgentes.forEach(function (o) {
+        var fila = el("div", { class: "plan-row" + (atrasado(o) ? " short" : ""),
+          style: "cursor:pointer", onclick: function () {
+            ui.tab = "pedidos"; ui.open[o.id] = true; render();
+          } }, [
+          el("span", { class: "plan-name", text: o.cliente || "Sin nombre" }),
+          el("span", { class: "plan-use", text: textoPlazo(o) }),
+          el("span", { class: "plan-cost", text: money(orderTotals(o).ingreso) })
+        ]);
+        plan.appendChild(fila);
+      });
+      cardPedidos.appendChild(plan);
+
+      cardPedidos.appendChild(el("div", { class: "unit-cost" + (atrasados.length ? " low" : "") }, [
+        el("span", { text: atrasados.length
+          ? atrasados.length + (atrasados.length === 1 ? " pedido atrasado" : " pedidos atrasados")
+          : abiertos.length + (abiertos.length === 1 ? " pedido abierto" : " pedidos abiertos") }),
+        el("b", { text: money(abiertos.reduce(function (t, o) { return t + orderTotals(o).ingreso; }, 0)) })
+      ]));
+    }
+    root.appendChild(cardPedidos);
+
+    /* --- qué falta comprar --- */
+    if (llevaMateriales()) root.appendChild(tarjetaCompras(abiertos));
+
+    /* --- accesos rápidos --- */
+    var accesos = el("div", { class: "mat-card" });
+    accesos.appendChild(el("h4", { style: "margin:0 0 8px;font-size:14px", text: "Empezar algo" }));
+    accesos.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo pedido",
+      onclick: function () { ui.tab = "pedidos"; render(); addOrder(); } }));
+    accesos.appendChild(el("button", { class: "btn wide", type: "button", text: "+ Nuevo producto",
+      style: "margin-top:8px", onclick: function () { ui.tab = "productos"; render(); addProduct(); } }));
+    if (llevaMateriales()) {
+      accesos.appendChild(el("button", { class: "btn wide", type: "button",
+        text: "+ Nuevo " + rubro().insumo.toLowerCase(), style: "margin-top:8px",
+        onclick: function () { ui.tab = "inventario"; ui.vista = "materiales"; render(); addMaterial(); } }));
+    }
+    root.appendChild(accesos);
+  }
+
+  /* lo que hay que comprar: lo que falta para los pedidos y lo bajo el mínimo */
+  function tarjetaCompras(abiertos) {
+    var card = el("div", { class: "mat-card" });
+    card.appendChild(el("div", { class: "row" }, [
+      el("div", { class: "grow" }, [el("h4", { style: "margin:0;font-size:14px", text: "Qué falta comprar" })]),
+      el("button", { class: "btn small", type: "button", text: "Ver inventario",
+        onclick: function () { ui.tab = "inventario"; ui.vista = "materiales"; render(); } })
+    ]));
+
+    var porPedidos = abiertos.length ? shoppingFor(pendingItems()) : { lines: [], total: 0, ok: true };
+    var faltanPedidos = porPedidos.lines.filter(function (l) { return l.falta > 1e-9; });
+
+    var bajos = state.materials.filter(function (m) { return falta(m) > 0; });
+    var yaListados = {};
+    faltanPedidos.forEach(function (l) { yaListados[l.material.id] = true; });
+
+    if (!faltanPedidos.length && !bajos.length) {
+      card.appendChild(el("div", { class: "unit-cost", style: "margin-top:8px" }, [
+        el("span", { text: "No falta nada por ahora" }),
+        el("b", { text: money(0) })
+      ]));
+      return card;
+    }
+
+    var total = 0;
+    var plan = el("div", { class: "plan" });
+
+    faltanPedidos.forEach(function (l) {
+      total += l.cost;
+      plan.appendChild(el("div", { class: "plan-row short" }, [
+        el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
+        el("span", { class: "plan-use", text: "faltan " + fmtQty(l.falta) + " " + stockUnit(l.material) + " para los pedidos" }),
+        el("span", { class: "plan-cost", text: l.packs
+          ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
+      ]));
+    });
+
+    bajos.forEach(function (m) {
+      if (yaListados[m.id]) return;
+      var rc = restockCost(m, falta(m));
+      total += rc.cost;
+      plan.appendChild(el("div", { class: "plan-row" }, [
+        el("span", { class: "plan-name", text: m.name || "Sin nombre" }),
+        el("span", { class: "plan-use", text: "bajo el mínimo · faltan " + fmtQty(falta(m)) + " " + stockUnit(m) }),
+        el("span", { class: "plan-cost", text: rc.packs
+          ? rc.packs + (rc.packs === 1 ? " paquete " : " paquetes ") + money(rc.cost) : money(rc.cost) })
+      ]));
+    });
+
+    card.appendChild(plan);
+    card.appendChild(el("div", { class: "unit-cost" + (faltanPedidos.length ? " low" : "") }, [
+      el("span", { text: faltanPedidos.length
+        ? "Comprar antes de producir los pedidos"
+        : "Para volver al nivel inicial" }),
+      el("b", { text: money(total) })
+    ]));
+    return card;
+  }
+
   /* ---------------- render: productos ---------------- */
 
   function productCard(p) {
@@ -1111,7 +1536,8 @@
       el("span", { class: "chip " + (r.ganancia < 0 ? "neg" : "g"), html: "Ganancia <b>" + money(r.ganancia) + "</b> · " + pct(r.margen) })
     ]);
 
-    var card = el("div", { class: "card " + (p.type === "servicio" ? "servicio" : "producto") }, [head, chips]);
+    var card = el("div", { class: "card " + (p.type === "servicio" ? "servicio" : "producto"),
+      "data-card": p.id }, [head, chips]);
     if (!open) return card;
 
     var body = el("div", { class: "card-body" });
@@ -1203,7 +1629,16 @@
     });
 
     matSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ " + rubro().insumo,
-      onclick: function () { p.materials.push({ materialId: "", qty: 1, h: "", w: "", pieces: 1 }); save(); render(); } }));
+      onclick: function () {
+        p.materials.push({ materialId: "", qty: 1, h: "", w: "", pieces: 1 });
+        save(); render();
+        enfocarUltimaLinea(p.id);
+      } }));
+
+    /* crear el material sin salir del producto ni perder lo escrito */
+    matSec.appendChild(el("button", { class: "btn small", type: "button",
+      text: "+ " + rubro().insumo + " nuevo", style: "margin-left:6px",
+      onclick: function () { crearMaterialDesdeProducto(p); } }));
     body.appendChild(matSec);
 
     /* costos adicionales */
@@ -1291,8 +1726,10 @@
     /* resultado */
     body.appendChild(resultTable(p));
 
-    /* eliminar producto */
+    /* duplicar y eliminar */
     body.appendChild(el("div", { class: "sec" }, [
+      el("button", { class: "btn small", type: "button", text: "Duplicar producto",
+        style: "margin-right:6px", onclick: function () { duplicarProducto(p); } }),
       el("button", { class: "btn small", type: "button", text: "Eliminar producto",
         onclick: function () {
           if (ui.confirming === p.id) {
@@ -1396,7 +1833,49 @@
         el("button", { class: "btn primary", type: "button", text: "Crear el primero", onclick: addProduct })
       ]));
     } else {
-      state.products.forEach(function (p) { root.appendChild(productCard(p)); });
+      var lista = el("div");
+
+      var opciones = {
+        texto: function (p) { return (p.name || "") + " " + (p.descripcionPublica || ""); },
+        filtros: [
+          { id: "publicados", label: "En la tienda",
+            test: function (p) { return !!p.publicado; },
+            contar: function () { return state.products.filter(function (p) { return p.publicado; }).length; } },
+          { id: "servicios", label: "Servicios",
+            test: function (p) { return p.type === "servicio"; },
+            contar: function () { return state.products.filter(function (p) { return p.type === "servicio"; }).length; } },
+          { id: "sinprecio", label: "Sin precio",
+            test: function (p) { return calc(p).final <= 0; },
+            contar: function () { return state.products.filter(function (p) { return calc(p).final <= 0; }).length; } }
+        ],
+        ordenes: [
+          { id: "nombre", label: "nombre", comparar: function (a, b) {
+            return norm(a.name).localeCompare(norm(b.name)); } },
+          { id: "ganancia", label: "más rentable", comparar: function (a, b) {
+            return calc(b).ganancia - calc(a).ganancia; } },
+          { id: "precio", label: "precio", comparar: function (a, b) {
+            return calc(b).final - calc(a).final; } }
+        ]
+      };
+
+      function pintarLista() {
+        lista.innerHTML = "";
+        var visibles = aplicarFiltro("productos", state.products.slice(), opciones);
+        if (!visibles.length) { lista.appendChild(sinResultados("productos", pintarLista)); return; }
+        visibles.forEach(function (p) { lista.appendChild(productCard(p)); });
+      }
+
+      root.appendChild(barraBusqueda({
+        lista: "productos",
+        placeholder: "Buscar producto…",
+        total: state.products.length,
+        filtros: opciones.filtros,
+        ordenes: opciones.ordenes,
+        repintar: pintarLista
+      }));
+      root.appendChild(lista);
+      pintarLista();
+
       root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo producto o servicio", onclick: addProduct }));
       root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de productos",
         style: "margin-top:8px", onclick: exportProducts }));
@@ -1413,6 +1892,12 @@
   }
 
   /* ---------------- render: materiales ---------------- */
+
+  /* cuánto le falta a un material para llegar a su nivel inicial */
+  function falta(m) {
+    var t = stockTarget(m);
+    return t > 0 ? Math.max(0, t - parseNum(m.stock)) : 0;
+  }
 
   /* vista de materiales dentro de Inventario: catálogo y existencias juntos */
   function pintarMateriales(root) {
@@ -1439,7 +1924,48 @@
     });
     root.appendChild(strip);
 
-    state.materials.forEach(function (m, idx) {
+    var listaMat = el("div");
+
+    var opsMat = {
+      texto: function (m) { return m.name || ""; },
+      filtros: [
+        { id: "bajos", label: "Bajo el mínimo",
+          test: function (m) { return stockTarget(m) > 0 && parseNum(m.stock) < stockTarget(m); },
+          contar: function () { return inventoryTotals().bajos; } },
+        { id: "sinstock", label: "Sin existencia",
+          test: function (m) { return parseNum(m.stock) <= 0; },
+          contar: function () { return state.materials.filter(function (m) { return parseNum(m.stock) <= 0; }).length; } },
+        { id: "sincosto", label: "Sin costo",
+          test: function (m) { return materialCost(m) <= 0; },
+          contar: function () { return state.materials.filter(function (m) { return materialCost(m) <= 0; }).length; } }
+      ],
+      ordenes: [
+        { id: "nombre", label: "nombre", comparar: function (a, b) {
+          return norm(a.name).localeCompare(norm(b.name)); } },
+        { id: "critico", label: "lo más crítico", comparar: function (a, b) {
+          return falta(b) - falta(a); } },
+        { id: "valor", label: "valor en inventario", comparar: function (a, b) {
+          return parseNum(b.stock) * stockUnitValue(b) - parseNum(a.stock) * stockUnitValue(a); } }
+      ]
+    };
+
+    root.appendChild(barraBusqueda({
+      lista: "materiales",
+      placeholder: "Buscar " + rubro().insumo.toLowerCase() + "…",
+      total: state.materials.length,
+      filtros: opsMat.filtros,
+      ordenes: opsMat.ordenes,
+      repintar: function () { render(); }
+    }));
+    root.appendChild(listaMat);
+
+    var visiblesMat = aplicarFiltro("materiales", state.materials.slice(), opsMat);
+    if (!visiblesMat.length) {
+      listaMat.appendChild(sinResultados("materiales", function () { render(); }));
+    }
+
+    visiblesMat.forEach(function (m) {
+      var idx = state.materials.indexOf(m);
       var card = el("div", { class: "mat-card" });
 
       var unitSel = el("select", { "aria-label": "Unidad" });
@@ -1587,7 +2113,10 @@
       card.appendChild(estado);
       refreshEstado();
 
-      root.appendChild(card);
+      card.appendChild(el("button", { class: "btn small", type: "button", text: "Duplicar",
+        style: "margin-top:10px", onclick: function () { duplicarMaterial(m); } }));
+
+      listaMat.appendChild(card);
     });
 
     root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Agregar " + rubro().insumo.toLowerCase(),
@@ -1689,12 +2218,65 @@
       return;
     }
 
-    /* pedidos, pendientes primero */
-    var orden = { pendiente: 0, proceso: 1, entregado: 2, cancelado: 3 };
-    state.orders.slice().sort(function (a, b) {
-      var d = (orden[a.estado] || 0) - (orden[b.estado] || 0);
-      return d !== 0 ? d : String(b.creado || "").localeCompare(String(a.creado || ""));
-    }).forEach(function (o) { root.appendChild(orderCard(o)); });
+    /* pedidos: pendientes primero, y lo que vence antes arriba */
+    var pesoEstado = { pendiente: 0, proceso: 1, entregado: 2, cancelado: 3 };
+    var listaPedidos = el("div");
+
+    var opsPedidos = {
+      texto: function (o) {
+        return (o.cliente || "") + " " + (o.whatsapp || "") + " " + (o.comuna || "") + " " + (o.notas || "") + " " +
+          (o.items || []).map(function (it) {
+            var p = productById(it.productId);
+            return p ? p.name : "";
+          }).join(" ");
+      },
+      filtros: [
+        { id: "pendiente", label: "Pendientes",
+          test: function (o) { return o.estado === "pendiente"; },
+          contar: function () { return state.orders.filter(function (o) { return o.estado === "pendiente"; }).length; } },
+        { id: "proceso", label: "En proceso",
+          test: function (o) { return o.estado === "proceso"; },
+          contar: function () { return state.orders.filter(function (o) { return o.estado === "proceso"; }).length; } },
+        { id: "atrasados", label: "Atrasados",
+          test: atrasado,
+          contar: function () { return state.orders.filter(atrasado).length; } },
+        { id: "entregado", label: "Entregados",
+          test: function (o) { return o.estado === "entregado"; },
+          contar: function () { return state.orders.filter(function (o) { return o.estado === "entregado"; }).length; } }
+      ],
+      ordenes: [
+        { id: "urgencia", label: "urgencia", comparar: function (a, b) {
+          var d = (pesoEstado[a.estado] || 0) - (pesoEstado[b.estado] || 0);
+          if (d !== 0) return d;
+          /* sin fecha comprometida, al final: no compite con lo que sí vence */
+          var fa = a.fecha || "9999-12-31", fb2 = b.fecha || "9999-12-31";
+          if (fa !== fb2) return fa.localeCompare(fb2);
+          return String(b.creado || "").localeCompare(String(a.creado || ""));
+        } },
+        { id: "recientes", label: "más recientes", comparar: function (a, b) {
+          return String(b.creado || "").localeCompare(String(a.creado || "")); } },
+        { id: "monto", label: "monto", comparar: function (a, b) {
+          return orderTotals(b).ingreso - orderTotals(a).ingreso; } }
+      ]
+    };
+
+    function pintarPedidos() {
+      listaPedidos.innerHTML = "";
+      var visibles = aplicarFiltro("pedidos", state.orders.slice(), opsPedidos);
+      if (!visibles.length) { listaPedidos.appendChild(sinResultados("pedidos", pintarPedidos)); return; }
+      visibles.forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
+    }
+
+    root.appendChild(barraBusqueda({
+      lista: "pedidos",
+      placeholder: "Buscar por cliente o producto…",
+      total: state.orders.length,
+      filtros: opsPedidos.filtros,
+      ordenes: opsPedidos.ordenes,
+      repintar: pintarPedidos
+    }));
+    root.appendChild(listaPedidos);
+    pintarPedidos();
   }
 
   function orderCard(o) {
@@ -1765,9 +2347,11 @@
 
       itemsSec.appendChild(el("div", { class: "row" }, [
         el("div", { class: "grow" }, [sel]),
+        /* repintar en cada tecla quitaría el foco: los totales se recalculan al salir */
         el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: it.qty, "aria-label": "Cantidad",
-          oninput: function (e) { it.qty = e.target.value; save(); render(); } })]),
+          oninput: function (e) { it.qty = e.target.value; save(); },
+          onchange: function () { renderPronto(); } })]),
         deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(); render(); })
       ]));
     });
@@ -2208,6 +2792,10 @@
   function escucharNube() {
     COLECCIONES.forEach(function (c) {
       fb.unsubs.push(colRef(c.nombre).onSnapshot(function (snap) {
+        /* el eco de lo que acabamos de subir no trae nada nuevo: repintar
+           con él le quitaría el foco a quien está escribiendo */
+        if (snap.metadata && snap.metadata.hasPendingWrites) { setSaveState("Sincronizado"); return; }
+
         var items = [], mapa = {};
         snap.forEach(function (d) {
           var item = Object.assign({ id: d.id }, d.data());
@@ -2225,20 +2813,58 @@
         guardarLocal();
         fb.aplicando = false;
         setSaveState("Sincronizado");
-        render();
+        renderSeguro();
       }, function () { setSaveState("Sin conexión"); }));
     });
 
     fb.unsubs.push(tiendaRef().onSnapshot(function (doc) {
-      if (!doc.exists || doc.metadata.hasPendingWrites) return;
+      if (!doc.exists || (doc.metadata && doc.metadata.hasPendingWrites)) return;
       var d = doc.data();
       if (!d.settings) return;
       fb.aplicando = true;
       aplicarSettings(d.settings);
       guardarLocal();
       fb.aplicando = false;
-      render();
+      renderSeguro();
     }, function () {}));
+  }
+
+  /* Un cambio que llega de otro dispositivo no debe borrar lo que se está
+     escribiendo aquí: se espera a que el campo pierda el foco. */
+  var esperaRender = null, prontoTimer = null;
+
+  /* Un cambio confirmado (salir de un campo) suele venir de un clic en otro
+     sitio: si se repinta de inmediato, ese clic se pierde con el nodo. */
+  function renderPronto() {
+    clearTimeout(prontoTimer);
+    prontoTimer = setTimeout(function () {
+      if (escribiendo()) { renderSeguro(); return; }
+      render();
+    }, 300);
+  }
+
+  function escribiendo() {
+    var a = document.activeElement;
+    if (!a) return false;
+    var tag = a.tagName;
+    return (tag === "INPUT" || tag === "TEXTAREA") && !!a.closest(".app");
+  }
+
+  /* Repintar en el blur reconstruiría la pantalla justo mientras se pulsa un
+     botón, y ese toque se perdería. Se espera a que nadie esté escribiendo. */
+  function renderSeguro() {
+    if (!escribiendo()) {
+      if (esperaRender) { clearInterval(esperaRender); esperaRender = null; }
+      render();
+      return;
+    }
+    if (esperaRender) return;
+    esperaRender = setInterval(function () {
+      if (escribiendo()) return;
+      clearInterval(esperaRender);
+      esperaRender = null;
+      render();
+    }, 700);
   }
 
   /* los pedidos que entran desde la tienda traen fechas y números en crudo */
@@ -2550,6 +3176,25 @@
     if (tabInv) tabInv.hidden = !moduloActivo("inventario");
     if (!moduloActivo("inventario") && ui.tab === "inventario") ui.tab = "productos";
     if (!vistaValida(ui.vista)) ui.vista = vistasInventario()[0];
+    pintarContadores();
+  }
+
+  /* número junto al nombre de cada pestaña: lo que reclama atención */
+  function pintarContadores() {
+    var cuentas = {
+      productos: state.products.length || null,
+      pedidos: state.orders.filter(function (o) {
+        return o.estado === "pendiente" || o.estado === "proceso";
+      }).length || null,
+      inventario: (llevaMateriales() ? inventoryTotals().bajos : 0) || null
+    };
+    Object.keys(cuentas).forEach(function (tab) {
+      var btn = document.querySelector('.tabs button[data-tab="' + tab + '"]');
+      if (!btn) return;
+      var vieja = btn.querySelector(".cuenta-tab");
+      if (vieja) vieja.remove();
+      if (cuentas[tab]) btn.appendChild(el("span", { class: "cuenta-tab", text: String(cuentas[tab]) }));
+    });
   }
 
   /* ---------------- ventanas de producción y entrega ---------------- */
@@ -3307,19 +3952,21 @@
 
   function render() {
     if (ui.tab === "inventario" && !moduloActivo("inventario")) ui.tab = "productos";
-    ["productos", "pedidos", "inventario", "ajustes"].forEach(function (t) {
+    ["inicio", "productos", "pedidos", "inventario", "ajustes"].forEach(function (t) {
       document.getElementById("tab-" + t).hidden = ui.tab !== t;
     });
     var btns = document.querySelectorAll(".tabs button");
     for (var i = 0; i < btns.length; i++) {
       btns[i].setAttribute("aria-selected", btns[i].dataset.tab === ui.tab ? "true" : "false");
     }
-    if (ui.tab === "productos") renderProductos();
+    if (ui.tab === "inicio") renderInicio();
+    else if (ui.tab === "productos") renderProductos();
     else if (ui.tab === "pedidos") renderPedidos();
     else if (ui.tab === "inventario") renderInventario();
     else renderAjustes();
     var sel = document.getElementById("currency");
     if (sel && sel.value !== state.settings.currency) sel.value = state.settings.currency;
+    pintarContadores();
   }
 
   /* ---------------- arranque ---------------- */
