@@ -1765,9 +1765,11 @@
 
       itemsSec.appendChild(el("div", { class: "row" }, [
         el("div", { class: "grow" }, [sel]),
+        /* repintar en cada tecla quitaría el foco: los totales se recalculan al salir */
         el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: it.qty, "aria-label": "Cantidad",
-          oninput: function (e) { it.qty = e.target.value; save(); render(); } })]),
+          oninput: function (e) { it.qty = e.target.value; save(); },
+          onchange: function () { render(); } })]),
         deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(); render(); })
       ]));
     });
@@ -2208,6 +2210,10 @@
   function escucharNube() {
     COLECCIONES.forEach(function (c) {
       fb.unsubs.push(colRef(c.nombre).onSnapshot(function (snap) {
+        /* el eco de lo que acabamos de subir no trae nada nuevo: repintar
+           con él le quitaría el foco a quien está escribiendo */
+        if (snap.metadata && snap.metadata.hasPendingWrites) { setSaveState("Sincronizado"); return; }
+
         var items = [], mapa = {};
         snap.forEach(function (d) {
           var item = Object.assign({ id: d.id }, d.data());
@@ -2225,20 +2231,43 @@
         guardarLocal();
         fb.aplicando = false;
         setSaveState("Sincronizado");
-        render();
+        renderSeguro();
       }, function () { setSaveState("Sin conexión"); }));
     });
 
     fb.unsubs.push(tiendaRef().onSnapshot(function (doc) {
-      if (!doc.exists || doc.metadata.hasPendingWrites) return;
+      if (!doc.exists || (doc.metadata && doc.metadata.hasPendingWrites)) return;
       var d = doc.data();
       if (!d.settings) return;
       fb.aplicando = true;
       aplicarSettings(d.settings);
       guardarLocal();
       fb.aplicando = false;
-      render();
+      renderSeguro();
     }, function () {}));
+  }
+
+  /* Un cambio que llega de otro dispositivo no debe borrar lo que se está
+     escribiendo aquí: se espera a que el campo pierda el foco. */
+  var renderEnEspera = false;
+
+  function escribiendo() {
+    var a = document.activeElement;
+    if (!a) return false;
+    var tag = a.tagName;
+    return (tag === "INPUT" || tag === "TEXTAREA") && !!a.closest(".app");
+  }
+
+  function renderSeguro() {
+    if (!escribiendo()) { render(); return; }
+    if (renderEnEspera) return;
+    renderEnEspera = true;
+    var campo = document.activeElement;
+    campo.addEventListener("blur", function alSalir() {
+      campo.removeEventListener("blur", alSalir);
+      renderEnEspera = false;
+      render();
+    });
   }
 
   /* los pedidos que entran desde la tienda traen fechas y números en crudo */
