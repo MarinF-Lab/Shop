@@ -41,6 +41,11 @@ service cloud.firestore {
         allow create: if esDueno(uid) || pedidoValido();
       }
 
+      /* cómo fue cambiando el costo de cada material: privado */
+      match /historial/{docId} {
+        allow read, write: if esDueno(uid);
+      }
+
       /* catálogo publicado: lectura abierta, escritura del dueño */
       match /catalogo/{docId} {
         allow read: if true;

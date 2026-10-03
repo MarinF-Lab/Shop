@@ -467,6 +467,7 @@
   }
   .campo-precio input:focus { outline: none; }
 
+  .note.aviso { color: var(--cost); font-weight: 600; }
   .btn.peligro { color: var(--danger); border-color: #E6C9C5; }
   .btn.peligro:hover { background: #FBEFED; }
 
@@ -591,7 +592,8 @@
         tienda: { nombre: "", whatsapp: "" } },
       materials: [],
       products: [],
-      orders: []
+      orders: [],
+      historial: []
     };
   }
 
@@ -601,7 +603,8 @@
   var COLECCIONES = [
     { nombre: "materiales", campo: "materials" },
     { nombre: "productos", campo: "products" },
-    { nombre: "pedidos", campo: "orders" }
+    { nombre: "pedidos", campo: "orders" },
+    { nombre: "historial", campo: "historial" }
   ];
 
   var ESTADOS = [
@@ -899,6 +902,94 @@
     return true;
   }
 
+  /* ---------------- historial de costos ----------------
+     Los insumos suben de precio y el margen se erosiona sin que se note.
+     Cada cambio real de costo se anota con su fecha. */
+
+  function registrarCosto(m, costoAnterior) {
+    var nuevo = materialCost(m);
+    if (!isFinite(nuevo) || nuevo <= 0) return;
+    if (Math.abs(nuevo - costoAnterior) < 0.01) return;   /* no cambió de verdad */
+    if (costoAnterior <= 0) return;                       /* primer precio: no es una subida */
+
+    var registro = {
+      id: uid(),
+      materialId: m.id,
+      fecha: new Date().toISOString(),
+      antes: costoAnterior,
+      despues: nuevo
+    };
+    state.historial.push(registro);
+    /* un año de cambios por material basta para ver la tendencia */
+    if (state.historial.length > 500) state.historial = state.historial.slice(-500);
+    sucios.historial[registro.id] = true;
+    pedirSubida();
+  }
+
+  /* se anota al dejar de escribir: tecla por tecla serían decenas de registros */
+  var anotarTimers = {};
+
+  function anotarCosto(m, costoAnterior) {
+    clearTimeout(anotarTimers[m.id]);
+    anotarTimers[m.id] = setTimeout(function () {
+      registrarCosto(m, costoAnterior);
+      if (ui.tab === "inventario") render();
+    }, 1800);
+  }
+
+  function historialDe(materialId) {
+    return state.historial.filter(function (h) { return h.materialId === materialId; })
+      .sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
+  }
+
+  var MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+  function mesDe(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return "";
+    var ahora = new Date();
+    return MESES[d.getMonth()] + (d.getFullYear() !== ahora.getFullYear() ? " de " + d.getFullYear() : "");
+  }
+
+  /* cuánto subió (o bajó) un material desde su primer registro */
+  function variacionCosto(m) {
+    var h = historialDe(m.id);
+    if (!h.length) return null;
+    var desde = h[0].antes, hasta = materialCost(m);
+    if (desde <= 0) return null;
+    var pctCambio = (hasta - desde) / desde * 100;
+    if (Math.abs(pctCambio) < 1) return null;
+    return { pct: pctCambio, desde: desde, hasta: hasta, mes: mesDe(h[0].fecha), cambios: h.length };
+  }
+
+  function textoVariacion(v) {
+    var signo = v.pct > 0 ? "Subió" : "Bajó";
+    return signo + " " + Math.round(Math.abs(v.pct)) + "% desde " + v.mes +
+      " · de " + money(v.desde) + " a " + money(v.hasta);
+  }
+
+  /* productos cuyo margen se comió la subida de un insumo */
+  function productosErosionados() {
+    var afectados = [];
+    state.products.forEach(function (p) {
+      var precio = parseNum(p.manualPrice);
+      if (precio <= 0) return;
+      var r = calc(p);
+      if (r.ganancia >= 0 && r.margen >= 15) return;   /* todavía deja margen razonable */
+
+      /* solo interesa si algún insumo suyo subió */
+      var subio = (p.materials || []).some(function (line) {
+        var m = materialById(line.materialId);
+        var v = m && variacionCosto(m);
+        return v && v.pct > 0;
+      });
+      if (!subio) return;
+      afectados.push({ producto: p, margen: r.margen, ganancia: r.ganancia });
+    });
+    return afectados;
+  }
+
   /* ---------------- existencias de producto terminado ----------------
      Un producto puede estar ya fabricado (unidades hechas y guardadas) o
      por fabricar (se produce descontando materiales). Todo consumo pasa
@@ -1124,8 +1215,8 @@
      tecla guardada, y por encima de quinientos el lote de Firestore ni
      siquiera se acepta. Aquí se anota solo lo que cambió. */
 
-  var sucios = { materiales: {}, productos: {}, pedidos: {} };
-  var borrados = { materiales: {}, productos: {}, pedidos: {} };
+  var sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+  var borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
   var sucioAjustes = false;
 
   function coleccionDe(obj) {
@@ -1133,6 +1224,7 @@
     if (state.materials.indexOf(obj) > -1) return "materiales";
     if (state.products.indexOf(obj) > -1) return "productos";
     if (state.orders.indexOf(obj) > -1) return "pedidos";
+    if (state.historial.indexOf(obj) > -1) return "historial";
     return null;
   }
 
@@ -1158,8 +1250,8 @@
   }
 
   function limpiarPendientes() {
-    sucios = { materiales: {}, productos: {}, pedidos: {} };
-    borrados = { materiales: {}, productos: {}, pedidos: {} };
+    sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+    borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
     sucioAjustes = false;
   }
 
@@ -1221,6 +1313,7 @@
       if (Array.isArray(data.materials)) state.materials = data.materials;
       if (Array.isArray(data.products)) { state.products = data.products; state.products.forEach(migrarPrecio); }
       if (Array.isArray(data.orders)) state.orders = data.orders;
+      if (Array.isArray(data.historial)) state.historial = data.historial;
       state.materials.forEach(function (m) {
         if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
       });
@@ -1582,6 +1675,32 @@
 
     /* --- qué falta comprar --- */
     if (llevaMateriales()) root.appendChild(tarjetaCompras(abiertos));
+
+    /* --- márgenes que se erosionaron --- */
+    var erosionados = productosErosionados();
+    if (erosionados.length) {
+      var aviso = el("div", { class: "mat-card" });
+      aviso.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("h4", { style: "margin:0;font-size:14px", text: "Revisa estos precios" })]),
+        el("button", { class: "btn small", type: "button", text: "Ver productos",
+          onclick: function () { ui.tab = "productos"; render(); } })
+      ]));
+      aviso.appendChild(el("p", { class: "note", style: "margin:6px 0 0",
+        text: "Subió el costo de algún insumo y el precio quedó corto." }));
+
+      var planAviso = el("div", { class: "plan" });
+      erosionados.slice(0, 5).forEach(function (x) {
+        planAviso.appendChild(el("div", { class: "plan-row short", style: "cursor:pointer",
+          onclick: function () { ui.tab = "productos"; ui.open[x.producto.id] = true; render(); } }, [
+          el("span", { class: "plan-name", text: x.producto.name || "Sin nombre" }),
+          el("span", { class: "plan-use", text: x.ganancia < 0 ? "pierdes " + money(-x.ganancia) + " por unidad"
+            : "solo te queda " + pct(x.margen) }),
+          el("span", { class: "plan-cost", text: money(parseNum(x.producto.manualPrice)) })
+        ]));
+      });
+      aviso.appendChild(planAviso);
+      root.appendChild(aviso);
+    }
 
     /* --- accesos rápidos --- */
     var accesos = el("div", { class: "mat-card" });
@@ -2148,7 +2267,7 @@
           el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Precio pagado" })]),
           el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
             value: m.buyPrice, placeholder: "0", "aria-label": "Precio de compra",
-            oninput: function (e) { m.buyPrice = e.target.value; save(m); refresh(); } })])
+            oninput: function (e) { var antes = materialCost(m); m.buyPrice = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
         ]));
 
         if (isArea(m.unit)) {
@@ -2175,7 +2294,7 @@
             el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidades que trae" })]),
             el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
               value: m.buyQty, placeholder: "0", "aria-label": "Cantidad comprada",
-              oninput: function (e) { m.buyQty = e.target.value; save(m); refresh(); } })])
+              oninput: function (e) { var antes = materialCost(m); m.buyQty = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
           ]));
         }
       } else {
@@ -2183,7 +2302,7 @@
           el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Costo por " + m.unit })]),
           el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
             value: m.cost, placeholder: "0", "aria-label": "Costo unitario",
-            oninput: function (e) { m.cost = e.target.value; save(m); refresh(); } })])
+            oninput: function (e) { var antes = materialCost(m); m.cost = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
         ]));
       }
 
@@ -2237,6 +2356,12 @@
       ]));
       card.appendChild(estado);
       refreshEstado();
+
+      var variacion = variacionCosto(m);
+      if (variacion) {
+        card.appendChild(el("p", { class: "note" + (variacion.pct > 0 ? " aviso" : ""),
+          style: "margin-top:8px", text: textoVariacion(variacion) }));
+      }
 
       card.appendChild(el("button", { class: "btn small", type: "button", text: "Duplicar",
         style: "margin-top:10px", onclick: function () { duplicarMaterial(m); } }));
@@ -2720,7 +2845,7 @@
   /* ---------------- firebase ---------------- */
 
   var fb = { app: null, db: null, auth: null, user: null, unsubs: [], estado: "apagado",
-    aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {} } };
+    aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {}, historial: {} } };
 
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -2871,7 +2996,7 @@
   function pararSync() {
     fb.unsubs.forEach(function (u) { try { u(); } catch (e) {} });
     fb.unsubs = [];
-    fb.remotos = { materiales: {}, productos: {}, pedidos: {} };
+    fb.remotos = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
   }
 
   /* Firestore es la fuente de verdad: al entrar bajamos la nube; si está
@@ -4079,6 +4204,7 @@
       state.materials = mats;
       state.products = prods;
       if (Array.isArray(data.orders)) state.orders = data.orders;
+      if (Array.isArray(data.historial)) state.historial = data.historial;
       if (data.settings) state.settings = Object.assign(state.settings, data.settings);
     } else {
       var idMap = {};

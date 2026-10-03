@@ -22,6 +22,7 @@ tiendas/{uid}                    settings (moneda, impuesto, datos de la tienda)
 tiendas/{uid}/materiales/{id}    materiales e insumos, con su stock
 tiendas/{uid}/productos/{id}     productos, recetas, costos y márgenes
 tiendas/{uid}/pedidos/{id}       pedidos propios y los que llegan de la tienda
+tiendas/{uid}/historial/{id}     cómo fue cambiando el costo de cada material
 tiendas/{uid}/catalogo/{id}      lo publicado, de lectura pública
 tiendas/{uid}/publico/tienda     nombre y WhatsApp que ve el cliente
 ```
@@ -110,11 +111,19 @@ de ellos lo que vence antes.
 Sin el parámetro `?tienda=`, `tienda.html` muestra su catálogo de ejemplo y
 envía los pedidos por WhatsApp.
 
+## Historial de costos
+
+Cada vez que cambia el costo de un material se anota el valor anterior y el
+nuevo. En la ficha del material aparece cuánto subió y desde cuándo, y en
+Inicio se avisa de los productos cuyo precio quedó corto porque sus insumos
+subieron.
+
 ## Seguridad
 
 Las reglas de `firestore.rules` garantizan que:
 
-- Solo el dueño lee y escribe sus materiales, productos, pedidos y ajustes.
+- Solo el dueño lee y escribe sus materiales, productos, pedidos, historial
+  de costos y ajustes.
 - El catálogo publicado y los datos de contacto son de lectura pública.
 - Cualquiera puede **crear** un pedido desde la tienda, con campos validados,
   pero nadie puede leer, editar ni borrar los pedidos de otra persona.
