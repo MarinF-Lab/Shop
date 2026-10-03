@@ -111,6 +111,17 @@ de ellos lo que vence antes.
 Sin el parámetro `?tienda=`, `tienda.html` muestra su catálogo de ejemplo y
 envía los pedidos por WhatsApp.
 
+## Categorías
+
+Los materiales se agrupan por categoría: quien trabaja con limpiapipas tiene un
+material en doce colores, no doce materiales sueltos. La categoría se elige de
+un desplegable con las que ya usaste, o se crea al vuelo desde la ficha.
+
+Cada categoría se pliega y muestra, sin abrirla, cuántos ítems tiene y cuánto
+dinero representa; dentro, cada material es una línea que se abre al tocarla.
+Al buscar, las categorías con coincidencias se abren solas. El desplegable de
+materiales dentro de cada producto queda agrupado igual.
+
 ## Historial de costos
 
 Cada vez que cambia el costo de un material se anota el valor anterior y el
