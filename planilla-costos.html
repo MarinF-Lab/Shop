@@ -715,14 +715,7 @@
     var total = mats + fijos + variables;
 
     var neto = 0;
-    if (p.pricingMode === "manual") {
-      neto = parseNum(p.manualPrice);
-    } else if (p.pricingMode === "margen") {
-      var m = parseNum(p.pricingValue);
-      neto = m >= 100 ? Infinity : total / (1 - m / 100);
-    } else {
-      neto = total * (1 + parseNum(p.pricingValue) / 100);
-    }
+    neto = parseNum(p.manualPrice);
     if (!isFinite(neto)) neto = 0;
 
     var ganancia = neto - total;
@@ -836,6 +829,29 @@
       if (posible < limit) { limit = posible; limiting = m; }
     });
     return { units: any ? limit : null, limiting: limiting };
+  }
+
+  /* Antes el precio podía salir de un margen o un markup sobre el costo.
+     Ahora solo hay precio fijo: se convierte el valor que el producto ya
+     mostraba, para que ningún precio cambie al actualizar la aplicación. */
+  function migrarPrecio(p) {
+    if (!p || p.pricingMode === "manual" || p.pricingMode == null) {
+      if (p) p.pricingMode = "manual";
+      return false;
+    }
+    var costo = 0;
+    (p.materials || []).forEach(function (line) { costo += lineCost(line); });
+    (p.costs || []).forEach(function (c) { costo += parseNum(c.amount); });
+
+    var pct = parseNum(p.pricingValue), neto;
+    if (p.pricingMode === "margen") neto = pct >= 100 ? 0 : costo / (1 - pct / 100);
+    else neto = costo * (1 + pct / 100);
+    if (!isFinite(neto)) neto = 0;
+
+    p.manualPrice = Math.round(neto);
+    p.pricingMode = "manual";
+    delete p.pricingValue;
+    return true;
   }
 
   /* ---------------- existencias de producto terminado ----------------
@@ -1168,7 +1184,7 @@
         delete state.settings.firebase; /* la configuración del proyecto ya no se guarda */
       }
       if (Array.isArray(data.materials)) state.materials = data.materials;
-      if (Array.isArray(data.products)) state.products = data.products;
+      if (Array.isArray(data.products)) { state.products = data.products; state.products.forEach(migrarPrecio); }
       if (Array.isArray(data.orders)) state.orders = data.orders;
       state.materials.forEach(function (m) {
         if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
@@ -1758,32 +1774,15 @@
 
     /* precio */
     var priceSec = el("div", { class: "sec" });
-    priceSec.appendChild(el("header", {}, [el("h4", { text: "Cómo defines el precio" })]));
+    priceSec.appendChild(el("header", {}, [el("h4", { text: "Precio de venta" })]));
+    priceSec.appendChild(el("p", { class: "note",
+      text: "Precio neto que cobras, sin impuesto. La ganancia y el margen se calculan solos." }));
 
-    var segPrecio = el("div", { class: "seg" });
-    [["margen", "Margen %"], ["markup", "Markup %"], ["manual", "Precio fijo"]].forEach(function (o) {
-      segPrecio.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": p.pricingMode === o[0],
-        onclick: function () { p.pricingMode = o[0]; save(p); render(); } }));
-    });
-    priceSec.appendChild(segPrecio);
-
-    var help = p.pricingMode === "margen" ? "Porcentaje que representa la ganancia dentro del precio de venta."
-      : p.pricingMode === "markup" ? "Porcentaje que se suma sobre el costo total."
-      : "Precio neto que cobras, sin impuesto. La ganancia se calcula sola.";
-    priceSec.appendChild(el("p", { class: "note", text: help }));
-
-    var inputWrap = el("div", { class: "row", style: "margin-top:8px" });
-    if (p.pricingMode === "manual") {
-      inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+    priceSec.appendChild(el("div", { class: "row", style: "margin-top:8px" }, [
+      el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
         value: p.manualPrice, placeholder: "0", "aria-label": "Precio neto",
-        oninput: function (e) { p.manualPrice = e.target.value; save(p); refreshOutputs(); } })]));
-    } else {
-      inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
-        value: p.pricingValue, placeholder: "0", "aria-label": "Porcentaje",
-        oninput: function (e) { p.pricingValue = e.target.value; save(p); refreshOutputs(); } })]));
-      inputWrap.appendChild(el("span", { class: "line-total", text: "%" }));
-    }
-    priceSec.appendChild(inputWrap);
+        oninput: function (e) { p.manualPrice = e.target.value; save(p); refreshOutputs(); } })])
+    ]));
     body.appendChild(priceSec);
 
     /* publicación en la tienda */
@@ -1972,7 +1971,7 @@
 
   function addProduct() {
     var p = { id: uid(), name: "", type: "producto", materials: [], costs: [],
-      pricingMode: "margen", pricingValue: 40, manualPrice: "", stock: "" };
+      pricingMode: "manual", manualPrice: "", stock: "" };
     state.products.push(p);
     ui.open[p.id] = true;
     save(p); render();
@@ -2895,8 +2894,14 @@
           });
         }
         if (c.campo === "orders") normalizarPedidos();
+        /* productos de versiones con margen o markup: se pasan a precio fijo */
+        var migrados = c.campo === "products" ? state.products.filter(migrarPrecio) : [];
         guardarLocal();
         fb.aplicando = false;
+        if (migrados.length) {
+          migrados.forEach(save);
+          toast(migrados.length + (migrados.length === 1 ? " producto pasó" : " productos pasaron") + " a precio fijo");
+        }
         setSaveState("Sincronizado");
         renderSeguro();
       }, function () { setSaveState("Sin conexión"); }));
@@ -3723,7 +3728,7 @@
 
   function buildProductsCsv() {
     var head = ["Nombre", "Tipo", "Materiales", "Costos fijos", "Costos variables", "Costo total",
-      "Modo de precio", "Valor", "Precio neto", "Impuesto %", "Impuesto", "Precio final",
+      "Precio neto", "Impuesto %", "Impuesto", "Precio final",
       "Ganancia", "Margen %", "Markup %", "Moneda"];
     var lines = [head.map(csvCell).join(";")];
     state.products.forEach(function (p) {
@@ -3731,7 +3736,6 @@
       lines.push([
         p.name || "Sin nombre", p.type,
         csvNum(r.mats), csvNum(r.fijos), csvNum(r.variables), csvNum(r.total),
-        p.pricingMode, p.pricingMode === "manual" ? csvNum(parseNum(p.manualPrice)) : String(parseNum(p.pricingValue)).replace(".", ","),
         csvNum(r.neto),
         state.settings.taxEnabled ? String(parseNum(state.settings.taxRate)).replace(".", ",") : "0",
         csvNum(r.tax), csvNum(r.final), csvNum(r.ganancia),
@@ -3955,17 +3959,15 @@
       var name = pick(map, row, ["nombre", "producto"]);
       if (!name) continue;
 
-      var modo = norm(pick(map, row, ["modo de precio", "modo"]));
       var p = {
         id: uid(), name: name,
         type: norm(pick(map, row, ["tipo"])).indexOf("servicio") > -1 ? "servicio" : "producto",
         materials: [], costs: [],
-        pricingMode: modo.indexOf("markup") > -1 ? "markup" : modo.indexOf("manual") > -1 ? "manual" : "margen",
-        pricingValue: 40, manualPrice: ""
+        pricingMode: "manual", manualPrice: ""
       };
 
-      if (p.pricingMode === "manual") p.manualPrice = parseNum(pick(map, row, ["precio neto"]));
-      else p.pricingValue = parseNum(pick(map, row, ["valor"]));
+      /* los CSV antiguos traían modo y porcentaje; vale el precio ya calculado */
+      p.manualPrice = parseNum(pick(map, row, ["precio neto", "precio"]));
 
       var mats = parseNum(pick(map, row, ["materiales"]));
       var fijos = parseNum(pick(map, row, ["costos fijos"]));
