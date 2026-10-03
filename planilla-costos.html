@@ -437,6 +437,12 @@
     border: 1px solid var(--line); border-radius: 999px;
     background: var(--surface); color: var(--muted);
   }
+  .buscador input[type="search"]:focus-visible,
+  .chip-filtro:focus-visible,
+  .seg button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
   .chip-filtro[aria-pressed="true"] {
     background: var(--accent-soft); border-color: var(--accent);
     color: var(--accent); font-weight: 600;
@@ -506,7 +512,7 @@
 
 <div class="app" hidden>
   <div class="bar">
-    <h1>Costos y precios<span id="saveState">Cargando…</span></h1>
+    <h1>Costos y precios<span id="saveState" role="status" aria-live="polite">Cargando…</span></h1>
     <div class="cuenta" id="cuenta"></div>
   </div>
 
@@ -3379,16 +3385,48 @@
 
   /* ---------------- ventanas de producción y entrega ---------------- */
 
+  var contadorVentanas = 0;
+
+  function enfocables(raiz) {
+    var nodos = raiz.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    return Array.prototype.filter.call(nodos, function (n) { return n.offsetParent !== null; });
+  }
+
   function abrirVentana(titulo, construir) {
+    var devolverFoco = document.activeElement;
+    var tituloId = "ventana-" + (++contadorVentanas);
+
     var bg = el("div", { class: "sheet-bg", onclick: function (e) { if (e.target === bg) cerrar(); } });
     var cuerpo = el("div", { class: "cuerpo" });
-    var sheet = el("div", { class: "sheet" }, [el("h3", { text: titulo }), cuerpo]);
-    function cerrar() { bg.remove(); document.removeEventListener("keydown", esc); }
-    function esc(e) { if (e.key === "Escape") cerrar(); }
-    document.addEventListener("keydown", esc);
+    var sheet = el("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-labelledby": tituloId },
+      [el("h3", { id: tituloId, text: titulo }), cuerpo]);
+
+    function cerrar() {
+      bg.remove();
+      document.removeEventListener("keydown", teclado, true);
+      /* el foco vuelve a donde estaba: sin esto se pierde al principio de la página */
+      if (devolverFoco && devolverFoco.focus) devolverFoco.focus();
+    }
+
+    /* mientras la ventana está abierta, el tabulador no sale de ella */
+    function teclado(e) {
+      if (e.key === "Escape") { e.preventDefault(); cerrar(); return; }
+      if (e.key !== "Tab") return;
+      var lista = enfocables(sheet);
+      if (!lista.length) return;
+      var primero = lista[0], ultimo = lista[lista.length - 1];
+      if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+      else if (!sheet.contains(document.activeElement)) { e.preventDefault(); primero.focus(); }
+    }
+
+    document.addEventListener("keydown", teclado, true);
     bg.appendChild(sheet);
     document.body.appendChild(bg);
     construir(cuerpo, sheet, cerrar);
+
+    var lista = enfocables(sheet);
+    if (lista.length) lista[0].focus();
     return cerrar;
   }
 
@@ -4148,7 +4186,9 @@
     });
     var btns = document.querySelectorAll(".tabs button");
     for (var i = 0; i < btns.length; i++) {
-      btns[i].setAttribute("aria-selected", btns[i].dataset.tab === ui.tab ? "true" : "false");
+      var activa = btns[i].dataset.tab === ui.tab;
+      btns[i].setAttribute("aria-selected", activa ? "true" : "false");
+      btns[i].setAttribute("tabindex", activa ? "0" : "-1");
     }
     if (ui.tab === "inicio") renderInicio();
     else if (ui.tab === "productos") renderProductos();
@@ -4164,6 +4204,26 @@
   for (var i = 0; i < tabButtons.length; i++) {
     tabButtons[i].addEventListener("click", function () { ui.tab = this.dataset.tab; render(); });
   }
+
+  /* una lista de pestañas se recorre con las flechas, no solo con el tabulador */
+  document.querySelector(".tabs").addEventListener("keydown", function (e) {
+    var paso = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (!paso && e.key !== "Home" && e.key !== "End") return;
+    var visibles = Array.prototype.filter.call(tabButtons, function (b) { return !b.hidden; });
+    if (!visibles.length) return;
+    e.preventDefault();
+    var actual = visibles.indexOf(document.activeElement);
+    if (actual < 0) actual = 0;
+    var destino = e.key === "Home" ? 0
+      : e.key === "End" ? visibles.length - 1
+      : (actual + paso + visibles.length) % visibles.length;
+    visibles[destino].focus();
+    ui.tab = visibles[destino].dataset.tab;
+    render();
+    /* render repinta: hay que recuperar el foco en la pestaña equivalente */
+    var tras = document.querySelector('.tabs button[data-tab="' + ui.tab + '"]');
+    if (tras) tras.focus();
+  });
 
   document.getElementById("btnGoogle").addEventListener("click", entrarConGoogle);
   gateOcupado(true, "Comprobando sesión…");
