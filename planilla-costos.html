@@ -32,6 +32,8 @@
     line-height: 1.45;
     -webkit-text-size-adjust: 100%;
     padding-bottom: 40px;
+    /* el fondo acompaña aunque el contenido sea corto */
+    min-height: 100vh;
   }
 
   .app :focus-visible {
@@ -43,11 +45,10 @@
   .bar {
     background: var(--ink);
     color: #F2F5F8;
-    padding: 14px 16px;
+    padding: 11px 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 10px;
   }
   .bar h1 {
     font-size: 17px;
@@ -86,9 +87,9 @@
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    padding: 13px 10px;
+    padding: 13px 7px;
     font: inherit;
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--muted);
     cursor: pointer;
     white-space: nowrap;
@@ -380,14 +381,18 @@
   .btn-google svg { width: 18px; height: 18px; flex: none; }
 
   .bar .cuenta {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 8px; flex: none;
     font-size: 12.5px; color: #93A6B6;
   }
   .bar .cuenta button {
     background: #22303F; color: #F2F5F8; border: 1px solid #33455A;
-    border-radius: 4px; padding: 6px 9px; font: inherit; font-size: 12.5px; cursor: pointer;
+    border-radius: 999px; padding: 6px 11px; font: inherit; font-size: 12.5px; cursor: pointer;
   }
-  .bar .cuenta img { width: 26px; height: 26px; border-radius: 50%; }
+  .bar .cuenta button:hover { background: #2C3D50; }
+  .bar .cuenta img { width: 28px; height: 28px; border-radius: 50%; }
+  /* el correo entero no cabe en un teléfono y tampoco hace falta */
+  .bar .cuenta .correo { display: none; }
+  @media (min-width: 560px) { .bar .cuenta .correo { display: inline; } }
 
   /* ---------- asistente ---------- */
   .wiz { max-width: 460px; }
@@ -442,6 +447,29 @@
   }
   .tabs button[aria-selected="true"] .cuenta-tab { color: var(--accent); }
 
+  /* ---------- pulido ---------- */
+  .campo-precio {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--surface); padding: 4px 12px 4px 14px;
+  }
+  .campo-precio:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .campo-precio .simbolo { font-family: var(--num); font-size: 16px; color: var(--muted); flex: none; }
+  .campo-precio input {
+    border: none; background: none; padding: 10px 0; flex: 1;
+    font-family: var(--num); font-size: 22px; font-weight: 600; text-align: right;
+  }
+  .campo-precio input:focus { outline: none; }
+
+  .btn.peligro { color: var(--danger); border-color: #E6C9C5; }
+  .btn.peligro:hover { background: #FBEFED; }
+
+  /* el aire entre secciones es lo que hace legible una ficha larga */
+  .sec { margin-top: 18px; }
+  .card-body { padding: 0 14px 16px; }
+  .mat-card + .mat-card { margin-top: 10px; }
+  .setting + .setting { margin-top: 14px; }
+
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     background: var(--ink); color: #fff; font-size: 13px;
@@ -479,7 +507,6 @@
 <div class="app" hidden>
   <div class="bar">
     <h1>Costos y precios<span id="saveState">Cargando…</span></h1>
-    <select id="currency" aria-label="Moneda"></select>
     <div class="cuenta" id="cuenta"></div>
   </div>
 
@@ -622,6 +649,9 @@
     return isFinite(n) ? n : 0;
   }
 
+  /* añade un hijo solo si existe: algunas piezas se omiten según el caso */
+  function agregar(padre, hijo) { if (hijo) padre.appendChild(hijo); }
+
   function el(tag, attrs, children) {
     var node = document.createElement(tag);
     if (attrs) Object.keys(attrs).forEach(function (k) {
@@ -733,6 +763,15 @@
 
   /* el stock se cuenta en pliegos si el material se compra por pliego, y si no en su unidad de uso */
   function stockUnit(m) { return hasSheet(m) ? "pliego" : (m ? m.unit : ""); }
+
+  /* "9 unidad" se lee mal: las unidades contables llevan plural */
+  var PLURALES = { unidad: "unidades", pliego: "pliegos", paquete: "paquetes", hora: "horas" };
+
+  function conUnidad(cantidad, unidad) {
+    var n = parseNum(cantidad);
+    var texto = Math.abs(n - 1) < 1e-9 ? unidad : (PLURALES[unidad] || unidad);
+    return fmtQty(n) + " " + texto;
+  }
 
   function stockUnitValue(m) {
     if (!m) return 0;
@@ -1351,9 +1390,13 @@
     return ui.filtros[lista];
   }
 
-  /* barra con buscador, chips de filtro y selector de orden */
+  /* Con pocos elementos la barra estorba más de lo que ayuda: se muestra
+     a partir de cinco, o si ya hay una búsqueda escrita. */
+  var MINIMO_BUSCADOR = 5;
+
   function barraBusqueda(opts) {
     var f = filtro(opts.lista);
+    if (opts.total < MINIMO_BUSCADOR && !f.q && !f.tag) return null;
     var caja = el("div", { class: "buscador" });
 
     var input = el("input", { type: "search", value: f.q, placeholder: opts.placeholder || "Buscar…",
@@ -1377,7 +1420,7 @@
       caja.appendChild(chips);
     }
 
-    if (opts.ordenes && opts.ordenes.length) {
+    if (opts.ordenes && opts.ordenes.length > 1 && opts.total >= MINIMO_BUSCADOR) {
       var sel = el("select", { class: "orden", "aria-label": "Ordenar" });
       opts.ordenes.forEach(function (o) {
         sel.appendChild(el("option", { value: o.id, text: "Orden: " + o.label }));
@@ -1580,7 +1623,7 @@
       total += l.cost;
       plan.appendChild(el("div", { class: "plan-row short" }, [
         el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-        el("span", { class: "plan-use", text: "faltan " + fmtQty(l.falta) + " " + stockUnit(l.material) + " para los pedidos" }),
+        el("span", { class: "plan-use", text: "faltan " + conUnidad(l.falta, stockUnit(l.material)) + " para los pedidos" }),
         el("span", { class: "plan-cost", text: l.packs
           ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
       ]));
@@ -1592,7 +1635,7 @@
       total += rc.cost;
       plan.appendChild(el("div", { class: "plan-row" }, [
         el("span", { class: "plan-name", text: m.name || "Sin nombre" }),
-        el("span", { class: "plan-use", text: "bajo el mínimo · faltan " + fmtQty(falta(m)) + " " + stockUnit(m) }),
+        el("span", { class: "plan-use", text: "bajo el mínimo · faltan " + conUnidad(falta(m), stockUnit(m)) }),
         el("span", { class: "plan-cost", text: rc.packs
           ? rc.packs + (rc.packs === 1 ? " paquete " : " paquetes ") + money(rc.cost) : money(rc.cost) })
       ]));
@@ -1600,9 +1643,7 @@
 
     card.appendChild(plan);
     card.appendChild(el("div", { class: "unit-cost" + (faltanPedidos.length ? " low" : "") }, [
-      el("span", { text: faltanPedidos.length
-        ? "Comprar antes de producir los pedidos"
-        : "Para volver al nivel inicial" }),
+      el("span", { text: faltanPedidos.length ? "Comprar para los pedidos" : "Para volver al nivel inicial" }),
       el("b", { text: money(total) })
     ]));
     return card;
@@ -1768,10 +1809,11 @@
     priceSec.appendChild(el("p", { class: "note",
       text: "Precio neto que cobras, sin impuesto. La ganancia y el margen se calculan solos." }));
 
-    priceSec.appendChild(el("div", { class: "row", style: "margin-top:8px" }, [
-      el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+    priceSec.appendChild(el("div", { class: "campo-precio" }, [
+      el("span", { class: "simbolo", text: cfg().symbol }),
+      el("input", { class: "num", type: "text", inputmode: "decimal",
         value: p.manualPrice, placeholder: "0", "aria-label": "Precio neto",
-        oninput: function (e) { p.manualPrice = e.target.value; save(p); refreshOutputs(); } })])
+        oninput: function (e) { p.manualPrice = e.target.value; save(p); refreshOutputs(); } })
     ]));
     body.appendChild(priceSec);
 
@@ -1803,7 +1845,7 @@
     body.appendChild(el("div", { class: "sec" }, [
       el("button", { class: "btn small", type: "button", text: "Duplicar producto",
         style: "margin-right:6px", onclick: function () { duplicarProducto(p); } }),
-      el("button", { class: "btn small", type: "button", text: "Eliminar producto",
+      el("button", { class: "btn small peligro", type: "button", text: "Eliminar producto",
         onclick: function () {
           if (ui.confirming === p.id) {
             state.products = state.products.filter(function (x) { return x.id !== p.id; });
@@ -1822,9 +1864,12 @@
   }
 
   function resultRow(label, value, cls) {
-    return el("tr", cls === "total" ? { class: "total" } : {}, [
+    var clases = (cls || "").split(" ").filter(Boolean);
+    var esTotal = clases.indexOf("total") > -1;
+    var color = clases.filter(function (c) { return c !== "total"; }).join(" ");
+    return el("tr", esTotal ? { class: "total" } : {}, [
       el("th", { scope: "row", text: label }),
-      el("td", { class: cls && cls !== "total" ? cls : "", text: value })
+      el("td", { class: color, text: value })
     ]);
   }
 
@@ -1841,9 +1886,9 @@
       rows.push(resultRow("Impuesto " + pct(parseNum(state.settings.taxRate)), money(r.tax)));
       rows.push(resultRow("Precio final", money(r.final), "total"));
     }
-    rows.push(resultRow("Ganancia", money(r.ganancia), r.ganancia < 0 ? "loss" : "gain"));
-    rows.push(resultRow("Margen sobre venta", pct(r.margen)));
-    rows.push(resultRow("Markup sobre costo", pct(r.markup)));
+    /* la ganancia es la conclusión de la tabla: se lee como tal */
+    rows.push(resultRow("Ganancia", money(r.ganancia), (r.ganancia < 0 ? "loss" : "gain") + " total"));
+    rows.push(resultRow("De cada venta te queda", pct(r.margen)));
 
     var tbody = el("tbody", {}, rows);
     return el("div", { class: "result", "data-result": p.id }, [el("table", {}, [tbody])]);
@@ -1939,7 +1984,7 @@
         visibles.forEach(function (p) { lista.appendChild(productCard(p)); });
       }
 
-      root.appendChild(barraBusqueda({
+      agregar(root, barraBusqueda({
         lista: "productos",
         placeholder: "Buscar producto…",
         total: state.products.length,
@@ -1951,8 +1996,6 @@
       pintarLista();
 
       root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo producto o servicio", onclick: addProduct }));
-      root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de productos",
-        style: "margin-top:8px", onclick: exportProducts }));
     }
     renderStrip();
   }
@@ -2023,7 +2066,7 @@
       ]
     };
 
-    root.appendChild(barraBusqueda({
+    agregar(root, barraBusqueda({
       lista: "materiales",
       placeholder: "Buscar " + rubro().insumo.toLowerCase() + "…",
       total: state.materials.length,
@@ -2165,8 +2208,8 @@
         if (bajo) {
           var rc = restockCost(m, target - stock);
           estado.appendChild(el("span", { text: rc.packs
-            ? "Faltan " + fmtQty(target - stock) + " " + unidad + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
-            : "Faltan " + fmtQty(target - stock) + " " + unidad }));
+            ? "Faltan " + conUnidad(target - stock, unidad) + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
+            : "Faltan " + conUnidad(target - stock, unidad) }));
           estado.appendChild(el("b", { text: money(rc.cost) }));
         } else {
           estado.appendChild(el("span", { text: "Valor de estas existencias" }));
@@ -2197,8 +2240,6 @@
 
     root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Agregar " + rubro().insumo.toLowerCase(),
       style: "margin-top:10px", onclick: addMaterial }));
-    root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de " + rubro().insumoPlural,
-      style: "margin-top:8px", onclick: exportMaterials }));
   }
 
   function addMaterial() {
@@ -2271,7 +2312,7 @@
           var unidad = stockUnit(l.material);
           detalle.appendChild(el("div", { class: "plan-row short" }, [
             el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-            el("span", { class: "plan-use", text: "necesitas " + fmtQty(l.need) + " " + unidad + " · tienes " + fmtQty(l.stock) }),
+            el("span", { class: "plan-use", text: "necesitas " + conUnidad(l.need, unidad) + " · tienes " + fmtQty(l.stock) }),
             el("span", { class: "plan-cost", text: l.packs
               ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
           ]));
@@ -2344,7 +2385,7 @@
       visibles.forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
     }
 
-    root.appendChild(barraBusqueda({
+    agregar(root, barraBusqueda({
       lista: "pedidos",
       placeholder: "Buscar por cliente o producto…",
       total: state.orders.length,
@@ -2456,7 +2497,7 @@
         faltan.forEach(function (l) {
           det.appendChild(el("div", { class: "plan-row short" }, [
             el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-            el("span", { class: "plan-use", text: "faltan " + fmtQty(l.falta) + " " + stockUnit(l.material) }),
+            el("span", { class: "plan-use", text: "faltan " + conUnidad(l.falta, stockUnit(l.material)) }),
             el("span", { class: "plan-cost", text: l.packs ? l.packs + " paq · " + money(l.cost) : money(l.cost) })
           ]));
         });
@@ -2503,7 +2544,7 @@
     }
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("button", { class: "btn small", type: "button", text: "Eliminar pedido", onclick: function () {
+      el("button", { class: "btn small peligro", type: "button", text: "Eliminar pedido", onclick: function () {
         if (ui.confirming === o.id) {
           state.orders = state.orders.filter(function (x) { return x.id !== o.id; });
           marcarBorrado("pedidos", o.id);
@@ -2803,7 +2844,7 @@
     if (fb.user.photoURL) {
       n.appendChild(el("img", { src: fb.user.photoURL, alt: "" }));
     }
-    n.appendChild(el("span", { text: fb.user.email || fb.user.displayName || "Mi cuenta" }));
+    n.appendChild(el("span", { class: "correo", text: fb.user.email || fb.user.displayName || "Mi cuenta" }));
     n.appendChild(el("button", { type: "button", text: "Salir", onclick: cerrarSesion }));
   }
 
@@ -3398,7 +3439,7 @@
         plan.lines.forEach(function (l) {
           var unidad = stockUnit(l.material);
           detalle.appendChild(filaPlan(l.material.name || "Sin nombre",
-            "usa " + fmtQty(l.use) + " " + unidad + " · quedan " + fmtQty(Math.max(0, l.after)),
+            "usa " + conUnidad(l.use, unidad) + " · quedan " + fmtQty(Math.max(0, l.after)),
             l.after < 0 ? "short" : ""));
         });
         if (!plan.lines.length) {
@@ -3483,7 +3524,7 @@
             var c = consumo[k];
             var queda = parseNum(c.material.stock) - c.use;
             mats.appendChild(filaPlan(c.material.name || "Sin nombre",
-              fmtQty(c.use) + " " + stockUnit(c.material) + " · quedan " + fmtQty(Math.max(0, queda)),
+              conUnidad(c.use, stockUnit(c.material)) + " · quedan " + fmtQty(Math.max(0, queda)),
               queda < 0 ? "short" : ""));
           });
           cuerpo.appendChild(mats);
@@ -3568,6 +3609,18 @@
     negocioCard.appendChild(rubroSel);
     negocioCard.appendChild(el("p", { class: "note",
       text: "Define cómo se llaman tus " + rubro().insumoPlural + " y qué secciones ves." }));
+
+    negocioCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Moneda" }));
+    var monedaSel = el("select", { "aria-label": "Moneda" });
+    Object.keys(CURRENCIES).forEach(function (code) {
+      monedaSel.appendChild(el("option", { value: code, text: CURRENCIES[code].label }));
+    });
+    monedaSel.value = state.settings.currency;
+    monedaSel.addEventListener("change", function () {
+      state.settings.currency = monedaSel.value;
+      save(); render();
+    });
+    negocioCard.appendChild(monedaSel);
 
     negocioCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Cómo vendes" }));
     var modoSeg = el("div", { class: "seg tiny" });
@@ -3665,6 +3718,8 @@
       el("h4", { text: "Respaldo e importación" }),
       el("p", { text: "El respaldo .json guarda todo tal cual: úsalo para cambiar de dispositivo o antes de borrar." }),
       el("button", { class: "btn wide", type: "button", text: "Exportar respaldo (.json)", onclick: exportBackup }),
+      el("button", { class: "btn wide", type: "button", text: "Exportar productos (CSV)", style: "margin-top:8px", onclick: exportProducts }),
+      el("button", { class: "btn wide", type: "button", text: "Exportar " + rubro().insumoPlural + " (CSV)", style: "margin-top:8px", onclick: exportMaterials }),
       el("button", { class: "btn wide", type: "button", text: "Restaurar respaldo (.json)", style: "margin-top:8px", onclick: importBackupSheet }),
       el("button", { class: "btn wide", type: "button", text: "Importar " + rubro().insumoPlural + " (CSV)", style: "margin-top:14px", onclick: importMaterialsSheet }),
       el("button", { class: "btn wide", type: "button", text: "Importar productos (CSV)", style: "margin-top:8px", onclick: importProductsSheet }),
@@ -3674,7 +3729,7 @@
     root.appendChild(el("div", { class: "setting" }, [
       el("h4", { text: "Tus datos" }),
       el("p", { text: rubro().insumos + ", productos y ajustes se guardan solos y son solo tuyos. Nadie más los ve." }),
-      el("button", { class: "btn small", type: "button", text: "Borrar todo y empezar de cero",
+      el("button", { class: "btn small peligro", type: "button", text: "Borrar todo y empezar de cero",
         onclick: function () {
           if (ui.confirming === "reset") {
             state.materials = []; state.products = []; ui.open = {}; ui.confirming = null;
@@ -4100,21 +4155,10 @@
     else if (ui.tab === "pedidos") renderPedidos();
     else if (ui.tab === "inventario") renderInventario();
     else renderAjustes();
-    var sel = document.getElementById("currency");
-    if (sel && sel.value !== state.settings.currency) sel.value = state.settings.currency;
     pintarContadores();
   }
 
   /* ---------------- arranque ---------------- */
-
-  var currencySel = document.getElementById("currency");
-  Object.keys(CURRENCIES).forEach(function (code) {
-    currencySel.appendChild(el("option", { value: code, text: CURRENCIES[code].label }));
-  });
-  currencySel.addEventListener("change", function () {
-    state.settings.currency = currencySel.value;
-    save(); render();
-  });
 
   var tabButtons = document.querySelectorAll(".tabs button");
   for (var i = 0; i < tabButtons.length; i++) {
