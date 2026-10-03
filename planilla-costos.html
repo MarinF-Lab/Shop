@@ -1045,15 +1045,6 @@
     return { ok: true, plan: plan };
   }
 
-  /* lo que se puede ofrecer hoy: lo ya hecho más lo que dan los materiales */
-  function availableUnits(p) {
-    var cap = capacity(p);
-    var desdeMateriales = llevaMateriales() && cap.units != null ? Math.max(0, cap.units) : 0;
-    if (!llevaFabricados()) return cap.units == null ? null : desdeMateriales;
-    if (!llevaMateriales()) return hechos(p);
-    return hechos(p) + desdeMateriales;
-  }
-
   function publicCatalog() {
     return state.products.filter(function (p) { return p.publicado; }).map(function (p) {
       var r = calc(p);
@@ -1062,8 +1053,7 @@
         nombre: p.name || "Sin nombre",
         descripcion: p.descripcionPublica || "",
         precio: Math.round(r.final),
-        moneda: state.settings.currency,
-        disponible: availableUnits(p)
+        moneda: state.settings.currency
       };
     });
   }
@@ -1795,16 +1785,14 @@
       el("label", { class: "switch" }, [pubCheck, el("span", { text: "Mostrar en el catálogo público" })])
     ]);
     if (p.publicado) {
-      var disp = availableUnits(p);
       pubSec.appendChild(el("div", { class: "sec", style: "margin-top:10px" }, [
         el("label", { class: "field", text: "Descripción para el cliente" }),
         el("input", { type: "text", value: p.descripcionPublica || "", placeholder: "Ej: Tulipán artesanal de limpiapipas",
           oninput: function (e) { p.descripcionPublica = e.target.value; save(p); } })
       ]));
       pubSec.appendChild(el("p", { class: "note",
-        text: "Se publica como " + money(r.final) + " · " +
-          (disp == null ? "sin stock definido" : disp + (disp === 1 ? " unidad disponible" : " unidades disponibles")) +
-          ". Tus costos y márgenes no salen a la tienda." }));
+        text: "Se publica como " + money(r.final) + " y se ofrece por encargo: el cliente pide " +
+          "la cantidad que quiera y tú la preparas. Tus costos y márgenes no salen a la tienda." }));
     }
     body.appendChild(pubSec);
 

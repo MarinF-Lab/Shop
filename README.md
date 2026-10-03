@@ -84,8 +84,11 @@ El asistente pregunta cómo trabajas y ajusta la aplicación:
 
 En modo mixto, **Fabricar** descuenta los materiales y suma las unidades a la
 existencia del producto, así que lo ya hecho nunca vuelve a consumir materiales.
-Lo disponible para la tienda pública es la suma de lo fabricado más lo que
-alcanzan a dar los materiales.
+
+La tienda pública siempre trabaja por encargo: no muestra cantidades y el cliente
+pide lo que necesite. El inventario es para ti, para saber si te alcanzan los
+materiales; un número publicado quedaría viejo entre una publicación y la
+siguiente.
 
 ## Uso diario
 
