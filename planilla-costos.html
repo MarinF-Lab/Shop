@@ -564,6 +564,13 @@
 
   var state = estadoInicial();
 
+  /* cada lista del estado y su colección en Firestore */
+  var COLECCIONES = [
+    { nombre: "materiales", campo: "materials" },
+    { nombre: "productos", campo: "products" },
+    { nombre: "pedidos", campo: "orders" }
+  ];
+
   var ESTADOS = [
     { id: "pendiente", label: "Pendiente" },
     { id: "proceso", label: "En proceso" },
@@ -853,6 +860,7 @@
     if (n <= 0) return { error: "Indica cuántas unidades vas a fabricar." };
     if (!llevaMateriales()) {
       p.stock = hechos(p) + n;
+      marcarSucio(p);
       return { units: n, sinMateriales: true };
     }
 
@@ -869,8 +877,12 @@
     });
     if (faltantes.length) return { error: textoFaltantes({ faltantes: faltantes }) };
 
-    usos.forEach(function (u) { u.material.stock = Math.max(0, parseNum(u.material.stock) - u.use); });
+    usos.forEach(function (u) {
+      u.material.stock = Math.max(0, parseNum(u.material.stock) - u.use);
+      marcarSucio(u.material);
+    });
     if (llevaFabricados()) p.stock = hechos(p) + n;
+    marcarSucio(p);
     return { units: n };
   }
 
@@ -1003,9 +1015,13 @@
     if (!plan.ok) return { error: textoFaltantes(plan) };
 
     plan.lineas.forEach(function (l) {
-      if (l.deHechos > 0) l.producto.stock = hechos(l.producto) - l.deHechos;
+      if (l.deHechos > 0) {
+        l.producto.stock = hechos(l.producto) - l.deHechos;
+        marcarSucio(l.producto);
+      }
       l.consumos.forEach(function (c) {
         c.material.stock = Math.max(0, parseNum(c.material.stock) - c.use);
+        marcarSucio(c.material);
       });
     });
     o.estado = "entregado";
@@ -1051,19 +1067,88 @@
     return window.storage.set(storageKey, JSON.stringify(state)).catch(function () {});
   }
 
+  /* ---------------- qué está pendiente de subir ----------------
+     Subir el estado entero en cada cambio costaba una escritura por cada
+     registro del usuario: con cuatrocientos, cuatrocientas escrituras por
+     tecla guardada, y por encima de quinientos el lote de Firestore ni
+     siquiera se acepta. Aquí se anota solo lo que cambió. */
+
+  var sucios = { materiales: {}, productos: {}, pedidos: {} };
+  var borrados = { materiales: {}, productos: {}, pedidos: {} };
+  var sucioAjustes = false;
+
+  function coleccionDe(obj) {
+    if (!obj || !obj.id) return null;
+    if (state.materials.indexOf(obj) > -1) return "materiales";
+    if (state.products.indexOf(obj) > -1) return "productos";
+    if (state.orders.indexOf(obj) > -1) return "pedidos";
+    return null;
+  }
+
+  function marcarSucio(obj) {
+    var col = coleccionDe(obj);
+    if (col) { sucios[col][obj.id] = true; delete borrados[col][obj.id]; }
+    else sucioAjustes = true;   /* ajustes, o algo que ya salió de su lista */
+  }
+
+  /* lo borrado se recuerda aparte: su objeto ya no está en ninguna lista */
+  function marcarBorrado(coleccion, id) {
+    if (!id) return;
+    borrados[coleccion][id] = true;
+    delete sucios[coleccion][id];
+    pedirSubida();
+  }
+
+  function hayPendientes() {
+    if (sucioAjustes) return true;
+    return COLECCIONES.some(function (c) {
+      return Object.keys(sucios[c.nombre]).length || Object.keys(borrados[c.nombre]).length;
+    });
+  }
+
+  function limpiarPendientes() {
+    sucios = { materiales: {}, productos: {}, pedidos: {} };
+    borrados = { materiales: {}, productos: {}, pedidos: {} };
+    sucioAjustes = false;
+  }
+
   /* Firestore es la fuente de verdad; el dispositivo guarda una copia para
-     seguir trabajando sin señal. Lo que quede sin subir se marca pendiente. */
-  function save() {
+     seguir trabajando sin señal. `que` es el objeto que cambió: un material,
+     un producto o un pedido. Sin argumento, se entiende que son los ajustes. */
+  function save(que) {
     if (fb && fb.aplicando) return;
+    marcarSucio(que);
+    pedirSubida();
+  }
+
+  /* para cambios masivos (importar, vaciar) donde no hay un objeto que señalar */
+  function guardarTodo() {
+    if (fb && fb.aplicando) return;
+    sucioAjustes = true;
+    COLECCIONES.forEach(function (c) {
+      (state[c.campo] || []).forEach(function (item) {
+        if (!item.id) item.id = uid();
+        sucios[c.nombre][item.id] = true;
+      });
+      /* lo que la nube tenía y aquí ya no está, se borra */
+      Object.keys((fb.remotos && fb.remotos[c.nombre]) || {}).forEach(function (id) {
+        var vive = (state[c.campo] || []).some(function (x) { return x.id === id; });
+        if (!vive) borrados[c.nombre][id] = true;
+      });
+    });
+    pedirSubida();
+  }
+
+  function pedirSubida() {
     pendiente = true;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       setSaveState("Guardando…");
       guardarLocal().then(function () {
         if (!fb.user) { pendiente = false; setSaveState("Sin sesión"); return; }
-        return subirTodo().then(function () {
-          pendiente = false;
-          setSaveState("Sincronizado");
+        return subirCambios().then(function () {
+          pendiente = hayPendientes();
+          setSaveState(pendiente ? "Pendiente de subir" : "Sincronizado");
         });
       }).catch(function () {
         setSaveState("Pendiente de subir");
@@ -1095,6 +1180,7 @@
   function limpiarEstado() {
     clearTimeout(saveTimer);
     pendiente = false;
+    limpiarPendientes();   /* lo de la cuenta anterior no se sube a la nueva */
     state = estadoInicial();
     ui.open = {};
     ui.confirming = null;
@@ -1165,7 +1251,7 @@
     state.products.splice(pos + 1, 0, copia);
     ui.open[copia.id] = true;
     ui.open[p.id] = false;
-    save(); render();
+    save(copia); render();
     toast("Duplicado como “" + copia.name + "”");
     enfocarTarjeta(copia.id);
   }
@@ -1174,7 +1260,7 @@
     var copia = Object.assign({}, m, { id: uid(), name: copiaNombre(m.name), stock: "" });
     var pos = state.materials.indexOf(m);
     state.materials.splice(pos + 1, 0, copia);
-    save(); render();
+    save(copia); render();
     toast("Duplicado como “" + copia.name + "”");
   }
 
@@ -1213,7 +1299,7 @@
           areaMode: "area", stock: "", stockMin: "" };
         state.materials.push(m);
         p.materials.push({ materialId: m.id, qty: 1, h: "", w: "", pieces: 1 });
-        save(); render(); cerrar();
+        save(m); save(p); render(); cerrar();
         toast(m.name + " agregado al producto");
         enfocarUltimaLinea(p.id);
       }
@@ -1546,13 +1632,13 @@
     body.appendChild(el("div", { class: "sec" }, [
       el("label", { class: "field", text: "Nombre" }),
       el("input", { type: "text", value: p.name, placeholder: "Ej: Tarjetas de presentación",
-        oninput: function (e) { p.name = e.target.value; head.querySelector("h3").textContent = p.name || "Sin nombre"; save(); } })
+        oninput: function (e) { p.name = e.target.value; head.querySelector("h3").textContent = p.name || "Sin nombre"; save(p); } })
     ]));
 
     var segTipo = el("div", { class: "seg" });
     [["producto", "Producto"], ["servicio", "Servicio"]].forEach(function (opt) {
       segTipo.appendChild(el("button", { type: "button", text: opt[1], "aria-pressed": p.type === opt[0],
-        onclick: function () { p.type = opt[0]; save(); render(); } }));
+        onclick: function () { p.type = opt[0]; save(p); render(); } }));
     });
     body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Tipo" }), segTipo]));
 
@@ -1574,7 +1660,7 @@
         sel.appendChild(el("option", { value: m.id, text: (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")" }));
       });
       sel.value = line.materialId || "";
-      sel.addEventListener("change", function () { line.materialId = sel.value; save(); render(); });
+      sel.addEventListener("change", function () { line.materialId = sel.value; save(p); render(); });
 
       var m = materialById(line.materialId);
       var area = m && isArea(m.unit);
@@ -1586,9 +1672,9 @@
         el("div", { class: "grow" }, [sel]),
         area ? null : el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: line.qty, "aria-label": "Cantidad",
-          oninput: function (e) { line.qty = e.target.value; save(); refreshOutputs(); } })]),
+          oninput: function (e) { line.qty = e.target.value; save(p); refreshOutputs(); } })]),
         area ? null : lineTotal,
-        deleteButton("Quitar material", function () { p.materials.splice(idx, 1); save(); render(); })
+        deleteButton("Quitar material", function () { p.materials.splice(idx, 1); save(p); render(); })
       ]));
 
       if (area) {
@@ -1609,7 +1695,7 @@
           return el("div", { class: "grow" }, [
             el("label", { class: "field", text: label }),
             el("input", { class: "num", type: "text", inputmode: "decimal", value: line[key], placeholder: "0",
-              oninput: function (e) { line[key] = e.target.value; save(); refreshLine(); refreshOutputs(); } })
+              oninput: function (e) { line[key] = e.target.value; save(p); refreshLine(); refreshOutputs(); } })
           ]);
         }
 
@@ -1631,7 +1717,7 @@
     matSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ " + rubro().insumo,
       onclick: function () {
         p.materials.push({ materialId: "", qty: 1, h: "", w: "", pieces: 1 });
-        save(); render();
+        save(p); render();
         enfocarUltimaLinea(p.id);
       } }));
 
@@ -1654,20 +1740,20 @@
         kindSel.appendChild(el("option", { value: o[0], text: o[1] }));
       });
       kindSel.value = c.kind;
-      kindSel.addEventListener("change", function () { c.kind = kindSel.value; save(); render(); });
+      kindSel.addEventListener("change", function () { c.kind = kindSel.value; save(p); render(); });
 
       costSec.appendChild(el("div", { class: "row" }, [
         el("div", { class: "grow" }, [el("input", { type: "text", value: c.name, placeholder: "Ej: Mano de obra",
-          oninput: function (e) { c.name = e.target.value; save(); } })]),
+          oninput: function (e) { c.name = e.target.value; save(p); } })]),
         el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal", value: c.amount, "aria-label": "Monto",
-          oninput: function (e) { c.amount = e.target.value; save(); refreshOutputs(); } })]),
+          oninput: function (e) { c.amount = e.target.value; save(p); refreshOutputs(); } })]),
         el("div", { class: "kind" }, [kindSel]),
-        deleteButton("Quitar costo", function () { p.costs.splice(idx, 1); save(); render(); })
+        deleteButton("Quitar costo", function () { p.costs.splice(idx, 1); save(p); render(); })
       ]));
     });
 
     costSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Costo",
-      onclick: function () { p.costs.push({ id: uid(), name: "", amount: "", kind: "variable" }); save(); render(); } }));
+      onclick: function () { p.costs.push({ id: uid(), name: "", amount: "", kind: "variable" }); save(p); render(); } }));
     body.appendChild(costSec);
 
     /* precio */
@@ -1677,7 +1763,7 @@
     var segPrecio = el("div", { class: "seg" });
     [["margen", "Margen %"], ["markup", "Markup %"], ["manual", "Precio fijo"]].forEach(function (o) {
       segPrecio.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": p.pricingMode === o[0],
-        onclick: function () { p.pricingMode = o[0]; save(); render(); } }));
+        onclick: function () { p.pricingMode = o[0]; save(p); render(); } }));
     });
     priceSec.appendChild(segPrecio);
 
@@ -1690,11 +1776,11 @@
     if (p.pricingMode === "manual") {
       inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
         value: p.manualPrice, placeholder: "0", "aria-label": "Precio neto",
-        oninput: function (e) { p.manualPrice = e.target.value; save(); refreshOutputs(); } })]));
+        oninput: function (e) { p.manualPrice = e.target.value; save(p); refreshOutputs(); } })]));
     } else {
       inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
         value: p.pricingValue, placeholder: "0", "aria-label": "Porcentaje",
-        oninput: function (e) { p.pricingValue = e.target.value; save(); refreshOutputs(); } })]));
+        oninput: function (e) { p.pricingValue = e.target.value; save(p); refreshOutputs(); } })]));
       inputWrap.appendChild(el("span", { class: "line-total", text: "%" }));
     }
     priceSec.appendChild(inputWrap);
@@ -1703,7 +1789,7 @@
     /* publicación en la tienda */
     var pubCheck = el("input", { type: "checkbox" });
     pubCheck.checked = !!p.publicado;
-    pubCheck.addEventListener("change", function () { p.publicado = pubCheck.checked; save(); render(); });
+    pubCheck.addEventListener("change", function () { p.publicado = pubCheck.checked; save(p); render(); });
 
     var pubSec = el("div", { class: "sec" }, [
       el("header", {}, [el("h4", { text: "Tienda pública" })]),
@@ -1714,7 +1800,7 @@
       pubSec.appendChild(el("div", { class: "sec", style: "margin-top:10px" }, [
         el("label", { class: "field", text: "Descripción para el cliente" }),
         el("input", { type: "text", value: p.descripcionPublica || "", placeholder: "Ej: Tulipán artesanal de limpiapipas",
-          oninput: function (e) { p.descripcionPublica = e.target.value; save(); } })
+          oninput: function (e) { p.descripcionPublica = e.target.value; save(p); } })
       ]));
       pubSec.appendChild(el("p", { class: "note",
         text: "Se publica como " + money(r.final) + " · " +
@@ -1734,7 +1820,8 @@
         onclick: function () {
           if (ui.confirming === p.id) {
             state.products = state.products.filter(function (x) { return x.id !== p.id; });
-            ui.confirming = null; save(); render(); toast("Producto eliminado");
+            marcarBorrado("productos", p.id);
+            ui.confirming = null; render(); toast("Producto eliminado");
           } else {
             ui.confirming = p.id;
             toast("Toca otra vez para eliminar");
@@ -1888,7 +1975,7 @@
       pricingMode: "margen", pricingValue: 40, manualPrice: "", stock: "" };
     state.products.push(p);
     ui.open[p.id] = true;
-    save(); render();
+    save(p); render();
   }
 
   /* ---------------- render: materiales ---------------- */
@@ -1972,7 +2059,7 @@
       UNITS.forEach(function (u) { unitSel.appendChild(el("option", { value: u, text: u })); });
       if (UNITS.indexOf(m.unit) === -1) unitSel.appendChild(el("option", { value: m.unit, text: m.unit }));
       unitSel.value = m.unit;
-      unitSel.addEventListener("change", function () { m.unit = unitSel.value; save(); render(); });
+      unitSel.addEventListener("change", function () { m.unit = unitSel.value; save(m); render(); });
 
       var readout = el("div", { class: "unit-cost" }, [
         el("span", { "data-unitlabel": m.id, text: "Costo por " + m.unit }),
@@ -1992,16 +2079,18 @@
       card.appendChild(el("div", { class: "row" }, [
         el("div", { class: "grow" }, [el("input", { type: "text", value: m.name, placeholder: "Ej: Papel couché 300g",
           "aria-label": "Nombre del material",
-          oninput: function (e) { m.name = e.target.value; save(); } })]),
+          oninput: function (e) { m.name = e.target.value; save(m); } })]),
         deleteButton("Eliminar material", function () {
           var usados = 0;
           state.products.forEach(function (p) {
             var antes = p.materials.length;
             p.materials = p.materials.filter(function (l) { return l.materialId !== m.id; });
+            if (p.materials.length !== antes) save(p);   /* el producto también cambió */
             usados += antes - p.materials.length;
           });
           state.materials.splice(idx, 1);
-          save(); render();
+          marcarBorrado("materiales", m.id);
+          render();
           toast(usados ? "Material eliminado y quitado de " + usados + " línea(s)" : "Material eliminado");
         })
       ]));
@@ -2014,7 +2103,7 @@
       var seg = el("div", { class: "seg tiny" });
       [["directo", "Costo por unidad"], ["compra", "Calcular desde compra"]].forEach(function (o) {
         seg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.mode || "directo") === o[0],
-          onclick: function () { m.mode = o[0]; save(); render(); } }));
+          onclick: function () { m.mode = o[0]; save(m); render(); } }));
       });
       card.appendChild(seg);
 
@@ -2023,7 +2112,7 @@
           el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Precio pagado" })]),
           el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
             value: m.buyPrice, placeholder: "0", "aria-label": "Precio de compra",
-            oninput: function (e) { m.buyPrice = e.target.value; save(); refresh(); } })])
+            oninput: function (e) { m.buyPrice = e.target.value; save(m); refresh(); } })])
         ]));
 
         if (isArea(m.unit)) {
@@ -2032,17 +2121,17 @@
             el("div", { class: "grow" }, [
               el("label", { class: "field", text: "Alto pliego (" + side + ")" }),
               el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetH, placeholder: "0",
-                oninput: function (e) { m.sheetH = e.target.value; save(); refresh(); } })
+                oninput: function (e) { m.sheetH = e.target.value; save(m); refresh(); } })
             ]),
             el("div", { class: "grow" }, [
               el("label", { class: "field", text: "Ancho pliego (" + side + ")" }),
               el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetW, placeholder: "0",
-                oninput: function (e) { m.sheetW = e.target.value; save(); refresh(); } })
+                oninput: function (e) { m.sheetW = e.target.value; save(m); refresh(); } })
             ]),
             el("div", { class: "grow" }, [
               el("label", { class: "field", text: "Pliegos" }),
               el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetQty, placeholder: "1",
-                oninput: function (e) { m.sheetQty = e.target.value; save(); refresh(); } })
+                oninput: function (e) { m.sheetQty = e.target.value; save(m); refresh(); } })
             ])
           ]));
         } else {
@@ -2050,7 +2139,7 @@
             el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidades que trae" })]),
             el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
               value: m.buyQty, placeholder: "0", "aria-label": "Cantidad comprada",
-              oninput: function (e) { m.buyQty = e.target.value; save(); refresh(); } })])
+              oninput: function (e) { m.buyQty = e.target.value; save(m); refresh(); } })])
           ]));
         }
       } else {
@@ -2058,7 +2147,7 @@
           el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Costo por " + m.unit })]),
           el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
             value: m.cost, placeholder: "0", "aria-label": "Costo unitario",
-            oninput: function (e) { m.cost = e.target.value; save(); refresh(); } })])
+            oninput: function (e) { m.cost = e.target.value; save(m); refresh(); } })])
         ]));
       }
 
@@ -2070,7 +2159,7 @@
         var segCobro = el("div", { class: "seg tiny", style: "margin-top:4px" });
         [["area", "Solo el área usada"], ["pliego", "Pliego completo"]].forEach(function (o) {
           segCobro.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.areaMode || "area") === o[0],
-            onclick: function () { m.areaMode = o[0]; save(); render(); } }));
+            onclick: function () { m.areaMode = o[0]; save(m); render(); } }));
         });
         card.appendChild(segCobro);
         card.appendChild(el("p", { class: "note", text: m.areaMode === "pliego"
@@ -2102,12 +2191,12 @@
         el("div", { class: "grow" }, [
           el("label", { class: "field", text: "Stock actual (" + unidad + ")" }),
           el("input", { class: "num", type: "text", inputmode: "decimal", value: m.stock, placeholder: "0",
-            oninput: function (e) { m.stock = e.target.value; save(); refreshEstado(); } })
+            oninput: function (e) { m.stock = e.target.value; save(m); refreshEstado(); } })
         ]),
         el("div", { class: "grow" }, [
           el("label", { class: "field", text: "Stock inicial" }),
           el("input", { class: "num", type: "text", inputmode: "decimal", value: stockTarget(m) || "", placeholder: "0",
-            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(); refreshEstado(); } })
+            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(m); refreshEstado(); } })
         ])
       ]));
       card.appendChild(estado);
@@ -2126,10 +2215,11 @@
   }
 
   function addMaterial() {
-    state.materials.push({ id: uid(), name: "", unit: "unidad", mode: "directo", cost: "",
+    var nuevo = { id: uid(), name: "", unit: "unidad", mode: "directo", cost: "",
       buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area",
-      stock: "", stockMin: "" });
-    save(); render();
+      stock: "", stockMin: "" };
+    state.materials.push(nuevo);
+    save(nuevo); render();
     var cards = document.querySelectorAll("#tab-inventario .mat-card");
     if (cards.length) {
       var input = cards[cards.length - 1].querySelector("input[type=text]");
@@ -2308,7 +2398,7 @@
       return el("div", { class: "sec" }, [
         el("label", { class: "field", text: label }),
         el("input", { type: "text", value: o[key] || "", placeholder: placeholder || "",
-          oninput: function (e) { o[key] = e.target.value; save(); } })
+          oninput: function (e) { o[key] = e.target.value; save(o); } })
       ]);
     }
     body.appendChild(campo("Cliente", "cliente", "Nombre"));
@@ -2317,7 +2407,7 @@
     var metodoSel = el("select", { "aria-label": "Método de entrega" });
     METODOS.forEach(function (mth) { metodoSel.appendChild(el("option", { value: mth, text: mth })); });
     metodoSel.value = o.metodo || METODOS[0];
-    metodoSel.addEventListener("change", function () { o.metodo = metodoSel.value; save(); });
+    metodoSel.addEventListener("change", function () { o.metodo = metodoSel.value; save(o); });
     body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Entrega" }), metodoSel]));
 
     body.appendChild(campo("Comuna o ciudad", "comuna", "Ej: Ñuñoa"));
@@ -2342,7 +2432,7 @@
         it.productId = sel.value;
         var p = productById(sel.value);
         if (p) it.price = Math.round(calc(p).final);
-        save(); render();
+        save(o); render();
       });
 
       itemsSec.appendChild(el("div", { class: "row" }, [
@@ -2350,9 +2440,9 @@
         /* repintar en cada tecla quitaría el foco: los totales se recalculan al salir */
         el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: it.qty, "aria-label": "Cantidad",
-          oninput: function (e) { it.qty = e.target.value; save(); },
+          oninput: function (e) { it.qty = e.target.value; save(o); },
           onchange: function () { renderPronto(); } })]),
-        deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(); render(); })
+        deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(o); render(); })
       ]));
     });
 
@@ -2360,7 +2450,7 @@
       onclick: function () {
         var p = state.products[0];
         o.items.push({ productId: p ? p.id : "", qty: 1, price: p ? Math.round(calc(p).final) : 0 });
-        save(); render();
+        save(o); render();
       } }));
     body.appendChild(itemsSec);
 
@@ -2407,7 +2497,7 @@
         onclick: function () {
           /* entregar abre su ventana: hay que ver de dónde sale cada unidad */
           if (e2.id === "entregado") { abrirEntrega(o); return; }
-          o.estado = e2.id; sincronizarEstado(o); save(); render();
+          o.estado = e2.id; sincronizarEstado(o); save(o); render();
         } }));
     });
     body.appendChild(el("div", { class: "sec" }, [
@@ -2429,7 +2519,8 @@
       el("button", { class: "btn small", type: "button", text: "Eliminar pedido", onclick: function () {
         if (ui.confirming === o.id) {
           state.orders = state.orders.filter(function (x) { return x.id !== o.id; });
-          ui.confirming = null; save(); render(); toast("Pedido eliminado");
+          marcarBorrado("pedidos", o.id);
+          ui.confirming = null; render(); toast("Pedido eliminado");
         } else {
           ui.confirming = o.id;
           toast("Toca otra vez para eliminar");
@@ -2449,7 +2540,7 @@
       estado: "pendiente", creado: new Date().toISOString().slice(0, 10), origen: "manual" };
     state.orders.push(o);
     ui.open[o.id] = true;
-    save(); render();
+    save(o); render();
   }
 
   /* ---------------- render: inventario ---------------- */
@@ -2555,7 +2646,7 @@
           el("label", { class: "field", text: "Unidades hechas" }),
           el("input", { class: "num", type: "text", inputmode: "decimal", value: p.stock == null ? "" : p.stock,
             placeholder: "0", "aria-label": "Unidades hechas de " + (p.name || "producto"),
-            oninput: function (e) { p.stock = e.target.value; save(); refreshEstado(); } })
+            oninput: function (e) { p.stock = e.target.value; save(p); refreshEstado(); } })
         ]),
         el("div", { class: "grow" }, [
           el("label", { class: "field", text: "Se puede fabricar" }),
@@ -2741,12 +2832,6 @@
   function colRef(nombre) { return tiendaRef().collection(nombre); }
   function publicoRef() { return tiendaRef().collection("publico").doc("tienda"); }
 
-  var COLECCIONES = [
-    { nombre: "materiales", campo: "materials" },
-    { nombre: "productos", campo: "products" },
-    { nombre: "pedidos", campo: "orders" }
-  ];
-
   /* ---------------- sincronización ---------------- */
 
   function pararSync() {
@@ -2882,24 +2967,85 @@
   }
 
   /* sube todo el estado; borra en la nube lo que ya no existe aquí */
+  /* Firestore acepta como mucho 500 operaciones por lote */
+  var TOPE_LOTE = 400;
+
+  function enviarOperaciones(ops) {
+    if (!ops.length) return Promise.resolve();
+    var tandas = [];
+    for (var i = 0; i < ops.length; i += TOPE_LOTE) tandas.push(ops.slice(i, i + TOPE_LOTE));
+    return tandas.reduce(function (cadena, tanda) {
+      return cadena.then(function () {
+        var batch = fb.db.batch();
+        tanda.forEach(function (op) {
+          if (op.borrar) batch.delete(op.ref);
+          else batch.set(op.ref, op.datos, op.fundir ? { merge: true } : undefined);
+        });
+        return batch.commit();
+      });
+    }, Promise.resolve());
+  }
+
+  function opAjustes() {
+    var settings = Object.assign({}, state.settings);
+    delete settings.firebase; /* pudo venir de un respaldo antiguo */
+    return { ref: tiendaRef(), datos: { settings: settings, actualizado: new Date().toISOString() }, fundir: true };
+  }
+
+  /* sube solo lo marcado como sucio, y borra lo marcado como borrado */
+  function subirCambios() {
+    if (!fb.user) return Promise.resolve();
+
+    var ops = [], aLimpiar = { materiales: [], productos: [], pedidos: [] };
+
+    COLECCIONES.forEach(function (c) {
+      Object.keys(sucios[c.nombre]).forEach(function (id) {
+        var item = null;
+        (state[c.campo] || []).forEach(function (x) { if (x.id === id) item = x; });
+        /* si ya no está en la lista, se borró: lo resuelve la rama de borrados */
+        if (!item) return;
+        ops.push({ ref: colRef(c.nombre).doc(id), datos: limpiar(item) });
+        aLimpiar[c.nombre].push(id);
+      });
+      Object.keys(borrados[c.nombre]).forEach(function (id) {
+        ops.push({ ref: colRef(c.nombre).doc(id), borrar: true });
+        aLimpiar[c.nombre].push(id);
+      });
+    });
+
+    var subiaAjustes = sucioAjustes;
+    if (subiaAjustes) ops.push(opAjustes());
+    if (!ops.length) return Promise.resolve();
+
+    return enviarOperaciones(ops).then(function () {
+      /* se limpia solo lo efectivamente enviado: lo editado entretanto sigue pendiente */
+      COLECCIONES.forEach(function (c) {
+        aLimpiar[c.nombre].forEach(function (id) {
+          delete sucios[c.nombre][id];
+          delete borrados[c.nombre][id];
+        });
+      });
+      if (subiaAjustes) sucioAjustes = false;
+    });
+  }
+
+  /* subida completa: migración inicial y el botón de Ajustes */
   function subirTodo() {
     if (!fb.user) return Promise.resolve();
-    var batch = fb.db.batch();
+    var ops = [];
     COLECCIONES.forEach(function (c) {
       var vivos = {};
       (state[c.campo] || []).forEach(function (item) {
         if (!item.id) item.id = uid();
         vivos[item.id] = true;
-        batch.set(colRef(c.nombre).doc(item.id), limpiar(item));
+        ops.push({ ref: colRef(c.nombre).doc(item.id), datos: limpiar(item) });
       });
       Object.keys(fb.remotos[c.nombre] || {}).forEach(function (id) {
-        if (!vivos[id]) batch.delete(colRef(c.nombre).doc(id));
+        if (!vivos[id]) ops.push({ ref: colRef(c.nombre).doc(id), borrar: true });
       });
     });
-    var settings = Object.assign({}, state.settings);
-    delete settings.firebase; /* pudo venir de un respaldo antiguo */
-    batch.set(tiendaRef(), { settings: settings, actualizado: new Date().toISOString() }, { merge: true });
-    return batch.commit();
+    ops.push(opAjustes());
+    return enviarOperaciones(ops).then(function () { limpiarPendientes(); });
   }
 
   /* Firestore no acepta undefined ni el id duplicado dentro del documento */
@@ -3288,7 +3434,7 @@
       accion.addEventListener("click", function () {
         var res = fabricar(p, input.value);
         if (res.error) { toast(res.error); return; }
-        save(); render(); cerrar();
+        save(p); render(); cerrar();
         toast(llevaFabricados()
           ? "Fabricadas " + fmtQty(res.units) + (res.units === 1 ? " unidad" : " unidades")
           : "Descontado el consumo de " + fmtQty(res.units) + (res.units === 1 ? " unidad" : " unidades"));
@@ -3367,7 +3513,7 @@
             var res = deliverOrder(o);
             if (res.error) { toast(res.error); return; }
             sincronizarEstado(o);
-            save(); render(); cerrar();
+            save(o); render(); cerrar();
             toast("Pedido entregado");
           } })
       ]));
@@ -3539,7 +3685,7 @@
         onclick: function () {
           if (ui.confirming === "reset") {
             state.materials = []; state.products = []; ui.open = {}; ui.confirming = null;
-            save(); render(); toast("Planilla vacía");
+            guardarTodo(); render(); toast("Planilla vacía");
           } else {
             ui.confirming = "reset";
             toast("Toca otra vez para borrar todo");
@@ -3911,7 +4057,7 @@
           if (!text) { toast("Pega el contenido o elige un archivo"); return; }
           var res = opts.run(text, mode);
           if (res.error) { toast(res.error); return; }
-          save(); bg.remove(); render();
+          guardarTodo(); bg.remove(); render();
           toast(res.count + " registro(s) importado(s)" + (res.partial ? " sin líneas de materiales" : ""));
         } }),
         el("button", { class: "btn", type: "button", text: "Cerrar", onclick: function () { bg.remove(); } })
