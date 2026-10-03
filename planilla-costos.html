@@ -32,6 +32,8 @@
     line-height: 1.45;
     -webkit-text-size-adjust: 100%;
     padding-bottom: 40px;
+    /* el fondo acompaña aunque el contenido sea corto */
+    min-height: 100vh;
   }
 
   .app :focus-visible {
@@ -43,11 +45,10 @@
   .bar {
     background: var(--ink);
     color: #F2F5F8;
-    padding: 14px 16px;
+    padding: 11px 14px;
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex-wrap: wrap;
+    gap: 10px;
   }
   .bar h1 {
     font-size: 17px;
@@ -86,9 +87,9 @@
     background: none;
     border: none;
     border-bottom: 2px solid transparent;
-    padding: 13px 10px;
+    padding: 13px 7px;
     font: inherit;
-    font-size: 13px;
+    font-size: 12.5px;
     color: var(--muted);
     cursor: pointer;
     white-space: nowrap;
@@ -380,14 +381,18 @@
   .btn-google svg { width: 18px; height: 18px; flex: none; }
 
   .bar .cuenta {
-    display: flex; align-items: center; gap: 8px;
+    display: flex; align-items: center; gap: 8px; flex: none;
     font-size: 12.5px; color: #93A6B6;
   }
   .bar .cuenta button {
     background: #22303F; color: #F2F5F8; border: 1px solid #33455A;
-    border-radius: 4px; padding: 6px 9px; font: inherit; font-size: 12.5px; cursor: pointer;
+    border-radius: 999px; padding: 6px 11px; font: inherit; font-size: 12.5px; cursor: pointer;
   }
-  .bar .cuenta img { width: 26px; height: 26px; border-radius: 50%; }
+  .bar .cuenta button:hover { background: #2C3D50; }
+  .bar .cuenta img { width: 28px; height: 28px; border-radius: 50%; }
+  /* el correo entero no cabe en un teléfono y tampoco hace falta */
+  .bar .cuenta .correo { display: none; }
+  @media (min-width: 560px) { .bar .cuenta .correo { display: inline; } }
 
   /* ---------- asistente ---------- */
   .wiz { max-width: 460px; }
@@ -432,6 +437,12 @@
     border: 1px solid var(--line); border-radius: 999px;
     background: var(--surface); color: var(--muted);
   }
+  .buscador input[type="search"]:focus-visible,
+  .chip-filtro:focus-visible,
+  .seg button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
   .chip-filtro[aria-pressed="true"] {
     background: var(--accent-soft); border-color: var(--accent);
     color: var(--accent); font-weight: 600;
@@ -441,6 +452,30 @@
     font-weight: 600; color: var(--muted);
   }
   .tabs button[aria-selected="true"] .cuenta-tab { color: var(--accent); }
+
+  /* ---------- pulido ---------- */
+  .campo-precio {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+    border: 1px solid var(--line); border-radius: 8px;
+    background: var(--surface); padding: 4px 12px 4px 14px;
+  }
+  .campo-precio:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
+  .campo-precio .simbolo { font-family: var(--num); font-size: 16px; color: var(--muted); flex: none; }
+  .campo-precio input {
+    border: none; background: none; padding: 10px 0; flex: 1;
+    font-family: var(--num); font-size: 22px; font-weight: 600; text-align: right;
+  }
+  .campo-precio input:focus { outline: none; }
+
+  .note.aviso { color: var(--cost); font-weight: 600; }
+  .btn.peligro { color: var(--danger); border-color: #E6C9C5; }
+  .btn.peligro:hover { background: #FBEFED; }
+
+  /* el aire entre secciones es lo que hace legible una ficha larga */
+  .sec { margin-top: 18px; }
+  .card-body { padding: 0 14px 16px; }
+  .mat-card + .mat-card { margin-top: 10px; }
+  .setting + .setting { margin-top: 14px; }
 
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
@@ -478,8 +513,7 @@
 
 <div class="app" hidden>
   <div class="bar">
-    <h1>Costos y precios<span id="saveState">Cargando…</span></h1>
-    <select id="currency" aria-label="Moneda"></select>
+    <h1>Costos y precios<span id="saveState" role="status" aria-live="polite">Cargando…</span></h1>
     <div class="cuenta" id="cuenta"></div>
   </div>
 
@@ -558,11 +592,20 @@
         tienda: { nombre: "", whatsapp: "" } },
       materials: [],
       products: [],
-      orders: []
+      orders: [],
+      historial: []
     };
   }
 
   var state = estadoInicial();
+
+  /* cada lista del estado y su colección en Firestore */
+  var COLECCIONES = [
+    { nombre: "materiales", campo: "materials" },
+    { nombre: "productos", campo: "products" },
+    { nombre: "pedidos", campo: "orders" },
+    { nombre: "historial", campo: "historial" }
+  ];
 
   var ESTADOS = [
     { id: "pendiente", label: "Pendiente" },
@@ -614,6 +657,9 @@
     var n = parseFloat(s);
     return isFinite(n) ? n : 0;
   }
+
+  /* añade un hijo solo si existe: algunas piezas se omiten según el caso */
+  function agregar(padre, hijo) { if (hijo) padre.appendChild(hijo); }
 
   function el(tag, attrs, children) {
     var node = document.createElement(tag);
@@ -708,14 +754,7 @@
     var total = mats + fijos + variables;
 
     var neto = 0;
-    if (p.pricingMode === "manual") {
-      neto = parseNum(p.manualPrice);
-    } else if (p.pricingMode === "margen") {
-      var m = parseNum(p.pricingValue);
-      neto = m >= 100 ? Infinity : total / (1 - m / 100);
-    } else {
-      neto = total * (1 + parseNum(p.pricingValue) / 100);
-    }
+    neto = parseNum(p.manualPrice);
     if (!isFinite(neto)) neto = 0;
 
     var ganancia = neto - total;
@@ -733,6 +772,15 @@
 
   /* el stock se cuenta en pliegos si el material se compra por pliego, y si no en su unidad de uso */
   function stockUnit(m) { return hasSheet(m) ? "pliego" : (m ? m.unit : ""); }
+
+  /* "9 unidad" se lee mal: las unidades contables llevan plural */
+  var PLURALES = { unidad: "unidades", pliego: "pliegos", paquete: "paquetes", hora: "horas" };
+
+  function conUnidad(cantidad, unidad) {
+    var n = parseNum(cantidad);
+    var texto = Math.abs(n - 1) < 1e-9 ? unidad : (PLURALES[unidad] || unidad);
+    return fmtQty(n) + " " + texto;
+  }
 
   function stockUnitValue(m) {
     if (!m) return 0;
@@ -831,6 +879,117 @@
     return { units: any ? limit : null, limiting: limiting };
   }
 
+  /* Antes el precio podía salir de un margen o un markup sobre el costo.
+     Ahora solo hay precio fijo: se convierte el valor que el producto ya
+     mostraba, para que ningún precio cambie al actualizar la aplicación. */
+  function migrarPrecio(p) {
+    if (!p || p.pricingMode === "manual" || p.pricingMode == null) {
+      if (p) p.pricingMode = "manual";
+      return false;
+    }
+    var costo = 0;
+    (p.materials || []).forEach(function (line) { costo += lineCost(line); });
+    (p.costs || []).forEach(function (c) { costo += parseNum(c.amount); });
+
+    var pct = parseNum(p.pricingValue), neto;
+    if (p.pricingMode === "margen") neto = pct >= 100 ? 0 : costo / (1 - pct / 100);
+    else neto = costo * (1 + pct / 100);
+    if (!isFinite(neto)) neto = 0;
+
+    p.manualPrice = Math.round(neto);
+    p.pricingMode = "manual";
+    delete p.pricingValue;
+    return true;
+  }
+
+  /* ---------------- historial de costos ----------------
+     Los insumos suben de precio y el margen se erosiona sin que se note.
+     Cada cambio real de costo se anota con su fecha. */
+
+  function registrarCosto(m, costoAnterior) {
+    var nuevo = materialCost(m);
+    if (!isFinite(nuevo) || nuevo <= 0) return;
+    if (Math.abs(nuevo - costoAnterior) < 0.01) return;   /* no cambió de verdad */
+    if (costoAnterior <= 0) return;                       /* primer precio: no es una subida */
+
+    var registro = {
+      id: uid(),
+      materialId: m.id,
+      fecha: new Date().toISOString(),
+      antes: costoAnterior,
+      despues: nuevo
+    };
+    state.historial.push(registro);
+    /* un año de cambios por material basta para ver la tendencia */
+    if (state.historial.length > 500) state.historial = state.historial.slice(-500);
+    sucios.historial[registro.id] = true;
+    pedirSubida();
+  }
+
+  /* se anota al dejar de escribir: tecla por tecla serían decenas de registros */
+  var anotarTimers = {};
+
+  function anotarCosto(m, costoAnterior) {
+    clearTimeout(anotarTimers[m.id]);
+    anotarTimers[m.id] = setTimeout(function () {
+      registrarCosto(m, costoAnterior);
+      if (ui.tab === "inventario") render();
+    }, 1800);
+  }
+
+  function historialDe(materialId) {
+    return state.historial.filter(function (h) { return h.materialId === materialId; })
+      .sort(function (a, b) { return String(a.fecha).localeCompare(String(b.fecha)); });
+  }
+
+  var MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+  function mesDe(iso) {
+    var d = new Date(iso);
+    if (isNaN(d)) return "";
+    var ahora = new Date();
+    return MESES[d.getMonth()] + (d.getFullYear() !== ahora.getFullYear() ? " de " + d.getFullYear() : "");
+  }
+
+  /* cuánto subió (o bajó) un material desde su primer registro */
+  function variacionCosto(m) {
+    var h = historialDe(m.id);
+    if (!h.length) return null;
+    var desde = h[0].antes, hasta = materialCost(m);
+    if (desde <= 0) return null;
+    var pctCambio = (hasta - desde) / desde * 100;
+    if (Math.abs(pctCambio) < 1) return null;
+    return { pct: pctCambio, desde: desde, hasta: hasta, mes: mesDe(h[0].fecha), cambios: h.length };
+  }
+
+  function textoVariacion(v) {
+    var signo = v.pct > 0 ? "Subió" : "Bajó";
+    return signo + " " + Math.round(Math.abs(v.pct)) + "% desde " + v.mes +
+      " · de " + money(v.desde) + " a " + money(v.hasta);
+  }
+
+  /* productos cuyo margen se comió la subida de un insumo */
+  function productosErosionados() {
+    var afectados = [];
+    state.products.forEach(function (p) {
+      var precio = parseNum(p.manualPrice);
+      if (precio <= 0) return;
+      var r = calc(p);
+      if (r.ganancia >= 0 && r.margen >= 15) return;   /* todavía deja margen razonable */
+
+      /* solo interesa si algún insumo suyo subió */
+      var subio = (p.materials || []).some(function (line) {
+        var m = materialById(line.materialId);
+        var v = m && variacionCosto(m);
+        return v && v.pct > 0;
+      });
+      if (!subio) return;
+      afectados.push({ producto: p, margen: r.margen, ganancia: r.ganancia });
+    });
+    return afectados;
+  }
+
   /* ---------------- existencias de producto terminado ----------------
      Un producto puede estar ya fabricado (unidades hechas y guardadas) o
      por fabricar (se produce descontando materiales). Todo consumo pasa
@@ -853,6 +1012,7 @@
     if (n <= 0) return { error: "Indica cuántas unidades vas a fabricar." };
     if (!llevaMateriales()) {
       p.stock = hechos(p) + n;
+      marcarSucio(p);
       return { units: n, sinMateriales: true };
     }
 
@@ -869,8 +1029,12 @@
     });
     if (faltantes.length) return { error: textoFaltantes({ faltantes: faltantes }) };
 
-    usos.forEach(function (u) { u.material.stock = Math.max(0, parseNum(u.material.stock) - u.use); });
+    usos.forEach(function (u) {
+      u.material.stock = Math.max(0, parseNum(u.material.stock) - u.use);
+      marcarSucio(u.material);
+    });
     if (llevaFabricados()) p.stock = hechos(p) + n;
+    marcarSucio(p);
     return { units: n };
   }
 
@@ -1003,23 +1167,18 @@
     if (!plan.ok) return { error: textoFaltantes(plan) };
 
     plan.lineas.forEach(function (l) {
-      if (l.deHechos > 0) l.producto.stock = hechos(l.producto) - l.deHechos;
+      if (l.deHechos > 0) {
+        l.producto.stock = hechos(l.producto) - l.deHechos;
+        marcarSucio(l.producto);
+      }
       l.consumos.forEach(function (c) {
         c.material.stock = Math.max(0, parseNum(c.material.stock) - c.use);
+        marcarSucio(c.material);
       });
     });
     o.estado = "entregado";
     o.entregado = new Date().toISOString().slice(0, 10);
     return { ok: true, plan: plan };
-  }
-
-  /* lo que se puede ofrecer hoy: lo ya hecho más lo que dan los materiales */
-  function availableUnits(p) {
-    var cap = capacity(p);
-    var desdeMateriales = llevaMateriales() && cap.units != null ? Math.max(0, cap.units) : 0;
-    if (!llevaFabricados()) return cap.units == null ? null : desdeMateriales;
-    if (!llevaMateriales()) return hechos(p);
-    return hechos(p) + desdeMateriales;
   }
 
   function publicCatalog() {
@@ -1030,8 +1189,7 @@
         nombre: p.name || "Sin nombre",
         descripcion: p.descripcionPublica || "",
         precio: Math.round(r.final),
-        moneda: state.settings.currency,
-        disponible: availableUnits(p)
+        moneda: state.settings.currency
       };
     });
   }
@@ -1051,19 +1209,89 @@
     return window.storage.set(storageKey, JSON.stringify(state)).catch(function () {});
   }
 
+  /* ---------------- qué está pendiente de subir ----------------
+     Subir el estado entero en cada cambio costaba una escritura por cada
+     registro del usuario: con cuatrocientos, cuatrocientas escrituras por
+     tecla guardada, y por encima de quinientos el lote de Firestore ni
+     siquiera se acepta. Aquí se anota solo lo que cambió. */
+
+  var sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+  var borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+  var sucioAjustes = false;
+
+  function coleccionDe(obj) {
+    if (!obj || !obj.id) return null;
+    if (state.materials.indexOf(obj) > -1) return "materiales";
+    if (state.products.indexOf(obj) > -1) return "productos";
+    if (state.orders.indexOf(obj) > -1) return "pedidos";
+    if (state.historial.indexOf(obj) > -1) return "historial";
+    return null;
+  }
+
+  function marcarSucio(obj) {
+    var col = coleccionDe(obj);
+    if (col) { sucios[col][obj.id] = true; delete borrados[col][obj.id]; }
+    else sucioAjustes = true;   /* ajustes, o algo que ya salió de su lista */
+  }
+
+  /* lo borrado se recuerda aparte: su objeto ya no está en ninguna lista */
+  function marcarBorrado(coleccion, id) {
+    if (!id) return;
+    borrados[coleccion][id] = true;
+    delete sucios[coleccion][id];
+    pedirSubida();
+  }
+
+  function hayPendientes() {
+    if (sucioAjustes) return true;
+    return COLECCIONES.some(function (c) {
+      return Object.keys(sucios[c.nombre]).length || Object.keys(borrados[c.nombre]).length;
+    });
+  }
+
+  function limpiarPendientes() {
+    sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+    borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+    sucioAjustes = false;
+  }
+
   /* Firestore es la fuente de verdad; el dispositivo guarda una copia para
-     seguir trabajando sin señal. Lo que quede sin subir se marca pendiente. */
-  function save() {
+     seguir trabajando sin señal. `que` es el objeto que cambió: un material,
+     un producto o un pedido. Sin argumento, se entiende que son los ajustes. */
+  function save(que) {
     if (fb && fb.aplicando) return;
+    marcarSucio(que);
+    pedirSubida();
+  }
+
+  /* para cambios masivos (importar, vaciar) donde no hay un objeto que señalar */
+  function guardarTodo() {
+    if (fb && fb.aplicando) return;
+    sucioAjustes = true;
+    COLECCIONES.forEach(function (c) {
+      (state[c.campo] || []).forEach(function (item) {
+        if (!item.id) item.id = uid();
+        sucios[c.nombre][item.id] = true;
+      });
+      /* lo que la nube tenía y aquí ya no está, se borra */
+      Object.keys((fb.remotos && fb.remotos[c.nombre]) || {}).forEach(function (id) {
+        var vive = (state[c.campo] || []).some(function (x) { return x.id === id; });
+        if (!vive) borrados[c.nombre][id] = true;
+      });
+    });
+    pedirSubida();
+  }
+
+  function pedirSubida() {
     pendiente = true;
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
       setSaveState("Guardando…");
       guardarLocal().then(function () {
         if (!fb.user) { pendiente = false; setSaveState("Sin sesión"); return; }
-        return subirTodo().then(function () {
-          pendiente = false;
-          setSaveState("Sincronizado");
+        return subirCambios().then(function () {
+          pendiente = hayPendientes();
+          setSaveState(pendiente ? "Pendiente de subir" : "Sincronizado");
         });
       }).catch(function () {
         setSaveState("Pendiente de subir");
@@ -1083,8 +1311,9 @@
         delete state.settings.firebase; /* la configuración del proyecto ya no se guarda */
       }
       if (Array.isArray(data.materials)) state.materials = data.materials;
-      if (Array.isArray(data.products)) state.products = data.products;
+      if (Array.isArray(data.products)) { state.products = data.products; state.products.forEach(migrarPrecio); }
       if (Array.isArray(data.orders)) state.orders = data.orders;
+      if (Array.isArray(data.historial)) state.historial = data.historial;
       state.materials.forEach(function (m) {
         if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
       });
@@ -1095,6 +1324,7 @@
   function limpiarEstado() {
     clearTimeout(saveTimer);
     pendiente = false;
+    limpiarPendientes();   /* lo de la cuenta anterior no se sube a la nueva */
     state = estadoInicial();
     ui.open = {};
     ui.confirming = null;
@@ -1165,7 +1395,7 @@
     state.products.splice(pos + 1, 0, copia);
     ui.open[copia.id] = true;
     ui.open[p.id] = false;
-    save(); render();
+    save(copia); render();
     toast("Duplicado como “" + copia.name + "”");
     enfocarTarjeta(copia.id);
   }
@@ -1174,7 +1404,7 @@
     var copia = Object.assign({}, m, { id: uid(), name: copiaNombre(m.name), stock: "" });
     var pos = state.materials.indexOf(m);
     state.materials.splice(pos + 1, 0, copia);
-    save(); render();
+    save(copia); render();
     toast("Duplicado como “" + copia.name + "”");
   }
 
@@ -1213,7 +1443,7 @@
           areaMode: "area", stock: "", stockMin: "" };
         state.materials.push(m);
         p.materials.push({ materialId: m.id, qty: 1, h: "", w: "", pieces: 1 });
-        save(); render(); cerrar();
+        save(m); save(p); render(); cerrar();
         toast(m.name + " agregado al producto");
         enfocarUltimaLinea(p.id);
       }
@@ -1259,9 +1489,13 @@
     return ui.filtros[lista];
   }
 
-  /* barra con buscador, chips de filtro y selector de orden */
+  /* Con pocos elementos la barra estorba más de lo que ayuda: se muestra
+     a partir de cinco, o si ya hay una búsqueda escrita. */
+  var MINIMO_BUSCADOR = 5;
+
   function barraBusqueda(opts) {
     var f = filtro(opts.lista);
+    if (opts.total < MINIMO_BUSCADOR && !f.q && !f.tag) return null;
     var caja = el("div", { class: "buscador" });
 
     var input = el("input", { type: "search", value: f.q, placeholder: opts.placeholder || "Buscar…",
@@ -1285,7 +1519,7 @@
       caja.appendChild(chips);
     }
 
-    if (opts.ordenes && opts.ordenes.length) {
+    if (opts.ordenes && opts.ordenes.length > 1 && opts.total >= MINIMO_BUSCADOR) {
       var sel = el("select", { class: "orden", "aria-label": "Ordenar" });
       opts.ordenes.forEach(function (o) {
         sel.appendChild(el("option", { value: o.id, text: "Orden: " + o.label }));
@@ -1442,6 +1676,32 @@
     /* --- qué falta comprar --- */
     if (llevaMateriales()) root.appendChild(tarjetaCompras(abiertos));
 
+    /* --- márgenes que se erosionaron --- */
+    var erosionados = productosErosionados();
+    if (erosionados.length) {
+      var aviso = el("div", { class: "mat-card" });
+      aviso.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("h4", { style: "margin:0;font-size:14px", text: "Revisa estos precios" })]),
+        el("button", { class: "btn small", type: "button", text: "Ver productos",
+          onclick: function () { ui.tab = "productos"; render(); } })
+      ]));
+      aviso.appendChild(el("p", { class: "note", style: "margin:6px 0 0",
+        text: "Subió el costo de algún insumo y el precio quedó corto." }));
+
+      var planAviso = el("div", { class: "plan" });
+      erosionados.slice(0, 5).forEach(function (x) {
+        planAviso.appendChild(el("div", { class: "plan-row short", style: "cursor:pointer",
+          onclick: function () { ui.tab = "productos"; ui.open[x.producto.id] = true; render(); } }, [
+          el("span", { class: "plan-name", text: x.producto.name || "Sin nombre" }),
+          el("span", { class: "plan-use", text: x.ganancia < 0 ? "pierdes " + money(-x.ganancia) + " por unidad"
+            : "solo te queda " + pct(x.margen) }),
+          el("span", { class: "plan-cost", text: money(parseNum(x.producto.manualPrice)) })
+        ]));
+      });
+      aviso.appendChild(planAviso);
+      root.appendChild(aviso);
+    }
+
     /* --- accesos rápidos --- */
     var accesos = el("div", { class: "mat-card" });
     accesos.appendChild(el("h4", { style: "margin:0 0 8px;font-size:14px", text: "Empezar algo" }));
@@ -1488,7 +1748,7 @@
       total += l.cost;
       plan.appendChild(el("div", { class: "plan-row short" }, [
         el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-        el("span", { class: "plan-use", text: "faltan " + fmtQty(l.falta) + " " + stockUnit(l.material) + " para los pedidos" }),
+        el("span", { class: "plan-use", text: "faltan " + conUnidad(l.falta, stockUnit(l.material)) + " para los pedidos" }),
         el("span", { class: "plan-cost", text: l.packs
           ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
       ]));
@@ -1500,7 +1760,7 @@
       total += rc.cost;
       plan.appendChild(el("div", { class: "plan-row" }, [
         el("span", { class: "plan-name", text: m.name || "Sin nombre" }),
-        el("span", { class: "plan-use", text: "bajo el mínimo · faltan " + fmtQty(falta(m)) + " " + stockUnit(m) }),
+        el("span", { class: "plan-use", text: "bajo el mínimo · faltan " + conUnidad(falta(m), stockUnit(m)) }),
         el("span", { class: "plan-cost", text: rc.packs
           ? rc.packs + (rc.packs === 1 ? " paquete " : " paquetes ") + money(rc.cost) : money(rc.cost) })
       ]));
@@ -1508,9 +1768,7 @@
 
     card.appendChild(plan);
     card.appendChild(el("div", { class: "unit-cost" + (faltanPedidos.length ? " low" : "") }, [
-      el("span", { text: faltanPedidos.length
-        ? "Comprar antes de producir los pedidos"
-        : "Para volver al nivel inicial" }),
+      el("span", { text: faltanPedidos.length ? "Comprar para los pedidos" : "Para volver al nivel inicial" }),
       el("b", { text: money(total) })
     ]));
     return card;
@@ -1546,13 +1804,13 @@
     body.appendChild(el("div", { class: "sec" }, [
       el("label", { class: "field", text: "Nombre" }),
       el("input", { type: "text", value: p.name, placeholder: "Ej: Tarjetas de presentación",
-        oninput: function (e) { p.name = e.target.value; head.querySelector("h3").textContent = p.name || "Sin nombre"; save(); } })
+        oninput: function (e) { p.name = e.target.value; head.querySelector("h3").textContent = p.name || "Sin nombre"; save(p); } })
     ]));
 
     var segTipo = el("div", { class: "seg" });
     [["producto", "Producto"], ["servicio", "Servicio"]].forEach(function (opt) {
       segTipo.appendChild(el("button", { type: "button", text: opt[1], "aria-pressed": p.type === opt[0],
-        onclick: function () { p.type = opt[0]; save(); render(); } }));
+        onclick: function () { p.type = opt[0]; save(p); render(); } }));
     });
     body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Tipo" }), segTipo]));
 
@@ -1574,7 +1832,7 @@
         sel.appendChild(el("option", { value: m.id, text: (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")" }));
       });
       sel.value = line.materialId || "";
-      sel.addEventListener("change", function () { line.materialId = sel.value; save(); render(); });
+      sel.addEventListener("change", function () { line.materialId = sel.value; save(p); render(); });
 
       var m = materialById(line.materialId);
       var area = m && isArea(m.unit);
@@ -1586,9 +1844,9 @@
         el("div", { class: "grow" }, [sel]),
         area ? null : el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: line.qty, "aria-label": "Cantidad",
-          oninput: function (e) { line.qty = e.target.value; save(); refreshOutputs(); } })]),
+          oninput: function (e) { line.qty = e.target.value; save(p); refreshOutputs(); } })]),
         area ? null : lineTotal,
-        deleteButton("Quitar material", function () { p.materials.splice(idx, 1); save(); render(); })
+        deleteButton("Quitar material", function () { p.materials.splice(idx, 1); save(p); render(); })
       ]));
 
       if (area) {
@@ -1609,7 +1867,7 @@
           return el("div", { class: "grow" }, [
             el("label", { class: "field", text: label }),
             el("input", { class: "num", type: "text", inputmode: "decimal", value: line[key], placeholder: "0",
-              oninput: function (e) { line[key] = e.target.value; save(); refreshLine(); refreshOutputs(); } })
+              oninput: function (e) { line[key] = e.target.value; save(p); refreshLine(); refreshOutputs(); } })
           ]);
         }
 
@@ -1631,7 +1889,7 @@
     matSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ " + rubro().insumo,
       onclick: function () {
         p.materials.push({ materialId: "", qty: 1, h: "", w: "", pieces: 1 });
-        save(); render();
+        save(p); render();
         enfocarUltimaLinea(p.id);
       } }));
 
@@ -1654,72 +1912,54 @@
         kindSel.appendChild(el("option", { value: o[0], text: o[1] }));
       });
       kindSel.value = c.kind;
-      kindSel.addEventListener("change", function () { c.kind = kindSel.value; save(); render(); });
+      kindSel.addEventListener("change", function () { c.kind = kindSel.value; save(p); render(); });
 
       costSec.appendChild(el("div", { class: "row" }, [
         el("div", { class: "grow" }, [el("input", { type: "text", value: c.name, placeholder: "Ej: Mano de obra",
-          oninput: function (e) { c.name = e.target.value; save(); } })]),
+          oninput: function (e) { c.name = e.target.value; save(p); } })]),
         el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal", value: c.amount, "aria-label": "Monto",
-          oninput: function (e) { c.amount = e.target.value; save(); refreshOutputs(); } })]),
+          oninput: function (e) { c.amount = e.target.value; save(p); refreshOutputs(); } })]),
         el("div", { class: "kind" }, [kindSel]),
-        deleteButton("Quitar costo", function () { p.costs.splice(idx, 1); save(); render(); })
+        deleteButton("Quitar costo", function () { p.costs.splice(idx, 1); save(p); render(); })
       ]));
     });
 
     costSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Costo",
-      onclick: function () { p.costs.push({ id: uid(), name: "", amount: "", kind: "variable" }); save(); render(); } }));
+      onclick: function () { p.costs.push({ id: uid(), name: "", amount: "", kind: "variable" }); save(p); render(); } }));
     body.appendChild(costSec);
 
     /* precio */
     var priceSec = el("div", { class: "sec" });
-    priceSec.appendChild(el("header", {}, [el("h4", { text: "Cómo defines el precio" })]));
+    priceSec.appendChild(el("header", {}, [el("h4", { text: "Precio de venta" })]));
+    priceSec.appendChild(el("p", { class: "note",
+      text: "Precio neto que cobras, sin impuesto. La ganancia y el margen se calculan solos." }));
 
-    var segPrecio = el("div", { class: "seg" });
-    [["margen", "Margen %"], ["markup", "Markup %"], ["manual", "Precio fijo"]].forEach(function (o) {
-      segPrecio.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": p.pricingMode === o[0],
-        onclick: function () { p.pricingMode = o[0]; save(); render(); } }));
-    });
-    priceSec.appendChild(segPrecio);
-
-    var help = p.pricingMode === "margen" ? "Porcentaje que representa la ganancia dentro del precio de venta."
-      : p.pricingMode === "markup" ? "Porcentaje que se suma sobre el costo total."
-      : "Precio neto que cobras, sin impuesto. La ganancia se calcula sola.";
-    priceSec.appendChild(el("p", { class: "note", text: help }));
-
-    var inputWrap = el("div", { class: "row", style: "margin-top:8px" });
-    if (p.pricingMode === "manual") {
-      inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+    priceSec.appendChild(el("div", { class: "campo-precio" }, [
+      el("span", { class: "simbolo", text: cfg().symbol }),
+      el("input", { class: "num", type: "text", inputmode: "decimal",
         value: p.manualPrice, placeholder: "0", "aria-label": "Precio neto",
-        oninput: function (e) { p.manualPrice = e.target.value; save(); refreshOutputs(); } })]));
-    } else {
-      inputWrap.appendChild(el("div", { class: "grow" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
-        value: p.pricingValue, placeholder: "0", "aria-label": "Porcentaje",
-        oninput: function (e) { p.pricingValue = e.target.value; save(); refreshOutputs(); } })]));
-      inputWrap.appendChild(el("span", { class: "line-total", text: "%" }));
-    }
-    priceSec.appendChild(inputWrap);
+        oninput: function (e) { p.manualPrice = e.target.value; save(p); refreshOutputs(); } })
+    ]));
     body.appendChild(priceSec);
 
     /* publicación en la tienda */
     var pubCheck = el("input", { type: "checkbox" });
     pubCheck.checked = !!p.publicado;
-    pubCheck.addEventListener("change", function () { p.publicado = pubCheck.checked; save(); render(); });
+    pubCheck.addEventListener("change", function () { p.publicado = pubCheck.checked; save(p); render(); });
 
     var pubSec = el("div", { class: "sec" }, [
       el("header", {}, [el("h4", { text: "Tienda pública" })]),
       el("label", { class: "switch" }, [pubCheck, el("span", { text: "Mostrar en el catálogo público" })])
     ]);
     if (p.publicado) {
-      var disp = availableUnits(p);
       pubSec.appendChild(el("div", { class: "sec", style: "margin-top:10px" }, [
         el("label", { class: "field", text: "Descripción para el cliente" }),
         el("input", { type: "text", value: p.descripcionPublica || "", placeholder: "Ej: Tulipán artesanal de limpiapipas",
-          oninput: function (e) { p.descripcionPublica = e.target.value; save(); } })
+          oninput: function (e) { p.descripcionPublica = e.target.value; save(p); } })
       ]));
       pubSec.appendChild(el("p", { class: "note",
-        text: "Se publica como " + money(r.final) + " · " +
-          (disp == null ? "sin stock definido" : disp + (disp === 1 ? " unidad disponible" : " unidades disponibles")) +
-          ". Tus costos y márgenes no salen a la tienda." }));
+        text: "Se publica como " + money(r.final) + " y se ofrece por encargo: el cliente pide " +
+          "la cantidad que quiera y tú la preparas. Tus costos y márgenes no salen a la tienda." }));
     }
     body.appendChild(pubSec);
 
@@ -1730,11 +1970,12 @@
     body.appendChild(el("div", { class: "sec" }, [
       el("button", { class: "btn small", type: "button", text: "Duplicar producto",
         style: "margin-right:6px", onclick: function () { duplicarProducto(p); } }),
-      el("button", { class: "btn small", type: "button", text: "Eliminar producto",
+      el("button", { class: "btn small peligro", type: "button", text: "Eliminar producto",
         onclick: function () {
           if (ui.confirming === p.id) {
             state.products = state.products.filter(function (x) { return x.id !== p.id; });
-            ui.confirming = null; save(); render(); toast("Producto eliminado");
+            marcarBorrado("productos", p.id);
+            ui.confirming = null; render(); toast("Producto eliminado");
           } else {
             ui.confirming = p.id;
             toast("Toca otra vez para eliminar");
@@ -1748,9 +1989,12 @@
   }
 
   function resultRow(label, value, cls) {
-    return el("tr", cls === "total" ? { class: "total" } : {}, [
+    var clases = (cls || "").split(" ").filter(Boolean);
+    var esTotal = clases.indexOf("total") > -1;
+    var color = clases.filter(function (c) { return c !== "total"; }).join(" ");
+    return el("tr", esTotal ? { class: "total" } : {}, [
       el("th", { scope: "row", text: label }),
-      el("td", { class: cls && cls !== "total" ? cls : "", text: value })
+      el("td", { class: color, text: value })
     ]);
   }
 
@@ -1767,9 +2011,9 @@
       rows.push(resultRow("Impuesto " + pct(parseNum(state.settings.taxRate)), money(r.tax)));
       rows.push(resultRow("Precio final", money(r.final), "total"));
     }
-    rows.push(resultRow("Ganancia", money(r.ganancia), r.ganancia < 0 ? "loss" : "gain"));
-    rows.push(resultRow("Margen sobre venta", pct(r.margen)));
-    rows.push(resultRow("Markup sobre costo", pct(r.markup)));
+    /* la ganancia es la conclusión de la tabla: se lee como tal */
+    rows.push(resultRow("Ganancia", money(r.ganancia), (r.ganancia < 0 ? "loss" : "gain") + " total"));
+    rows.push(resultRow("De cada venta te queda", pct(r.margen)));
 
     var tbody = el("tbody", {}, rows);
     return el("div", { class: "result", "data-result": p.id }, [el("table", {}, [tbody])]);
@@ -1865,7 +2109,7 @@
         visibles.forEach(function (p) { lista.appendChild(productCard(p)); });
       }
 
-      root.appendChild(barraBusqueda({
+      agregar(root, barraBusqueda({
         lista: "productos",
         placeholder: "Buscar producto…",
         total: state.products.length,
@@ -1877,18 +2121,16 @@
       pintarLista();
 
       root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo producto o servicio", onclick: addProduct }));
-      root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de productos",
-        style: "margin-top:8px", onclick: exportProducts }));
     }
     renderStrip();
   }
 
   function addProduct() {
     var p = { id: uid(), name: "", type: "producto", materials: [], costs: [],
-      pricingMode: "margen", pricingValue: 40, manualPrice: "", stock: "" };
+      pricingMode: "manual", manualPrice: "", stock: "" };
     state.products.push(p);
     ui.open[p.id] = true;
-    save(); render();
+    save(p); render();
   }
 
   /* ---------------- render: materiales ---------------- */
@@ -1949,7 +2191,7 @@
       ]
     };
 
-    root.appendChild(barraBusqueda({
+    agregar(root, barraBusqueda({
       lista: "materiales",
       placeholder: "Buscar " + rubro().insumo.toLowerCase() + "…",
       total: state.materials.length,
@@ -1972,7 +2214,7 @@
       UNITS.forEach(function (u) { unitSel.appendChild(el("option", { value: u, text: u })); });
       if (UNITS.indexOf(m.unit) === -1) unitSel.appendChild(el("option", { value: m.unit, text: m.unit }));
       unitSel.value = m.unit;
-      unitSel.addEventListener("change", function () { m.unit = unitSel.value; save(); render(); });
+      unitSel.addEventListener("change", function () { m.unit = unitSel.value; save(m); render(); });
 
       var readout = el("div", { class: "unit-cost" }, [
         el("span", { "data-unitlabel": m.id, text: "Costo por " + m.unit }),
@@ -1992,16 +2234,18 @@
       card.appendChild(el("div", { class: "row" }, [
         el("div", { class: "grow" }, [el("input", { type: "text", value: m.name, placeholder: "Ej: Papel couché 300g",
           "aria-label": "Nombre del material",
-          oninput: function (e) { m.name = e.target.value; save(); } })]),
+          oninput: function (e) { m.name = e.target.value; save(m); } })]),
         deleteButton("Eliminar material", function () {
           var usados = 0;
           state.products.forEach(function (p) {
             var antes = p.materials.length;
             p.materials = p.materials.filter(function (l) { return l.materialId !== m.id; });
+            if (p.materials.length !== antes) save(p);   /* el producto también cambió */
             usados += antes - p.materials.length;
           });
           state.materials.splice(idx, 1);
-          save(); render();
+          marcarBorrado("materiales", m.id);
+          render();
           toast(usados ? "Material eliminado y quitado de " + usados + " línea(s)" : "Material eliminado");
         })
       ]));
@@ -2014,7 +2258,7 @@
       var seg = el("div", { class: "seg tiny" });
       [["directo", "Costo por unidad"], ["compra", "Calcular desde compra"]].forEach(function (o) {
         seg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.mode || "directo") === o[0],
-          onclick: function () { m.mode = o[0]; save(); render(); } }));
+          onclick: function () { m.mode = o[0]; save(m); render(); } }));
       });
       card.appendChild(seg);
 
@@ -2023,7 +2267,7 @@
           el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Precio pagado" })]),
           el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
             value: m.buyPrice, placeholder: "0", "aria-label": "Precio de compra",
-            oninput: function (e) { m.buyPrice = e.target.value; save(); refresh(); } })])
+            oninput: function (e) { var antes = materialCost(m); m.buyPrice = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
         ]));
 
         if (isArea(m.unit)) {
@@ -2032,17 +2276,17 @@
             el("div", { class: "grow" }, [
               el("label", { class: "field", text: "Alto pliego (" + side + ")" }),
               el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetH, placeholder: "0",
-                oninput: function (e) { m.sheetH = e.target.value; save(); refresh(); } })
+                oninput: function (e) { m.sheetH = e.target.value; save(m); refresh(); } })
             ]),
             el("div", { class: "grow" }, [
               el("label", { class: "field", text: "Ancho pliego (" + side + ")" }),
               el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetW, placeholder: "0",
-                oninput: function (e) { m.sheetW = e.target.value; save(); refresh(); } })
+                oninput: function (e) { m.sheetW = e.target.value; save(m); refresh(); } })
             ]),
             el("div", { class: "grow" }, [
               el("label", { class: "field", text: "Pliegos" }),
               el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetQty, placeholder: "1",
-                oninput: function (e) { m.sheetQty = e.target.value; save(); refresh(); } })
+                oninput: function (e) { m.sheetQty = e.target.value; save(m); refresh(); } })
             ])
           ]));
         } else {
@@ -2050,7 +2294,7 @@
             el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidades que trae" })]),
             el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
               value: m.buyQty, placeholder: "0", "aria-label": "Cantidad comprada",
-              oninput: function (e) { m.buyQty = e.target.value; save(); refresh(); } })])
+              oninput: function (e) { var antes = materialCost(m); m.buyQty = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
           ]));
         }
       } else {
@@ -2058,7 +2302,7 @@
           el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Costo por " + m.unit })]),
           el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
             value: m.cost, placeholder: "0", "aria-label": "Costo unitario",
-            oninput: function (e) { m.cost = e.target.value; save(); refresh(); } })])
+            oninput: function (e) { var antes = materialCost(m); m.cost = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
         ]));
       }
 
@@ -2070,7 +2314,7 @@
         var segCobro = el("div", { class: "seg tiny", style: "margin-top:4px" });
         [["area", "Solo el área usada"], ["pliego", "Pliego completo"]].forEach(function (o) {
           segCobro.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.areaMode || "area") === o[0],
-            onclick: function () { m.areaMode = o[0]; save(); render(); } }));
+            onclick: function () { m.areaMode = o[0]; save(m); render(); } }));
         });
         card.appendChild(segCobro);
         card.appendChild(el("p", { class: "note", text: m.areaMode === "pliego"
@@ -2089,8 +2333,8 @@
         if (bajo) {
           var rc = restockCost(m, target - stock);
           estado.appendChild(el("span", { text: rc.packs
-            ? "Faltan " + fmtQty(target - stock) + " " + unidad + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
-            : "Faltan " + fmtQty(target - stock) + " " + unidad }));
+            ? "Faltan " + conUnidad(target - stock, unidad) + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
+            : "Faltan " + conUnidad(target - stock, unidad) }));
           estado.appendChild(el("b", { text: money(rc.cost) }));
         } else {
           estado.appendChild(el("span", { text: "Valor de estas existencias" }));
@@ -2102,16 +2346,22 @@
         el("div", { class: "grow" }, [
           el("label", { class: "field", text: "Stock actual (" + unidad + ")" }),
           el("input", { class: "num", type: "text", inputmode: "decimal", value: m.stock, placeholder: "0",
-            oninput: function (e) { m.stock = e.target.value; save(); refreshEstado(); } })
+            oninput: function (e) { m.stock = e.target.value; save(m); refreshEstado(); } })
         ]),
         el("div", { class: "grow" }, [
           el("label", { class: "field", text: "Stock inicial" }),
           el("input", { class: "num", type: "text", inputmode: "decimal", value: stockTarget(m) || "", placeholder: "0",
-            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(); refreshEstado(); } })
+            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(m); refreshEstado(); } })
         ])
       ]));
       card.appendChild(estado);
       refreshEstado();
+
+      var variacion = variacionCosto(m);
+      if (variacion) {
+        card.appendChild(el("p", { class: "note" + (variacion.pct > 0 ? " aviso" : ""),
+          style: "margin-top:8px", text: textoVariacion(variacion) }));
+      }
 
       card.appendChild(el("button", { class: "btn small", type: "button", text: "Duplicar",
         style: "margin-top:10px", onclick: function () { duplicarMaterial(m); } }));
@@ -2121,15 +2371,14 @@
 
     root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Agregar " + rubro().insumo.toLowerCase(),
       style: "margin-top:10px", onclick: addMaterial }));
-    root.appendChild(el("button", { class: "btn wide", type: "button", text: "Exportar CSV de " + rubro().insumoPlural,
-      style: "margin-top:8px", onclick: exportMaterials }));
   }
 
   function addMaterial() {
-    state.materials.push({ id: uid(), name: "", unit: "unidad", mode: "directo", cost: "",
+    var nuevo = { id: uid(), name: "", unit: "unidad", mode: "directo", cost: "",
       buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area",
-      stock: "", stockMin: "" });
-    save(); render();
+      stock: "", stockMin: "" };
+    state.materials.push(nuevo);
+    save(nuevo); render();
     var cards = document.querySelectorAll("#tab-inventario .mat-card");
     if (cards.length) {
       var input = cards[cards.length - 1].querySelector("input[type=text]");
@@ -2194,7 +2443,7 @@
           var unidad = stockUnit(l.material);
           detalle.appendChild(el("div", { class: "plan-row short" }, [
             el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-            el("span", { class: "plan-use", text: "necesitas " + fmtQty(l.need) + " " + unidad + " · tienes " + fmtQty(l.stock) }),
+            el("span", { class: "plan-use", text: "necesitas " + conUnidad(l.need, unidad) + " · tienes " + fmtQty(l.stock) }),
             el("span", { class: "plan-cost", text: l.packs
               ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
           ]));
@@ -2267,7 +2516,7 @@
       visibles.forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
     }
 
-    root.appendChild(barraBusqueda({
+    agregar(root, barraBusqueda({
       lista: "pedidos",
       placeholder: "Buscar por cliente o producto…",
       total: state.orders.length,
@@ -2308,7 +2557,7 @@
       return el("div", { class: "sec" }, [
         el("label", { class: "field", text: label }),
         el("input", { type: "text", value: o[key] || "", placeholder: placeholder || "",
-          oninput: function (e) { o[key] = e.target.value; save(); } })
+          oninput: function (e) { o[key] = e.target.value; save(o); } })
       ]);
     }
     body.appendChild(campo("Cliente", "cliente", "Nombre"));
@@ -2317,7 +2566,7 @@
     var metodoSel = el("select", { "aria-label": "Método de entrega" });
     METODOS.forEach(function (mth) { metodoSel.appendChild(el("option", { value: mth, text: mth })); });
     metodoSel.value = o.metodo || METODOS[0];
-    metodoSel.addEventListener("change", function () { o.metodo = metodoSel.value; save(); });
+    metodoSel.addEventListener("change", function () { o.metodo = metodoSel.value; save(o); });
     body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Entrega" }), metodoSel]));
 
     body.appendChild(campo("Comuna o ciudad", "comuna", "Ej: Ñuñoa"));
@@ -2342,7 +2591,7 @@
         it.productId = sel.value;
         var p = productById(sel.value);
         if (p) it.price = Math.round(calc(p).final);
-        save(); render();
+        save(o); render();
       });
 
       itemsSec.appendChild(el("div", { class: "row" }, [
@@ -2350,9 +2599,9 @@
         /* repintar en cada tecla quitaría el foco: los totales se recalculan al salir */
         el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: it.qty, "aria-label": "Cantidad",
-          oninput: function (e) { it.qty = e.target.value; save(); },
+          oninput: function (e) { it.qty = e.target.value; save(o); },
           onchange: function () { renderPronto(); } })]),
-        deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(); render(); })
+        deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(o); render(); })
       ]));
     });
 
@@ -2360,7 +2609,7 @@
       onclick: function () {
         var p = state.products[0];
         o.items.push({ productId: p ? p.id : "", qty: 1, price: p ? Math.round(calc(p).final) : 0 });
-        save(); render();
+        save(o); render();
       } }));
     body.appendChild(itemsSec);
 
@@ -2379,7 +2628,7 @@
         faltan.forEach(function (l) {
           det.appendChild(el("div", { class: "plan-row short" }, [
             el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-            el("span", { class: "plan-use", text: "faltan " + fmtQty(l.falta) + " " + stockUnit(l.material) }),
+            el("span", { class: "plan-use", text: "faltan " + conUnidad(l.falta, stockUnit(l.material)) }),
             el("span", { class: "plan-cost", text: l.packs ? l.packs + " paq · " + money(l.cost) : money(l.cost) })
           ]));
         });
@@ -2407,7 +2656,7 @@
         onclick: function () {
           /* entregar abre su ventana: hay que ver de dónde sale cada unidad */
           if (e2.id === "entregado") { abrirEntrega(o); return; }
-          o.estado = e2.id; sincronizarEstado(o); save(); render();
+          o.estado = e2.id; sincronizarEstado(o); save(o); render();
         } }));
     });
     body.appendChild(el("div", { class: "sec" }, [
@@ -2426,10 +2675,11 @@
     }
 
     body.appendChild(el("div", { class: "sec" }, [
-      el("button", { class: "btn small", type: "button", text: "Eliminar pedido", onclick: function () {
+      el("button", { class: "btn small peligro", type: "button", text: "Eliminar pedido", onclick: function () {
         if (ui.confirming === o.id) {
           state.orders = state.orders.filter(function (x) { return x.id !== o.id; });
-          ui.confirming = null; save(); render(); toast("Pedido eliminado");
+          marcarBorrado("pedidos", o.id);
+          ui.confirming = null; render(); toast("Pedido eliminado");
         } else {
           ui.confirming = o.id;
           toast("Toca otra vez para eliminar");
@@ -2449,7 +2699,7 @@
       estado: "pendiente", creado: new Date().toISOString().slice(0, 10), origen: "manual" };
     state.orders.push(o);
     ui.open[o.id] = true;
-    save(); render();
+    save(o); render();
   }
 
   /* ---------------- render: inventario ---------------- */
@@ -2555,7 +2805,7 @@
           el("label", { class: "field", text: "Unidades hechas" }),
           el("input", { class: "num", type: "text", inputmode: "decimal", value: p.stock == null ? "" : p.stock,
             placeholder: "0", "aria-label": "Unidades hechas de " + (p.name || "producto"),
-            oninput: function (e) { p.stock = e.target.value; save(); refreshEstado(); } })
+            oninput: function (e) { p.stock = e.target.value; save(p); refreshEstado(); } })
         ]),
         el("div", { class: "grow" }, [
           el("label", { class: "field", text: "Se puede fabricar" }),
@@ -2595,7 +2845,7 @@
   /* ---------------- firebase ---------------- */
 
   var fb = { app: null, db: null, auth: null, user: null, unsubs: [], estado: "apagado",
-    aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {} } };
+    aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {}, historial: {} } };
 
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -2725,7 +2975,7 @@
     if (fb.user.photoURL) {
       n.appendChild(el("img", { src: fb.user.photoURL, alt: "" }));
     }
-    n.appendChild(el("span", { text: fb.user.email || fb.user.displayName || "Mi cuenta" }));
+    n.appendChild(el("span", { class: "correo", text: fb.user.email || fb.user.displayName || "Mi cuenta" }));
     n.appendChild(el("button", { type: "button", text: "Salir", onclick: cerrarSesion }));
   }
 
@@ -2741,18 +2991,12 @@
   function colRef(nombre) { return tiendaRef().collection(nombre); }
   function publicoRef() { return tiendaRef().collection("publico").doc("tienda"); }
 
-  var COLECCIONES = [
-    { nombre: "materiales", campo: "materials" },
-    { nombre: "productos", campo: "products" },
-    { nombre: "pedidos", campo: "orders" }
-  ];
-
   /* ---------------- sincronización ---------------- */
 
   function pararSync() {
     fb.unsubs.forEach(function (u) { try { u(); } catch (e) {} });
     fb.unsubs = [];
-    fb.remotos = { materiales: {}, productos: {}, pedidos: {} };
+    fb.remotos = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
   }
 
   /* Firestore es la fuente de verdad: al entrar bajamos la nube; si está
@@ -2810,8 +3054,14 @@
           });
         }
         if (c.campo === "orders") normalizarPedidos();
+        /* productos de versiones con margen o markup: se pasan a precio fijo */
+        var migrados = c.campo === "products" ? state.products.filter(migrarPrecio) : [];
         guardarLocal();
         fb.aplicando = false;
+        if (migrados.length) {
+          migrados.forEach(save);
+          toast(migrados.length + (migrados.length === 1 ? " producto pasó" : " productos pasaron") + " a precio fijo");
+        }
         setSaveState("Sincronizado");
         renderSeguro();
       }, function () { setSaveState("Sin conexión"); }));
@@ -2882,24 +3132,85 @@
   }
 
   /* sube todo el estado; borra en la nube lo que ya no existe aquí */
+  /* Firestore acepta como mucho 500 operaciones por lote */
+  var TOPE_LOTE = 400;
+
+  function enviarOperaciones(ops) {
+    if (!ops.length) return Promise.resolve();
+    var tandas = [];
+    for (var i = 0; i < ops.length; i += TOPE_LOTE) tandas.push(ops.slice(i, i + TOPE_LOTE));
+    return tandas.reduce(function (cadena, tanda) {
+      return cadena.then(function () {
+        var batch = fb.db.batch();
+        tanda.forEach(function (op) {
+          if (op.borrar) batch.delete(op.ref);
+          else batch.set(op.ref, op.datos, op.fundir ? { merge: true } : undefined);
+        });
+        return batch.commit();
+      });
+    }, Promise.resolve());
+  }
+
+  function opAjustes() {
+    var settings = Object.assign({}, state.settings);
+    delete settings.firebase; /* pudo venir de un respaldo antiguo */
+    return { ref: tiendaRef(), datos: { settings: settings, actualizado: new Date().toISOString() }, fundir: true };
+  }
+
+  /* sube solo lo marcado como sucio, y borra lo marcado como borrado */
+  function subirCambios() {
+    if (!fb.user) return Promise.resolve();
+
+    var ops = [], aLimpiar = { materiales: [], productos: [], pedidos: [] };
+
+    COLECCIONES.forEach(function (c) {
+      Object.keys(sucios[c.nombre]).forEach(function (id) {
+        var item = null;
+        (state[c.campo] || []).forEach(function (x) { if (x.id === id) item = x; });
+        /* si ya no está en la lista, se borró: lo resuelve la rama de borrados */
+        if (!item) return;
+        ops.push({ ref: colRef(c.nombre).doc(id), datos: limpiar(item) });
+        aLimpiar[c.nombre].push(id);
+      });
+      Object.keys(borrados[c.nombre]).forEach(function (id) {
+        ops.push({ ref: colRef(c.nombre).doc(id), borrar: true });
+        aLimpiar[c.nombre].push(id);
+      });
+    });
+
+    var subiaAjustes = sucioAjustes;
+    if (subiaAjustes) ops.push(opAjustes());
+    if (!ops.length) return Promise.resolve();
+
+    return enviarOperaciones(ops).then(function () {
+      /* se limpia solo lo efectivamente enviado: lo editado entretanto sigue pendiente */
+      COLECCIONES.forEach(function (c) {
+        aLimpiar[c.nombre].forEach(function (id) {
+          delete sucios[c.nombre][id];
+          delete borrados[c.nombre][id];
+        });
+      });
+      if (subiaAjustes) sucioAjustes = false;
+    });
+  }
+
+  /* subida completa: migración inicial y el botón de Ajustes */
   function subirTodo() {
     if (!fb.user) return Promise.resolve();
-    var batch = fb.db.batch();
+    var ops = [];
     COLECCIONES.forEach(function (c) {
       var vivos = {};
       (state[c.campo] || []).forEach(function (item) {
         if (!item.id) item.id = uid();
         vivos[item.id] = true;
-        batch.set(colRef(c.nombre).doc(item.id), limpiar(item));
+        ops.push({ ref: colRef(c.nombre).doc(item.id), datos: limpiar(item) });
       });
       Object.keys(fb.remotos[c.nombre] || {}).forEach(function (id) {
-        if (!vivos[id]) batch.delete(colRef(c.nombre).doc(id));
+        if (!vivos[id]) ops.push({ ref: colRef(c.nombre).doc(id), borrar: true });
       });
     });
-    var settings = Object.assign({}, state.settings);
-    delete settings.firebase; /* pudo venir de un respaldo antiguo */
-    batch.set(tiendaRef(), { settings: settings, actualizado: new Date().toISOString() }, { merge: true });
-    return batch.commit();
+    ops.push(opAjustes());
+    return enviarOperaciones(ops).then(function () { limpiarPendientes(); });
   }
 
   /* Firestore no acepta undefined ni el id duplicado dentro del documento */
@@ -3199,16 +3510,48 @@
 
   /* ---------------- ventanas de producción y entrega ---------------- */
 
+  var contadorVentanas = 0;
+
+  function enfocables(raiz) {
+    var nodos = raiz.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    return Array.prototype.filter.call(nodos, function (n) { return n.offsetParent !== null; });
+  }
+
   function abrirVentana(titulo, construir) {
+    var devolverFoco = document.activeElement;
+    var tituloId = "ventana-" + (++contadorVentanas);
+
     var bg = el("div", { class: "sheet-bg", onclick: function (e) { if (e.target === bg) cerrar(); } });
     var cuerpo = el("div", { class: "cuerpo" });
-    var sheet = el("div", { class: "sheet" }, [el("h3", { text: titulo }), cuerpo]);
-    function cerrar() { bg.remove(); document.removeEventListener("keydown", esc); }
-    function esc(e) { if (e.key === "Escape") cerrar(); }
-    document.addEventListener("keydown", esc);
+    var sheet = el("div", { class: "sheet", role: "dialog", "aria-modal": "true", "aria-labelledby": tituloId },
+      [el("h3", { id: tituloId, text: titulo }), cuerpo]);
+
+    function cerrar() {
+      bg.remove();
+      document.removeEventListener("keydown", teclado, true);
+      /* el foco vuelve a donde estaba: sin esto se pierde al principio de la página */
+      if (devolverFoco && devolverFoco.focus) devolverFoco.focus();
+    }
+
+    /* mientras la ventana está abierta, el tabulador no sale de ella */
+    function teclado(e) {
+      if (e.key === "Escape") { e.preventDefault(); cerrar(); return; }
+      if (e.key !== "Tab") return;
+      var lista = enfocables(sheet);
+      if (!lista.length) return;
+      var primero = lista[0], ultimo = lista[lista.length - 1];
+      if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+      else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+      else if (!sheet.contains(document.activeElement)) { e.preventDefault(); primero.focus(); }
+    }
+
+    document.addEventListener("keydown", teclado, true);
     bg.appendChild(sheet);
     document.body.appendChild(bg);
     construir(cuerpo, sheet, cerrar);
+
+    var lista = enfocables(sheet);
+    if (lista.length) lista[0].focus();
     return cerrar;
   }
 
@@ -3259,7 +3602,7 @@
         plan.lines.forEach(function (l) {
           var unidad = stockUnit(l.material);
           detalle.appendChild(filaPlan(l.material.name || "Sin nombre",
-            "usa " + fmtQty(l.use) + " " + unidad + " · quedan " + fmtQty(Math.max(0, l.after)),
+            "usa " + conUnidad(l.use, unidad) + " · quedan " + fmtQty(Math.max(0, l.after)),
             l.after < 0 ? "short" : ""));
         });
         if (!plan.lines.length) {
@@ -3288,7 +3631,7 @@
       accion.addEventListener("click", function () {
         var res = fabricar(p, input.value);
         if (res.error) { toast(res.error); return; }
-        save(); render(); cerrar();
+        save(p); render(); cerrar();
         toast(llevaFabricados()
           ? "Fabricadas " + fmtQty(res.units) + (res.units === 1 ? " unidad" : " unidades")
           : "Descontado el consumo de " + fmtQty(res.units) + (res.units === 1 ? " unidad" : " unidades"));
@@ -3344,7 +3687,7 @@
             var c = consumo[k];
             var queda = parseNum(c.material.stock) - c.use;
             mats.appendChild(filaPlan(c.material.name || "Sin nombre",
-              fmtQty(c.use) + " " + stockUnit(c.material) + " · quedan " + fmtQty(Math.max(0, queda)),
+              conUnidad(c.use, stockUnit(c.material)) + " · quedan " + fmtQty(Math.max(0, queda)),
               queda < 0 ? "short" : ""));
           });
           cuerpo.appendChild(mats);
@@ -3367,7 +3710,7 @@
             var res = deliverOrder(o);
             if (res.error) { toast(res.error); return; }
             sincronizarEstado(o);
-            save(); render(); cerrar();
+            save(o); render(); cerrar();
             toast("Pedido entregado");
           } })
       ]));
@@ -3429,6 +3772,18 @@
     negocioCard.appendChild(rubroSel);
     negocioCard.appendChild(el("p", { class: "note",
       text: "Define cómo se llaman tus " + rubro().insumoPlural + " y qué secciones ves." }));
+
+    negocioCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Moneda" }));
+    var monedaSel = el("select", { "aria-label": "Moneda" });
+    Object.keys(CURRENCIES).forEach(function (code) {
+      monedaSel.appendChild(el("option", { value: code, text: CURRENCIES[code].label }));
+    });
+    monedaSel.value = state.settings.currency;
+    monedaSel.addEventListener("change", function () {
+      state.settings.currency = monedaSel.value;
+      save(); render();
+    });
+    negocioCard.appendChild(monedaSel);
 
     negocioCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Cómo vendes" }));
     var modoSeg = el("div", { class: "seg tiny" });
@@ -3526,6 +3881,8 @@
       el("h4", { text: "Respaldo e importación" }),
       el("p", { text: "El respaldo .json guarda todo tal cual: úsalo para cambiar de dispositivo o antes de borrar." }),
       el("button", { class: "btn wide", type: "button", text: "Exportar respaldo (.json)", onclick: exportBackup }),
+      el("button", { class: "btn wide", type: "button", text: "Exportar productos (CSV)", style: "margin-top:8px", onclick: exportProducts }),
+      el("button", { class: "btn wide", type: "button", text: "Exportar " + rubro().insumoPlural + " (CSV)", style: "margin-top:8px", onclick: exportMaterials }),
       el("button", { class: "btn wide", type: "button", text: "Restaurar respaldo (.json)", style: "margin-top:8px", onclick: importBackupSheet }),
       el("button", { class: "btn wide", type: "button", text: "Importar " + rubro().insumoPlural + " (CSV)", style: "margin-top:14px", onclick: importMaterialsSheet }),
       el("button", { class: "btn wide", type: "button", text: "Importar productos (CSV)", style: "margin-top:8px", onclick: importProductsSheet }),
@@ -3535,11 +3892,11 @@
     root.appendChild(el("div", { class: "setting" }, [
       el("h4", { text: "Tus datos" }),
       el("p", { text: rubro().insumos + ", productos y ajustes se guardan solos y son solo tuyos. Nadie más los ve." }),
-      el("button", { class: "btn small", type: "button", text: "Borrar todo y empezar de cero",
+      el("button", { class: "btn small peligro", type: "button", text: "Borrar todo y empezar de cero",
         onclick: function () {
           if (ui.confirming === "reset") {
             state.materials = []; state.products = []; ui.open = {}; ui.confirming = null;
-            save(); render(); toast("Planilla vacía");
+            guardarTodo(); render(); toast("Planilla vacía");
           } else {
             ui.confirming = "reset";
             toast("Toca otra vez para borrar todo");
@@ -3577,7 +3934,7 @@
 
   function buildProductsCsv() {
     var head = ["Nombre", "Tipo", "Materiales", "Costos fijos", "Costos variables", "Costo total",
-      "Modo de precio", "Valor", "Precio neto", "Impuesto %", "Impuesto", "Precio final",
+      "Precio neto", "Impuesto %", "Impuesto", "Precio final",
       "Ganancia", "Margen %", "Markup %", "Moneda"];
     var lines = [head.map(csvCell).join(";")];
     state.products.forEach(function (p) {
@@ -3585,7 +3942,6 @@
       lines.push([
         p.name || "Sin nombre", p.type,
         csvNum(r.mats), csvNum(r.fijos), csvNum(r.variables), csvNum(r.total),
-        p.pricingMode, p.pricingMode === "manual" ? csvNum(parseNum(p.manualPrice)) : String(parseNum(p.pricingValue)).replace(".", ","),
         csvNum(r.neto),
         state.settings.taxEnabled ? String(parseNum(state.settings.taxRate)).replace(".", ",") : "0",
         csvNum(r.tax), csvNum(r.final), csvNum(r.ganancia),
@@ -3809,17 +4165,15 @@
       var name = pick(map, row, ["nombre", "producto"]);
       if (!name) continue;
 
-      var modo = norm(pick(map, row, ["modo de precio", "modo"]));
       var p = {
         id: uid(), name: name,
         type: norm(pick(map, row, ["tipo"])).indexOf("servicio") > -1 ? "servicio" : "producto",
         materials: [], costs: [],
-        pricingMode: modo.indexOf("markup") > -1 ? "markup" : modo.indexOf("manual") > -1 ? "manual" : "margen",
-        pricingValue: 40, manualPrice: ""
+        pricingMode: "manual", manualPrice: ""
       };
 
-      if (p.pricingMode === "manual") p.manualPrice = parseNum(pick(map, row, ["precio neto"]));
-      else p.pricingValue = parseNum(pick(map, row, ["valor"]));
+      /* los CSV antiguos traían modo y porcentaje; vale el precio ya calculado */
+      p.manualPrice = parseNum(pick(map, row, ["precio neto", "precio"]));
 
       var mats = parseNum(pick(map, row, ["materiales"]));
       var fijos = parseNum(pick(map, row, ["costos fijos"]));
@@ -3850,6 +4204,7 @@
       state.materials = mats;
       state.products = prods;
       if (Array.isArray(data.orders)) state.orders = data.orders;
+      if (Array.isArray(data.historial)) state.historial = data.historial;
       if (data.settings) state.settings = Object.assign(state.settings, data.settings);
     } else {
       var idMap = {};
@@ -3911,7 +4266,7 @@
           if (!text) { toast("Pega el contenido o elige un archivo"); return; }
           var res = opts.run(text, mode);
           if (res.error) { toast(res.error); return; }
-          save(); bg.remove(); render();
+          guardarTodo(); bg.remove(); render();
           toast(res.count + " registro(s) importado(s)" + (res.partial ? " sin líneas de materiales" : ""));
         } }),
         el("button", { class: "btn", type: "button", text: "Cerrar", onclick: function () { bg.remove(); } })
@@ -3957,33 +4312,44 @@
     });
     var btns = document.querySelectorAll(".tabs button");
     for (var i = 0; i < btns.length; i++) {
-      btns[i].setAttribute("aria-selected", btns[i].dataset.tab === ui.tab ? "true" : "false");
+      var activa = btns[i].dataset.tab === ui.tab;
+      btns[i].setAttribute("aria-selected", activa ? "true" : "false");
+      btns[i].setAttribute("tabindex", activa ? "0" : "-1");
     }
     if (ui.tab === "inicio") renderInicio();
     else if (ui.tab === "productos") renderProductos();
     else if (ui.tab === "pedidos") renderPedidos();
     else if (ui.tab === "inventario") renderInventario();
     else renderAjustes();
-    var sel = document.getElementById("currency");
-    if (sel && sel.value !== state.settings.currency) sel.value = state.settings.currency;
     pintarContadores();
   }
 
   /* ---------------- arranque ---------------- */
 
-  var currencySel = document.getElementById("currency");
-  Object.keys(CURRENCIES).forEach(function (code) {
-    currencySel.appendChild(el("option", { value: code, text: CURRENCIES[code].label }));
-  });
-  currencySel.addEventListener("change", function () {
-    state.settings.currency = currencySel.value;
-    save(); render();
-  });
-
   var tabButtons = document.querySelectorAll(".tabs button");
   for (var i = 0; i < tabButtons.length; i++) {
     tabButtons[i].addEventListener("click", function () { ui.tab = this.dataset.tab; render(); });
   }
+
+  /* una lista de pestañas se recorre con las flechas, no solo con el tabulador */
+  document.querySelector(".tabs").addEventListener("keydown", function (e) {
+    var paso = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (!paso && e.key !== "Home" && e.key !== "End") return;
+    var visibles = Array.prototype.filter.call(tabButtons, function (b) { return !b.hidden; });
+    if (!visibles.length) return;
+    e.preventDefault();
+    var actual = visibles.indexOf(document.activeElement);
+    if (actual < 0) actual = 0;
+    var destino = e.key === "Home" ? 0
+      : e.key === "End" ? visibles.length - 1
+      : (actual + paso + visibles.length) % visibles.length;
+    visibles[destino].focus();
+    ui.tab = visibles[destino].dataset.tab;
+    render();
+    /* render repinta: hay que recuperar el foco en la pestaña equivalente */
+    var tras = document.querySelector('.tabs button[data-tab="' + ui.tab + '"]');
+    if (tras) tras.focus();
+  });
 
   document.getElementById("btnGoogle").addEventListener("click", entrarConGoogle);
   gateOcupado(true, "Comprobando sesión…");

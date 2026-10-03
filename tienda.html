@@ -178,7 +178,7 @@
   var CATALOGO_LOCAL = [
     /* Ejemplo. Reemplázalo o bórralo cuando conectes Firebase:
     { id: "demo1", nombre: "Tulipán", descripcion: "Flor artesanal de limpiapipas",
-      precio: 2000, moneda: "CLP", disponible: 8 }
+      precio: 2000, moneda: "CLP" }
     */
   ];
 
@@ -281,16 +281,14 @@
     sub.textContent = "Elige lo que quieras y envía tu pedido.";
 
     catalogo.forEach(function (p) {
-      var disp = p.disponible;
-      var agotado = disp === 0;
       var card = el("div", { class: "item" }, [
         el("h3", { text: p.nombre }),
         p.descripcion ? el("p", { class: "desc", text: p.descripcion }) : null
       ]);
 
-      var etiqueta = disp == null ? el("span", { class: "tag", text: "A pedido" })
-        : agotado ? el("span", { class: "tag slow", text: "Por encargo" })
-        : el("span", { class: "tag ok", text: disp === 1 ? "Queda 1" : "Quedan " + disp });
+      /* todo se prepara después de recibir el pedido: no hay stock que mostrar,
+         y un número guardado de la última publicación solo podría mentir */
+      var etiqueta = el("span", { class: "tag", text: "Por encargo" });
 
       var stepper = el("div", { class: "stepper" });
       var out = el("span", { text: String(carrito[p.id] || 0) });
