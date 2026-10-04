@@ -119,8 +119,14 @@ un desplegable con las que ya usaste, o se crea al vuelo desde la ficha.
 
 Cada categoría se pliega y muestra, sin abrirla, cuántos ítems tiene y cuánto
 dinero representa; dentro, cada material es una línea que se abre al tocarla.
-Al buscar, las categorías con coincidencias se abren solas. El desplegable de
-materiales dentro de cada producto queda agrupado igual.
+Al buscar, las categorías con coincidencias se abren solas. El lápiz de la
+cabecera permite renombrar la categoría —si le pones el nombre de otra, se
+fusionan— o eliminarla, en cuyo caso sus materiales pasan a "Sin categoría"
+sin perderse.
+
+Al armar un producto, el material se elige con botones dentro del propio
+recuadro: primero la categoría, luego el color. Con menos de ocho materiales se
+muestran todos directamente.
 
 ## Historial de costos
 

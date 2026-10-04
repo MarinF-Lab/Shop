@@ -509,6 +509,31 @@
   .mat-detalle { padding: 2px 12px 12px; }
   .mat-detalle[hidden] { display: none; }
 
+  /* ---------- elegir material con botones ---------- */
+  .selector-mat { margin-bottom: 2px; }
+  .selector-mat .chips-filtro { margin-top: 0; }
+  .selector-mat .chip-filtro { font-size: 13px; padding: 8px 12px; }
+  .chip-mat { display: inline-flex; align-items: baseline; gap: 7px; }
+  .chip-mat .nom { font-weight: 600; }
+  .chip-mat small { font-family: var(--num); font-size: 11.5px; opacity: .75; }
+  .mat-elegido {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 9px 10px 9px 12px;
+  }
+  .mat-elegido .nombre {
+    flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--accent);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mat-elegido .btn { flex: none; }
+
+  .cat-head .editar {
+    flex: none; background: none; border: none; cursor: pointer;
+    color: var(--muted); font: inherit; font-size: 14px; padding: 4px 6px; border-radius: 4px;
+  }
+  .cat-head .editar:hover { background: var(--paper); color: var(--ink); }
+  .cat-head .editar:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     background: var(--ink); color: #fff; font-size: 13px;
@@ -648,7 +673,8 @@
 
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
-  var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {} };
+  var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
+    verCategoria: {}, cambiando: {} };
 
   /* ---------------- utilidades ---------------- */
 
@@ -1860,30 +1886,16 @@
     }
 
     p.materials.forEach(function (line, idx) {
-      var sel = el("select", {});
-      sel.appendChild(el("option", { value: "", text: "Selecciona un " + rubro().insumo.toLowerCase() }));
-      /* agrupado por categoría: con muchos colores, una lista plana no se recorre */
-      agruparPorCategoria(state.materials.slice().sort(function (a, b) {
-        return norm(a.name).localeCompare(norm(b.name));
-      })).forEach(function (g) {
-        var grupo = el("optgroup", { label: g.nombre });
-        g.items.forEach(function (m) {
-          grupo.appendChild(el("option", { value: m.id,
-            text: (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")" }));
-        });
-        sel.appendChild(grupo);
-      });
-      sel.value = line.materialId || "";
-      sel.addEventListener("change", function () { line.materialId = sel.value; save(p); render(); });
-
       var m = materialById(line.materialId);
       var area = m && isArea(m.unit);
       var lineBox = el("div", { class: "mat-line" });
 
       var lineTotal = el("span", { class: "line-total", text: m ? money(lineCost(line).cost) : "—" });
 
-      lineBox.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "grow" }, [sel]),
+      lineBox.appendChild(selectorMaterial(p, line, function () { save(p); render(); }));
+
+      lineBox.appendChild(el("div", { class: "row", style: "margin-top:6px" }, [
+        area ? null : el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Cantidad" })]),
         area ? null : el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: line.qty, "aria-label": "Cantidad",
           oninput: function (e) { line.qty = e.target.value; save(p); refreshOutputs(); } })]),
@@ -2281,6 +2293,166 @@
     });
   }
 
+  /* renombrar, fusionar o eliminar una categoría desde su cabecera */
+  function editarCategoria(g) {
+    abrirVentana("Categoría " + g.nombre, function (cuerpo, sheet, cerrar) {
+      var campo = el("input", { type: "text", value: g.nombre, "aria-label": "Nombre de la categoría" });
+      cuerpo.appendChild(el("label", { class: "field", text: "Nombre" }));
+      cuerpo.appendChild(campo);
+      cuerpo.appendChild(el("p", { class: "note",
+        text: "Agrupa " + g.items.length + " " + (g.items.length === 1 ? rubro().insumo.toLowerCase() : rubro().insumoPlural) + "." }));
+
+      var aviso = el("p", { class: "note", style: "min-height:18px" });
+      cuerpo.appendChild(aviso);
+
+      /* si el nombre nuevo ya existe, renombrar es fusionar: hay que decirlo */
+      function revisar() {
+        var nuevo = campo.value.trim();
+        var choca = nuevo && norm(nuevo) !== norm(g.nombre) &&
+          categoriasUsadas().some(function (c) { return norm(c) === norm(nuevo); });
+        aviso.className = "note" + (choca ? " aviso" : "");
+        aviso.textContent = choca
+          ? "Ya existe “" + nuevo + "”: se juntarán en una sola categoría."
+          : "";
+      }
+      campo.addEventListener("input", revisar);
+      revisar();
+
+      function renombrar() {
+        var nuevo = campo.value.trim();
+        if (!nuevo) { toast("Ponle un nombre"); campo.focus(); return; }
+        if (nuevo === SIN_CATEGORIA) { toast("Ese nombre está reservado"); campo.focus(); return; }
+        if (nuevo === g.nombre) { cerrar(); return; }
+
+        g.items.forEach(function (m) { m.categoria = nuevo; save(m); });
+        /* la categoría no debe cerrarse sola por haberla renombrado */
+        if (ui.open[claveCategoria(g.nombre)]) ui.open[claveCategoria(nuevo)] = true;
+        delete ui.open[claveCategoria(g.nombre)];
+        ui.ultimaCategoria = nuevo;
+        render(); cerrar();
+        toast("Ahora se llama “" + nuevo + "”");
+      }
+
+      function eliminar() {
+        var cuantos = g.items.length;
+        var mensaje = cuantos
+          ? "Se eliminará la categoría y " + cuantos + " " +
+            (cuantos === 1 ? rubro().insumo.toLowerCase() + " quedará" : rubro().insumoPlural + " quedarán") +
+            " sin categoría. No se borra ninguno."
+          : "Se eliminará la categoría.";
+        if (!window.confirm(mensaje)) return;
+
+        g.items.forEach(function (m) { m.categoria = ""; save(m); });
+        delete ui.open[claveCategoria(g.nombre)];
+        if (ui.ultimaCategoria === g.nombre) ui.ultimaCategoria = "";
+        render(); cerrar();
+        toast(cuantos ? cuantos + " sin categoría" : "Categoría eliminada");
+      }
+
+      campo.addEventListener("keydown", function (e) { if (e.key === "Enter") renombrar(); });
+
+      cuerpo.appendChild(el("button", { class: "btn small peligro wide", type: "button",
+        style: "margin-top:4px", text: "Eliminar categoría", onclick: eliminar }));
+
+      sheet.appendChild(el("div", { class: "actions" }, [
+        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
+        el("button", { class: "btn primary", type: "button", text: "Guardar", onclick: renombrar })
+      ]));
+    });
+  }
+
+  /* ---------------- elegir material con botones ----------------
+     Un desplegable nativo con cuarenta colores abre un menú que tapa la
+     pantalla. Aquí la elección ocurre dentro del propio recuadro: primero
+     la categoría, después el color. */
+
+  var MINIMO_POR_CATEGORIA = 8;
+
+  function botonChip(texto, activo, onclick) {
+    return el("button", { class: "chip-filtro", type: "button",
+      "aria-pressed": activo ? "true" : "false", text: texto, onclick: onclick });
+  }
+
+  /* el nombre manda; el precio acompaña, para no leer dos veces lo mismo */
+  function botonMaterial(m, activo, onclick) {
+    return el("button", { class: "chip-filtro chip-mat", type: "button",
+      "aria-pressed": activo ? "true" : "false",
+      "aria-label": etiquetaMaterial(m), onclick: onclick }, [
+      el("span", { class: "nom", text: m.name || "Sin nombre" }),
+      el("small", { text: money(materialCost(m)) + "/" + m.unit })
+    ]);
+  }
+
+  function etiquetaMaterial(m) {
+    return (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")";
+  }
+
+  /* devuelve el bloque de selección para una línea de material de un producto */
+  function selectorMaterial(p, line, alElegir) {
+    var caja = el("div", { class: "selector-mat" });
+    var elegido = materialById(line.materialId);
+
+    /* qué categoría se está mirando; por defecto, la del material ya elegido */
+    var claveVista = "sel:" + p.id + ":" + (line.materialId || "nuevo");
+    if (ui.verCategoria[claveVista] === undefined) {
+      ui.verCategoria[claveVista] = elegido ? categoriaDe(elegido) : null;
+    }
+
+    var grupos = agruparPorCategoria(state.materials.slice().sort(function (a, b) {
+      return norm(a.name).localeCompare(norm(b.name));
+    }));
+    /* con pocos materiales, pedir dos toques sería peor que uno */
+    var directo = grupos.length <= 1 || state.materials.length < MINIMO_POR_CATEGORIA;
+
+    function pintar() {
+      caja.innerHTML = "";
+
+      if (elegido && !ui.cambiando[claveVista]) {
+        caja.appendChild(el("div", { class: "mat-elegido" }, [
+          el("span", { class: "nombre", text: etiquetaMaterial(elegido) }),
+          el("button", { class: "btn small", type: "button", text: "Cambiar",
+            onclick: function () { ui.cambiando[claveVista] = true; pintar(); } })
+        ]));
+        return;
+      }
+
+      var vista = ui.verCategoria[claveVista];
+
+      if (!directo) {
+        var filaCat = el("div", { class: "chips-filtro" });
+        grupos.forEach(function (g) {
+          filaCat.appendChild(botonChip(g.nombre + " · " + g.items.length, vista === g.nombre, function () {
+            ui.verCategoria[claveVista] = vista === g.nombre ? null : g.nombre;
+            pintar();
+          }));
+        });
+        caja.appendChild(filaCat);
+        if (!vista) {
+          caja.appendChild(el("p", { class: "note", style: "margin:6px 2px 0",
+            text: "Elige una categoría para ver sus " + rubro().insumoPlural + "." }));
+          return;
+        }
+      }
+
+      var items = directo
+        ? state.materials.slice().sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); })
+        : (grupos.filter(function (g) { return g.nombre === vista; })[0] || { items: [] }).items;
+
+      var filaMat = el("div", { class: "chips-filtro", style: "margin-top:6px" });
+      items.forEach(function (m) {
+        filaMat.appendChild(botonMaterial(m, line.materialId === m.id, function () {
+          line.materialId = m.id;
+          ui.cambiando[claveVista] = false;
+          alElegir();
+        }));
+      });
+      caja.appendChild(filaMat);
+    }
+
+    pintar();
+    return caja;
+  }
+
   /* vista de materiales dentro de Inventario: catálogo y existencias juntos */
   function pintarMateriales(root) {
     root.appendChild(el("p", { class: "note", style: "margin:0 2px 12px",
@@ -2363,7 +2535,11 @@
         el("span", { class: "caret", text: "▸" }),
         el("h4", { text: g.nombre }),
         g.bajos ? el("span", { class: "chip neg", text: g.bajos + " bajo" }) : null,
-        el("span", { class: "cat-resumen", text: resumen })
+        el("span", { class: "cat-resumen", text: resumen }),
+        /* "Sin categoría" no es una categoría: es la ausencia de una */
+        g.nombre === SIN_CATEGORIA ? null : el("button", { class: "editar", type: "button",
+          title: "Editar categoría", "aria-label": "Editar la categoría " + g.nombre, text: "✎",
+          onclick: function (e) { e.stopPropagation(); editarCategoria(g); } })
       ]);
       cabecera.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ui.open[clave] = !abierta; render(); }
