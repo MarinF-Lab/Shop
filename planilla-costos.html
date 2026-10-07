@@ -509,6 +509,38 @@
   .mat-detalle { padding: 2px 12px 12px; }
   .mat-detalle[hidden] { display: none; }
 
+  /* ---------- elegir material con botones ---------- */
+  .selector-mat { margin-bottom: 2px; }
+  .selector-mat .chips-filtro { margin-top: 0; }
+  .selector-mat .chip-filtro { font-size: 13px; padding: 8px 12px; }
+  .chip-mat { display: inline-flex; align-items: baseline; gap: 7px; }
+  .chip-mat .nom { font-weight: 600; }
+  .chip-mat small { font-family: var(--num); font-size: 11.5px; opacity: .75; }
+  .mat-elegido {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--accent-soft); border: 1px solid var(--accent);
+    border-radius: 8px; padding: 9px 10px 9px 12px;
+  }
+  .mat-elegido .nombre {
+    flex: 1; min-width: 0; font-size: 13.5px; font-weight: 600; color: var(--accent);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .mat-elegido .btn { flex: none; }
+
+  .cat-head .editar {
+    flex: none; background: none; border: none; cursor: pointer;
+    color: var(--muted); font: inherit; font-size: 14px; padding: 4px 6px; border-radius: 4px;
+  }
+  .cat-head .editar:hover { background: var(--paper); color: var(--ink); }
+  .cat-head .editar:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+  .chip-mat.agotado { opacity: .45; text-decoration: line-through; }
+  .chips-filtro.colores { margin-top: 4px; }
+  .colores-pedido { margin: 2px 0 14px; padding: 10px 12px; border-left: 3px solid var(--accent-soft);
+    background: #F7F9FB; border-radius: 0 6px 6px 0; }
+  .chip.pago-pagado { background: var(--gain-soft); color: var(--gain); font-weight: 600; }
+  .chip.pago-abonado { background: var(--cost-soft); color: var(--cost); font-weight: 600; }
+  .chip.pago-porcobrar { background: var(--paper); color: var(--muted); font-weight: 600; }
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     background: var(--ink); color: #fff; font-size: 13px;
@@ -551,7 +583,7 @@
 
   <div class="tabs" role="tablist">
     <button role="tab" data-tab="inicio" aria-selected="true">Inicio</button>
-    <button role="tab" data-tab="productos" aria-selected="false">Productos</button>
+    <button role="tab" data-tab="productos" aria-selected="false">Flores</button>
     <button role="tab" data-tab="pedidos" aria-selected="false">Pedidos</button>
     <button role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
     <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
@@ -648,7 +680,8 @@
 
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
-  var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {} };
+  var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
+    verCategoria: {}, cambiando: {} };
 
   /* ---------------- utilidades ---------------- */
 
@@ -700,6 +733,9 @@
       else if (k === "text") node.textContent = attrs[k];
       else if (k === "html") node.innerHTML = attrs[k];
       else if (k.slice(0, 2) === "on") node.addEventListener(k.slice(2), attrs[k]);
+      /* los aria-* son de valor "true"/"false": un booleano suelto los dejaba vacíos
+         y ni el CSS de seleccionado ni los lectores de pantalla los reconocían */
+      else if (k.slice(0, 5) === "aria-" && typeof attrs[k] === "boolean") node.setAttribute(k, attrs[k] ? "true" : "false");
       else if (attrs[k] === true) node.setAttribute(k, "");
       else if (attrs[k] !== false && attrs[k] != null) node.setAttribute(k, attrs[k]);
     });
@@ -773,10 +809,92 @@
     return null;
   }
 
+  /* ---------------- la flor: pétalos y hojas de color elegible ----------------
+     Una flor de limpiapipas lleva pétalos y hojas cuyo color pide el cliente,
+     más materiales fijos (barra, cinta) que van siempre igual. La receta dice
+     cuántos pétalos usa en un color y en bicolor; el pedido dice cuáles. */
+
+  function florDe(p) {
+    var f = p.flor || {};
+    return {
+      catPetalos: f.catPetalos || "",
+      petalosUno: parseNum(f.petalosUno),
+      petalosPrim: parseNum(f.petalosPrim),
+      petalosSec: parseNum(f.petalosSec),
+      colorDefecto: f.colorDefecto || "",
+      catHojas: f.catHojas || "",
+      hojas: parseNum(f.hojas),
+      colorHojas: f.colorHojas || ""
+    };
+  }
+
+  function admiteBicolor(p) {
+    var f = florDe(p);
+    return f.petalosPrim > 0 && f.petalosSec > 0;
+  }
+
+  /* la elección de una línea de pedido, completada con los valores de la receta */
+  function eleccionDe(p, it) {
+    var f = florDe(p);
+    it = it || {};
+    var modo = it.modo === "dos" && admiteBicolor(p) ? "dos" : "uno";
+    return {
+      modo: modo,
+      primario: it.primario || f.colorDefecto,
+      secundario: it.secundario || "",
+      hojas: it.hojasColor || f.colorHojas
+    };
+  }
+
+  /* materiales de color que consume UNA flor con esa elección */
+  function lineasFlor(p, it) {
+    var f = florDe(p), e = eleccionDe(p, it), out = [];
+    function sumar(id, cant) {
+      if (!id || cant <= 0) return;
+      var previo = out.filter(function (x) { return x.materialId === id; })[0];
+      if (previo) previo.use += cant; else out.push({ materialId: id, use: cant });
+    }
+    if (e.modo === "dos") {
+      sumar(e.primario, f.petalosPrim);
+      sumar(e.secundario || e.primario, f.petalosSec);
+    } else {
+      sumar(e.primario, f.petalosUno);
+    }
+    sumar(e.hojas, f.hojas);
+    return out;
+  }
+
+  /* ¿le falta a la línea elegir algún color que la receta exige? */
+  function coloresPendientes(p, it) {
+    var f = florDe(p), e = eleccionDe(p, it), faltan = [];
+    var petalos = e.modo === "dos" ? f.petalosPrim + f.petalosSec : f.petalosUno;
+    if (petalos > 0 && !materialById(e.primario)) faltan.push("color primario");
+    if (e.modo === "dos" && f.petalosSec > 0 && !materialById(e.secundario)) faltan.push("color secundario");
+    if (f.hojas > 0 && !materialById(e.hojas)) faltan.push("color de hojas");
+    return faltan;
+  }
+
+  function describirColores(p, it) {
+    var f = florDe(p), e = eleccionDe(p, it), partes = [];
+    var nombre = function (id) { var m = materialById(id); return m ? m.name : "sin elegir"; };
+    var petalos = e.modo === "dos" ? f.petalosPrim + f.petalosSec : f.petalosUno;
+    if (petalos > 0) {
+      partes.push(e.modo === "dos"
+        ? "pétalos " + nombre(e.primario) + " + " + nombre(e.secundario)
+        : "pétalos " + nombre(e.primario));
+    }
+    if (f.hojas > 0) partes.push("hojas " + nombre(e.hojas));
+    return partes.join(" · ");
+  }
+
   function calc(p) {
     var mats = 0;
     p.materials.forEach(function (line) {
       mats += lineCost(line).cost;
+    });
+    lineasFlor(p, null).forEach(function (l) {
+      var m = materialById(l.materialId);
+      if (m) mats += materialCost(m) * l.use;
     });
     var fijos = 0, variables = 0;
     p.costs.forEach(function (c) {
@@ -1033,9 +1151,14 @@
   function llevaMateriales() { return moduloActivo("materiales"); }
 
   function textoFaltantes(plan) {
-    return "No alcanza: " + plan.faltantes.map(function (f) {
-      return f.nombre + " (faltan " + fmtQty(f.falta) + " " + f.unidad + ")";
-    }).join(", ");
+    var sinElegir = plan.faltantes.filter(function (f) { return f.sinCantidad; });
+    var cortos = plan.faltantes.filter(function (f) { return !f.sinCantidad; });
+    var partes = [];
+    if (sinElegir.length) partes.push(sinElegir.map(function (f) { return f.nombre; }).join(", "));
+    if (cortos.length) partes.push("No alcanza: " + cortos.map(function (f) {
+      return f.nombre + " (faltan " + conUnidad(f.falta, f.unidad) + ")";
+    }).join(", "));
+    return partes.join(". ");
   }
 
   /* fabricar guarda las unidades como existencia y descuenta materiales */
@@ -1092,6 +1215,10 @@
         var m = materialById(line.materialId);
         if (!m) return;
         use[m.id] = (use[m.id] || 0) + lineStockUse(line) * qty;
+      });
+      lineasFlor(p, it).forEach(function (l) {
+        if (!materialById(l.materialId)) return;
+        use[l.materialId] = (use[l.materialId] || 0) + l.use * qty;
       });
     });
     return use;
@@ -1180,6 +1307,17 @@
             simStock[m.id] -= use;
             consumos.push({ material: m, use: use });
           });
+          /* pétalos y hojas en los colores que pidió el cliente */
+          coloresPendientes(p, it).forEach(function (q) {
+            res.faltantes.push({ nombre: (p.name || "Flor") + ": falta elegir " + q, falta: 0, unidad: "", sinCantidad: true });
+          });
+          lineasFlor(p, it).forEach(function (l) {
+            var m = materialById(l.materialId);
+            if (!m) return;
+            var use = l.use * aFabricar;
+            simStock[m.id] -= use;
+            consumos.push({ material: m, use: use });
+          });
         }
       }
       res.lineas.push({ producto: p, qty: n, deHechos: deHechos, aFabricar: aFabricar, consumos: consumos });
@@ -1208,6 +1346,22 @@
         marcarSucio(c.material);
       });
     });
+    /* lo consumido queda en el pedido, con el nombre de ese día:
+       si el material se renombra o se borra, el registro sigue siendo cierto */
+    var consumo = {};
+    plan.lineas.forEach(function (l) {
+      l.consumos.forEach(function (c) {
+        var k = c.material.id;
+        if (!consumo[k]) consumo[k] = { materialId: k, nombre: c.material.name || "Sin nombre",
+          categoria: (c.material.categoria || "").trim(), cantidad: 0, unidad: stockUnit(c.material) };
+        consumo[k].cantidad += c.use;
+      });
+    });
+    o.consumo = Object.keys(consumo).map(function (k) { return consumo[k]; });
+    o.colores = (o.items || []).map(function (it) {
+      var p = productById(it.productId);
+      return p ? { flor: p.name || "Flor", qty: parseNum(it.qty), detalle: describirColores(p, it) } : null;
+    }).filter(Boolean);
     o.estado = "entregado";
     o.entregado = new Date().toISOString().slice(0, 10);
     return { ok: true, plan: plan };
@@ -1668,6 +1822,56 @@
     }
     root.appendChild(comparacion);
 
+    /* --- cómo te pagaron este mes --- */
+    var porMetodo = { efectivo: 0, transferencia: 0 }, porCobrar = 0;
+    state.orders.forEach(function (o) {
+      (o.pagos || []).forEach(function (x) {
+        if (String(x.fecha || "").slice(0, 7) !== mesActual()) return;
+        var k = x.metodo === "transferencia" ? "transferencia" : "efectivo";
+        porMetodo[k] += parseNum(x.monto);
+      });
+      if (o.estado !== "cancelado") porCobrar += Math.max(0, estadoPago(o).saldo);
+    });
+    var cobros = el("dl", { class: "strip" });
+    [["Efectivo", money(porMetodo.efectivo), "gain"],
+     ["Transferencia", money(porMetodo.transferencia), "gain"],
+     ["Por cobrar", money(porCobrar), porCobrar > 0 ? "cost" : ""]].forEach(function (c) {
+      cobros.appendChild(el("div", {}, [
+        el("dt", { text: c[0] }),
+        el("dd", { text: c[1], style: c[2] === "gain" ? "color:var(--gain)" : c[2] === "cost" ? "color:var(--cost)" : "" })
+      ]));
+    });
+    root.appendChild(el("h3", { class: "sec-title", text: "Cómo te pagaron este mes" }));
+    root.appendChild(cobros);
+
+    /* --- colores más usados en 30 días --- */
+    var desde = new Date(); desde.setDate(desde.getDate() - 30);
+    var desdeIso = desde.toISOString().slice(0, 10), usados = {};
+    state.orders.forEach(function (o) {
+      if (o.estado !== "entregado" || String(o.entregado || "") < desdeIso) return;
+      (o.consumo || []).forEach(function (c) {
+        var k = c.materialId;
+        if (!usados[k]) usados[k] = { nombre: c.nombre, categoria: c.categoria, cantidad: 0, unidad: c.unidad };
+        usados[k].cantidad += parseNum(c.cantidad);
+      });
+    });
+    var ranking = Object.keys(usados).map(function (k) { return usados[k]; })
+      .sort(function (a, b) { return b.cantidad - a.cantidad; }).slice(0, 5);
+    if (ranking.length) {
+      var cardUso = el("div", { class: "mat-card" });
+      cardUso.appendChild(el("h4", { style: "margin:0 0 6px;font-size:14px", text: "Lo que más se usó (30 días)" }));
+      var planUso = el("div", { class: "plan" });
+      ranking.forEach(function (u) {
+        planUso.appendChild(el("div", { class: "plan-row" }, [
+          el("span", { class: "plan-name", text: u.nombre }),
+          el("span", { class: "plan-use", text: u.categoria || "" }),
+          el("span", { class: "plan-cost", text: conUnidad(u.cantidad, u.unidad) })
+        ]));
+      });
+      cardUso.appendChild(planUso);
+      root.appendChild(cardUso);
+    }
+
     /* --- pedidos que urgen --- */
     var cardPedidos = el("div", { class: "mat-card" });
     cardPedidos.appendChild(el("div", { class: "row" }, [
@@ -1837,21 +2041,17 @@
     /* nombre + tipo */
     body.appendChild(el("div", { class: "sec" }, [
       el("label", { class: "field", text: "Nombre" }),
-      el("input", { type: "text", value: p.name, placeholder: "Ej: Tarjetas de presentación",
+      el("input", { type: "text", value: p.name, placeholder: "Ej: Tulipán",
         oninput: function (e) { p.name = e.target.value; head.querySelector("h3").textContent = p.name || "Sin nombre"; save(p); } })
     ]));
 
-    var segTipo = el("div", { class: "seg" });
-    [["producto", "Producto"], ["servicio", "Servicio"]].forEach(function (opt) {
-      segTipo.appendChild(el("button", { type: "button", text: opt[1], "aria-pressed": p.type === opt[0],
-        onclick: function () { p.type = opt[0]; save(p); render(); } }));
-    });
-    body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Tipo" }), segTipo]));
 
-    /* materiales */
+    body.appendChild(seccionFlor(p));
+
+    /* materiales fijos: barra, cinta, etc. */
     var matSec = el("div", { class: "sec" });
     matSec.appendChild(el("header", {}, [
-      el("h4", { text: rubro().receta }),
+      el("h4", { text: "Otros materiales" }),
       el("span", { class: "sub", text: money(r.mats) })
     ]));
 
@@ -1860,30 +2060,16 @@
     }
 
     p.materials.forEach(function (line, idx) {
-      var sel = el("select", {});
-      sel.appendChild(el("option", { value: "", text: "Selecciona un " + rubro().insumo.toLowerCase() }));
-      /* agrupado por categoría: con muchos colores, una lista plana no se recorre */
-      agruparPorCategoria(state.materials.slice().sort(function (a, b) {
-        return norm(a.name).localeCompare(norm(b.name));
-      })).forEach(function (g) {
-        var grupo = el("optgroup", { label: g.nombre });
-        g.items.forEach(function (m) {
-          grupo.appendChild(el("option", { value: m.id,
-            text: (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")" }));
-        });
-        sel.appendChild(grupo);
-      });
-      sel.value = line.materialId || "";
-      sel.addEventListener("change", function () { line.materialId = sel.value; save(p); render(); });
-
       var m = materialById(line.materialId);
       var area = m && isArea(m.unit);
       var lineBox = el("div", { class: "mat-line" });
 
       var lineTotal = el("span", { class: "line-total", text: m ? money(lineCost(line).cost) : "—" });
 
-      lineBox.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "grow" }, [sel]),
+      lineBox.appendChild(selectorMaterial(p, line, function () { save(p); render(); }));
+
+      lineBox.appendChild(el("div", { class: "row", style: "margin-top:6px" }, [
+        area ? null : el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Cantidad" })]),
         area ? null : el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
           value: line.qty, "aria-label": "Cantidad",
           oninput: function (e) { line.qty = e.target.value; save(p); refreshOutputs(); } })]),
@@ -2127,9 +2313,6 @@
           { id: "publicados", label: "En la tienda",
             test: function (p) { return !!p.publicado; },
             contar: function () { return state.products.filter(function (p) { return p.publicado; }).length; } },
-          { id: "servicios", label: "Servicios",
-            test: function (p) { return p.type === "servicio"; },
-            contar: function () { return state.products.filter(function (p) { return p.type === "servicio"; }).length; } },
           { id: "sinprecio", label: "Sin precio",
             test: function (p) { return calc(p).final <= 0; },
             contar: function () { return state.products.filter(function (p) { return calc(p).final <= 0; }).length; } }
@@ -2162,7 +2345,7 @@
       root.appendChild(lista);
       pintarLista();
 
-      root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo producto o servicio", onclick: addProduct }));
+      root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nueva flor", onclick: addProduct }));
     }
     renderStrip();
   }
@@ -2281,6 +2464,370 @@
     });
   }
 
+  /* renombrar, fusionar o eliminar una categoría desde su cabecera */
+  function editarCategoria(g) {
+    abrirVentana("Categoría " + g.nombre, function (cuerpo, sheet, cerrar) {
+      var campo = el("input", { type: "text", value: g.nombre, "aria-label": "Nombre de la categoría" });
+      cuerpo.appendChild(el("label", { class: "field", text: "Nombre" }));
+      cuerpo.appendChild(campo);
+      cuerpo.appendChild(el("p", { class: "note",
+        text: "Agrupa " + g.items.length + " " + (g.items.length === 1 ? rubro().insumo.toLowerCase() : rubro().insumoPlural) + "." }));
+
+      var aviso = el("p", { class: "note", style: "min-height:18px" });
+      cuerpo.appendChild(aviso);
+
+      /* si el nombre nuevo ya existe, renombrar es fusionar: hay que decirlo */
+      function revisar() {
+        var nuevo = campo.value.trim();
+        var choca = nuevo && norm(nuevo) !== norm(g.nombre) &&
+          categoriasUsadas().some(function (c) { return norm(c) === norm(nuevo); });
+        aviso.className = "note" + (choca ? " aviso" : "");
+        aviso.textContent = choca
+          ? "Ya existe “" + nuevo + "”: se juntarán en una sola categoría."
+          : "";
+      }
+      campo.addEventListener("input", revisar);
+      revisar();
+
+      function renombrar() {
+        var nuevo = campo.value.trim();
+        if (!nuevo) { toast("Ponle un nombre"); campo.focus(); return; }
+        if (nuevo === SIN_CATEGORIA) { toast("Ese nombre está reservado"); campo.focus(); return; }
+        if (nuevo === g.nombre) { cerrar(); return; }
+
+        g.items.forEach(function (m) { m.categoria = nuevo; save(m); });
+        /* la categoría no debe cerrarse sola por haberla renombrado */
+        if (ui.open[claveCategoria(g.nombre)]) ui.open[claveCategoria(nuevo)] = true;
+        delete ui.open[claveCategoria(g.nombre)];
+        ui.ultimaCategoria = nuevo;
+        render(); cerrar();
+        toast("Ahora se llama “" + nuevo + "”");
+      }
+
+      function eliminar() {
+        var cuantos = g.items.length;
+        var mensaje = cuantos
+          ? "Se eliminará la categoría y " + cuantos + " " +
+            (cuantos === 1 ? rubro().insumo.toLowerCase() + " quedará" : rubro().insumoPlural + " quedarán") +
+            " sin categoría. No se borra ninguno."
+          : "Se eliminará la categoría.";
+        if (!window.confirm(mensaje)) return;
+
+        g.items.forEach(function (m) { m.categoria = ""; save(m); });
+        delete ui.open[claveCategoria(g.nombre)];
+        if (ui.ultimaCategoria === g.nombre) ui.ultimaCategoria = "";
+        render(); cerrar();
+        toast(cuantos ? cuantos + " sin categoría" : "Categoría eliminada");
+      }
+
+      campo.addEventListener("keydown", function (e) { if (e.key === "Enter") renombrar(); });
+
+      cuerpo.appendChild(el("button", { class: "btn small peligro wide", type: "button",
+        style: "margin-top:4px", text: "Eliminar categoría", onclick: eliminar }));
+
+      sheet.appendChild(el("div", { class: "actions" }, [
+        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
+        el("button", { class: "btn primary", type: "button", text: "Guardar", onclick: renombrar })
+      ]));
+    });
+  }
+
+  /* botones con los colores de una categoría; muestra el stock y atenúa lo agotado */
+  function selectorColor(categoria, actual, alElegir) {
+    var fila = el("div", { class: "chips-filtro colores" });
+    var opciones = state.materials.filter(function (m) { return categoriaDe(m) === categoria; })
+      .sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); });
+    if (!categoria || !opciones.length) {
+      fila.appendChild(el("p", { class: "note", style: "margin:0",
+        text: categoria ? "No hay materiales en “" + categoria + "”." : "Elige primero el tipo de limpiapipas." }));
+      return fila;
+    }
+    opciones.forEach(function (m) {
+      var stock = parseNum(m.stock);
+      var b = el("button", { class: "chip-filtro chip-mat" + (stock <= 0 ? " agotado" : ""), type: "button",
+        "aria-pressed": actual === m.id ? "true" : "false",
+        "aria-label": (m.name || "Sin nombre") + ", quedan " + fmtQty(stock),
+        onclick: function () { alElegir(m.id); } }, [
+        el("span", { class: "nom", text: m.name || "Sin nombre" }),
+        el("small", { text: fmtQty(stock) })
+      ]);
+      fila.appendChild(b);
+    });
+    return fila;
+  }
+
+  function selectorCategoriaSimple(actual, alCambiar) {
+    var sel = el("select", { "aria-label": "Tipo de limpiapipas" });
+    sel.appendChild(el("option", { value: "", text: "Elegir tipo…" }));
+    categoriasUsadas().forEach(function (c) { sel.appendChild(el("option", { value: c, text: c })); });
+    sel.value = actual || "";
+    sel.addEventListener("change", function () { alCambiar(sel.value); });
+    return sel;
+  }
+
+  /* receta de la flor: cuántos pétalos y hojas, de qué tipo de limpiapipas */
+  function seccionFlor(p) {
+    if (!p.flor) p.flor = {};
+    var f = p.flor;
+    var sec = el("div", { class: "sec" });
+    sec.appendChild(el("header", {}, [el("h4", { text: "Pétalos y hojas" })]));
+    sec.appendChild(el("p", { class: "note", style: "margin:0 0 8px",
+      text: "Lo que lleva color a elección del cliente. Barra, cinta y lo demás van en Otros materiales." }));
+
+    function num(label, clave) {
+      return el("div", { class: "grow" }, [
+        el("label", { class: "field", text: label }),
+        el("input", { class: "num", type: "text", inputmode: "decimal", value: f[clave] || "", placeholder: "0",
+          "aria-label": label,
+          oninput: function (e) { f[clave] = e.target.value; save(p); refreshOutputs(); } })
+      ]);
+    }
+
+    sec.appendChild(el("label", { class: "field", text: "Tipo de limpiapipas de los pétalos" }));
+    sec.appendChild(selectorCategoriaSimple(f.catPetalos, function (c) {
+      f.catPetalos = c; f.colorDefecto = ""; save(p); render();
+    }));
+    sec.appendChild(el("div", { class: "row measures", style: "margin-top:8px" }, [
+      num("Pétalos (un color)", "petalosUno"),
+      num("Bicolor: primario", "petalosPrim"),
+      num("Bicolor: secundario", "petalosSec")
+    ]));
+    if (f.catPetalos) {
+      sec.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color de referencia (para el costo)" }));
+      sec.appendChild(selectorColor(f.catPetalos, f.colorDefecto, function (id) { f.colorDefecto = id; save(p); render(); }));
+    }
+
+    sec.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Tipo de limpiapipas de las hojas" }));
+    sec.appendChild(selectorCategoriaSimple(f.catHojas, function (c) {
+      f.catHojas = c; f.colorHojas = ""; save(p); render();
+    }));
+    sec.appendChild(el("div", { class: "row measures", style: "margin-top:8px" }, [num("Hojas por flor", "hojas")]));
+    if (f.catHojas) {
+      sec.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color de hojas habitual" }));
+      sec.appendChild(selectorColor(f.catHojas, f.colorHojas, function (id) { f.colorHojas = id; save(p); render(); }));
+    }
+    return sec;
+  }
+
+  /* en el pedido: un color o bicolor, primario, secundario y hojas */
+  function coloresDePedido(o, it, p) {
+    var f = florDe(p), e = eleccionDe(p, it);
+    var caja = el("div", { class: "colores-pedido" });
+    var cambiar = function (clave, valor) { it[clave] = valor; save(o); render(); };
+
+    var tienePetalos = f.petalosUno > 0 || admiteBicolor(p);
+    if (!tienePetalos && f.hojas <= 0) {
+      caja.appendChild(el("p", { class: "note", style: "margin:0",
+        text: "Esta flor no tiene pétalos ni hojas configurados en su receta." }));
+      return caja;
+    }
+
+    if (tienePetalos) {
+      if (admiteBicolor(p)) {
+        var seg = el("div", { class: "seg tiny" });
+        [["uno", "Un color · " + fmtQty(f.petalosUno) + " pétalos"],
+         ["dos", "Bicolor · " + fmtQty(f.petalosPrim) + " + " + fmtQty(f.petalosSec)]].forEach(function (op) {
+          seg.appendChild(el("button", { type: "button", text: op[1], "aria-pressed": e.modo === op[0],
+            onclick: function () { cambiar("modo", op[0]); } }));
+        });
+        caja.appendChild(seg);
+      }
+      caja.appendChild(el("label", { class: "field", style: "margin-top:8px",
+        text: e.modo === "dos" ? "Color primario" : "Color de los pétalos" }));
+      caja.appendChild(selectorColor(f.catPetalos, e.primario, function (id) { cambiar("primario", id); }));
+      if (e.modo === "dos") {
+        caja.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color secundario" }));
+        caja.appendChild(selectorColor(f.catPetalos, e.secundario, function (id) { cambiar("secundario", id); }));
+      }
+    }
+    if (f.hojas > 0) {
+      caja.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color de las hojas" }));
+      caja.appendChild(selectorColor(f.catHojas, e.hojas, function (id) { cambiar("hojasColor", id); }));
+    }
+    caja.appendChild(el("p", { class: "note", style: "margin:8px 0 0", text: describirColores(p, it) }));
+    return caja;
+  }
+
+  /* ---------------- pagos y abonos ----------------
+     Un pago mixto son dos pagos; un abono es un pago más. Con eso basta. */
+
+  var METODOS_PAGO = [["efectivo", "Efectivo"], ["transferencia", "Transferencia"]];
+
+  function cobrado(o) {
+    return (o.pagos || []).reduce(function (t, x) { return t + parseNum(x.monto); }, 0);
+  }
+
+  function estadoPago(o) {
+    var total = orderTotals(o).ingreso, pagado = cobrado(o);
+    if (pagado <= 0) return { id: "porcobrar", label: "Por cobrar", saldo: total };
+    if (pagado + 0.5 < total) return { id: "abonado", label: "Abonado", saldo: total - pagado };
+    return { id: "pagado", label: "Pagado", saldo: total - pagado };
+  }
+
+  function seccionPagos(o) {
+    if (!o.pagos) o.pagos = [];
+    var total = orderTotals(o).ingreso;
+    var est = estadoPago(o);
+    var sec = el("div", { class: "sec" });
+    sec.appendChild(el("header", {}, [
+      el("h4", { text: "Pagos" }),
+      el("span", { class: "sub", text: money(cobrado(o)) + " de " + money(total) })
+    ]));
+
+    if (!o.pagos.length) {
+      sec.appendChild(el("p", { class: "note", style: "margin:0 0 6px", text: "Sin pagos registrados." }));
+    }
+    o.pagos.forEach(function (x, idx) {
+      var metodo = el("select", { "aria-label": "Forma de pago" });
+      METODOS_PAGO.forEach(function (m) { metodo.appendChild(el("option", { value: m[0], text: m[1] })); });
+      metodo.value = x.metodo || "efectivo";
+      metodo.addEventListener("change", function () { x.metodo = metodo.value; save(o); render(); });
+      sec.appendChild(el("div", { class: "row" }, [
+        el("div", { class: "grow" }, [el("input", { type: "date", value: x.fecha || "", "aria-label": "Fecha del pago",
+          onchange: function (e) { x.fecha = e.target.value; save(o); renderPronto(); } })]),
+        el("div", { class: "grow" }, [metodo]),
+        el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
+          value: x.monto, "aria-label": "Monto",
+          oninput: function (e) { x.monto = e.target.value; save(o); },
+          onchange: function () { renderPronto(); } })]),
+        deleteButton("Quitar pago", function () { o.pagos.splice(idx, 1); save(o); render(); })
+      ]));
+    });
+
+    sec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Pago",
+      onclick: function () {
+        var saldo = Math.max(0, total - cobrado(o));
+        o.pagos.push({ id: uid(), fecha: hoy(), metodo: "efectivo", monto: Math.round(saldo) });
+        save(o); render();
+      } }));
+
+    var resumen = el("div", { class: "unit-cost" + (est.id === "pagado" ? "" : " low"), style: "margin-top:10px" });
+    if (est.saldo < -0.5) {
+      resumen.appendChild(el("span", { text: "Se cobró de más" }));
+      resumen.appendChild(el("b", { text: money(-est.saldo) }));
+    } else if (est.id === "pagado") {
+      resumen.appendChild(el("span", { text: "Pagado completo" }));
+      resumen.appendChild(el("b", { text: money(total) }));
+    } else {
+      resumen.appendChild(el("span", { text: "Falta por cobrar" }));
+      resumen.appendChild(el("b", { text: money(est.saldo) }));
+    }
+    sec.appendChild(resumen);
+    return sec;
+  }
+
+  /* qué se gastó en un pedido ya entregado */
+  function seccionConsumo(o) {
+    if (o.estado !== "entregado" || !(o.consumo || []).length) return null;
+    var sec = el("div", { class: "sec" });
+    sec.appendChild(el("header", {}, [el("h4", { text: "Lo que se usó" })]));
+    (o.colores || []).forEach(function (c) {
+      sec.appendChild(el("p", { class: "note", style: "margin:0 0 4px",
+        text: fmtQty(c.qty) + " × " + c.flor + (c.detalle ? " · " + c.detalle : "") }));
+    });
+    var plan = el("div", { class: "plan" });
+    o.consumo.forEach(function (c) {
+      plan.appendChild(el("div", { class: "plan-row" }, [
+        el("span", { class: "plan-name", text: c.nombre }),
+        el("span", { class: "plan-use", text: conUnidad(c.cantidad, c.unidad) })
+      ]));
+    });
+    sec.appendChild(plan);
+    return sec;
+  }
+
+  /* ---------------- elegir material con botones ----------------
+     Un desplegable nativo con cuarenta colores abre un menú que tapa la
+     pantalla. Aquí la elección ocurre dentro del propio recuadro: primero
+     la categoría, después el color. */
+
+  var MINIMO_POR_CATEGORIA = 8;
+
+  function botonChip(texto, activo, onclick) {
+    return el("button", { class: "chip-filtro", type: "button",
+      "aria-pressed": activo ? "true" : "false", text: texto, onclick: onclick });
+  }
+
+  /* el nombre manda; el precio acompaña, para no leer dos veces lo mismo */
+  function botonMaterial(m, activo, onclick) {
+    return el("button", { class: "chip-filtro chip-mat", type: "button",
+      "aria-pressed": activo ? "true" : "false",
+      "aria-label": etiquetaMaterial(m), onclick: onclick }, [
+      el("span", { class: "nom", text: m.name || "Sin nombre" }),
+      el("small", { text: money(materialCost(m)) + "/" + m.unit })
+    ]);
+  }
+
+  function etiquetaMaterial(m) {
+    return (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")";
+  }
+
+  /* devuelve el bloque de selección para una línea de material de un producto */
+  function selectorMaterial(p, line, alElegir) {
+    var caja = el("div", { class: "selector-mat" });
+    var elegido = materialById(line.materialId);
+
+    /* qué categoría se está mirando; por defecto, la del material ya elegido */
+    var claveVista = "sel:" + p.id + ":" + (line.materialId || "nuevo");
+    if (ui.verCategoria[claveVista] === undefined) {
+      ui.verCategoria[claveVista] = elegido ? categoriaDe(elegido) : null;
+    }
+
+    var grupos = agruparPorCategoria(state.materials.slice().sort(function (a, b) {
+      return norm(a.name).localeCompare(norm(b.name));
+    }));
+    /* con pocos materiales, pedir dos toques sería peor que uno */
+    var directo = grupos.length <= 1 || state.materials.length < MINIMO_POR_CATEGORIA;
+
+    function pintar() {
+      caja.innerHTML = "";
+
+      if (elegido && !ui.cambiando[claveVista]) {
+        caja.appendChild(el("div", { class: "mat-elegido" }, [
+          el("span", { class: "nombre", text: etiquetaMaterial(elegido) }),
+          el("button", { class: "btn small", type: "button", text: "Cambiar",
+            onclick: function () { ui.cambiando[claveVista] = true; pintar(); } })
+        ]));
+        return;
+      }
+
+      var vista = ui.verCategoria[claveVista];
+
+      if (!directo) {
+        var filaCat = el("div", { class: "chips-filtro" });
+        grupos.forEach(function (g) {
+          filaCat.appendChild(botonChip(g.nombre + " · " + g.items.length, vista === g.nombre, function () {
+            ui.verCategoria[claveVista] = vista === g.nombre ? null : g.nombre;
+            pintar();
+          }));
+        });
+        caja.appendChild(filaCat);
+        if (!vista) {
+          caja.appendChild(el("p", { class: "note", style: "margin:6px 2px 0",
+            text: "Elige una categoría para ver sus " + rubro().insumoPlural + "." }));
+          return;
+        }
+      }
+
+      var items = directo
+        ? state.materials.slice().sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); })
+        : (grupos.filter(function (g) { return g.nombre === vista; })[0] || { items: [] }).items;
+
+      var filaMat = el("div", { class: "chips-filtro", style: "margin-top:6px" });
+      items.forEach(function (m) {
+        filaMat.appendChild(botonMaterial(m, line.materialId === m.id, function () {
+          line.materialId = m.id;
+          ui.cambiando[claveVista] = false;
+          alElegir();
+        }));
+      });
+      caja.appendChild(filaMat);
+    }
+
+    pintar();
+    return caja;
+  }
+
   /* vista de materiales dentro de Inventario: catálogo y existencias juntos */
   function pintarMateriales(root) {
     root.appendChild(el("p", { class: "note", style: "margin:0 2px 12px",
@@ -2363,7 +2910,11 @@
         el("span", { class: "caret", text: "▸" }),
         el("h4", { text: g.nombre }),
         g.bajos ? el("span", { class: "chip neg", text: g.bajos + " bajo" }) : null,
-        el("span", { class: "cat-resumen", text: resumen })
+        el("span", { class: "cat-resumen", text: resumen }),
+        /* "Sin categoría" no es una categoría: es la ausencia de una */
+        g.nombre === SIN_CATEGORIA ? null : el("button", { class: "editar", type: "button",
+          title: "Editar categoría", "aria-label": "Editar la categoría " + g.nombre, text: "✎",
+          onclick: function (e) { e.stopPropagation(); editarCategoria(g); } })
       ]);
       cabecera.addEventListener("keydown", function (e) {
         if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ui.open[clave] = !abierta; render(); }
@@ -2734,7 +3285,8 @@
       el("span", { class: "chip est-" + o.estado, text: estadoLabel(o.estado) }),
       el("span", { class: "chip p", html: "Ingreso <b>" + money(t.ingreso) + "</b>" }),
       el("span", { class: "chip " + (t.ganancia < 0 ? "neg" : "g"), html: "Ganancia <b>" + money(t.ganancia) + "</b>" }),
-      el("span", { class: "chip " + (plan.ok ? "g" : "neg"), text: plan.ok ? "Hay material" : "Falta material" })
+      el("span", { class: "chip " + (plan.ok ? "g" : "neg"), text: plan.ok ? "Hay material" : "Falta material" }),
+      el("span", { class: "chip pago-" + estadoPago(o).id, text: estadoPago(o).label })
     ]);
 
     var card = el("div", { class: "card " + (plan.ok ? "producto" : "servicio") }, [head, chips]);
@@ -2766,13 +3318,13 @@
     /* items */
     var itemsSec = el("div", { class: "sec" });
     itemsSec.appendChild(el("header", {}, [
-      el("h4", { text: "Productos del pedido" }),
+      el("h4", { text: "Flores del pedido" }),
       el("span", { class: "sub", text: money(t.ingreso) })
     ]));
 
     (o.items || []).forEach(function (it, idx) {
       var sel = el("select", {});
-      sel.appendChild(el("option", { value: "", text: "Selecciona un producto" }));
+      sel.appendChild(el("option", { value: "", text: "Elige una flor" }));
       state.products.forEach(function (p) {
         sel.appendChild(el("option", { value: p.id, text: (p.name || "Sin nombre") + " · " + money(calc(p).final) }));
       });
@@ -2791,11 +3343,15 @@
           value: it.qty, "aria-label": "Cantidad",
           oninput: function (e) { it.qty = e.target.value; save(o); },
           onchange: function () { renderPronto(); } })]),
-        deleteButton("Quitar producto", function () { o.items.splice(idx, 1); save(o); render(); })
+        deleteButton("Quitar flor", function () { o.items.splice(idx, 1); save(o); render(); })
       ]));
+
+      /* colores de esta línea: un color o bicolor, y las hojas */
+      var flor = productById(it.productId);
+      if (flor) itemsSec.appendChild(coloresDePedido(o, it, flor));
     });
 
-    itemsSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Producto",
+    itemsSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Flor",
       onclick: function () {
         var p = state.products[0];
         o.items.push({ productId: p ? p.id : "", qty: 1, price: p ? Math.round(calc(p).final) : 0 });
@@ -2838,6 +3394,9 @@
       el("tr", { class: "total" }, [el("th", { scope: "row", text: "Ganancia" }),
         el("td", { class: t.ganancia < 0 ? "loss" : "gain", text: money(t.ganancia) })])
     ])])]));
+
+    agregar(body, seccionConsumo(o));
+    body.appendChild(seccionPagos(o));
 
     /* estado */
     var segEstado = el("div", { class: "seg tiny", style: "margin-top:14px" });
@@ -3213,6 +3772,10 @@
 
   /* el asistente solo aparece la primera vez, con la nube ya consultada */
   function revisarAsistente() {
+    /* cuentas creadas con el asistente genérico: pasan a flores por encargo */
+    if (state.settings.configurado && (state.settings.modo !== "encargo" || state.settings.rubro !== "manualidades")) {
+      fijarRubroFlores(); save();
+    }
     if (necesitaAsistente()) abrirAsistente();
     else { aplicarLenguaje(); render(); }
   }
@@ -3230,9 +3793,20 @@
            con él le quitaría el foco a quien está escribiendo */
         if (snap.metadata && snap.metadata.hasPendingWrites) { setSaveState("Sincronizado"); return; }
 
+        /* Se actualiza cada objeto en su sitio en vez de reemplazarlo: si la
+           pantalla aún no se repintó, sus botones apuntan a estos objetos, y
+           con copias nuevas el siguiente toque modificaría uno ya descartado. */
+        var previos = {};
+        (state[c.campo] || []).forEach(function (x) { if (x && x.id) previos[x.id] = x; });
         var items = [], mapa = {};
         snap.forEach(function (d) {
-          var item = Object.assign({ id: d.id }, d.data());
+          var datos = d.data(), item = previos[d.id];
+          if (item) {
+            Object.keys(item).forEach(function (k) { if (k !== "id" && !(k in datos)) delete item[k]; });
+            Object.assign(item, datos);
+          } else {
+            item = Object.assign({ id: d.id }, datos);
+          }
           items.push(item); mapa[d.id] = true;
         });
         fb.remotos[c.nombre] = mapa;
@@ -3314,8 +3888,11 @@
       o.metodo = o.metodo || METODOS[0];
       o.origen = o.origen || "tienda";
       if (o.creado) o.creado = String(o.creado).slice(0, 10);
-      o.items = (o.items || []).map(function (i) {
-        return { productId: i.productId, qty: parseNum(i.qty), price: parseNum(i.price) };
+      /* se corrigen los tipos en el mismo objeto: reconstruir la línea borraba
+         todo lo que no fuera producto, cantidad y precio (colores, modo...) */
+      (o.items || []).forEach(function (i) {
+        i.qty = parseNum(i.qty);
+        i.price = parseNum(i.price);
       });
     });
     state.orders.sort(function (a, b) { return String(b.creado || "").localeCompare(String(a.creado || "")); });
@@ -3478,7 +4055,16 @@
     }
   };
 
-  function rubro() { return RUBROS[state.settings.rubro] || RUBROS.general; }
+  function rubro() { return RUBROS.manualidades; }
+
+  /* flores por encargo, con inventario de materiales y página pública */
+  function fijarRubroFlores() {
+    state.settings.rubro = "manualidades";
+    state.settings.modo = "encargo";
+    var m = state.settings.modulos || {};
+    state.settings.modulos = { inventario: true, tienda: m.tienda !== false, lotes: false,
+      materiales: true, fabricados: false };
+  }
 
   function modulos() {
     return Object.assign({}, rubro().modulos, state.settings.modulos || {});
@@ -3508,7 +4094,8 @@
     pintarAsistente();
   }
 
-  var PASOS = ["negocio", "rubro", "dinero", "venta"];
+  /* la app es de flores de limpiapipas: solo hace falta el nombre del taller */
+  var PASOS = ["negocio"];
 
   function pintarAsistente() {
     var card = document.getElementById("wizardCard");
@@ -3560,11 +4147,11 @@
   }
 
   function pasoNegocio(card) {
-    card.appendChild(el("h1", { text: "¿Cómo se llama tu emprendimiento?" }));
+    card.appendChild(el("h1", { text: "¿Cómo se llama tu taller?" }));
     card.appendChild(el("p", { class: "intro", text: "Es el nombre que verán tus clientes. Puedes cambiarlo cuando quieras." }));
     var campos = el("div", { class: "campos" });
-    var input = el("input", { type: "text", value: wiz.nombre, placeholder: "Ej: Taller Aurora",
-      "aria-label": "Nombre del emprendimiento" });
+    var input = el("input", { type: "text", value: wiz.nombre, placeholder: "Ej: Flores de limpiapipas Aurora",
+      "aria-label": "Nombre del taller" });
     input.addEventListener("input", function () {
       wiz.nombre = input.value;
       card.querySelector(".acciones .btn.primary").disabled = !wiz.nombre.trim();
@@ -3646,20 +4233,8 @@
   }
 
   function cerrarAsistente() {
-    var r = RUBROS[wiz.rubro] || RUBROS.general;
     state.settings.tienda.nombre = wiz.nombre.trim();
-    state.settings.rubro = wiz.rubro || "general";
-    state.settings.currency = wiz.currency;
-    state.settings.taxEnabled = wiz.taxEnabled;
-    state.settings.taxRate = wiz.taxRate;
-    state.settings.modo = wiz.modo;
-    state.settings.modulos = {
-      inventario: r.modulos.inventario,
-      tienda: wiz.tienda,
-      lotes: r.modulos.lotes,
-      materiales: wiz.modo !== "stock",
-      fabricados: wiz.modo !== "encargo"
-    };
+    fijarRubroFlores();
     state.settings.configurado = true;
 
     document.getElementById("wizard").hidden = true;
@@ -3935,33 +4510,11 @@
 
     /* negocio: rubro y módulos, lo mismo que definió el asistente */
     var negocioCard = el("div", { class: "setting" }, [
-      el("h4", { text: "Tu negocio" }),
+      el("h4", { text: "Tu taller" }),
       el("label", { class: "field", text: "Nombre" }),
-      el("input", { type: "text", value: state.settings.tienda.nombre, placeholder: "Ej: Taller Aurora",
-        oninput: function (e) { state.settings.tienda.nombre = e.target.value; save(); } }),
-      el("label", { class: "field", style: "margin-top:10px", text: "Rubro" })
+      el("input", { type: "text", value: state.settings.tienda.nombre, placeholder: "Ej: Flores de limpiapipas Aurora",
+        oninput: function (e) { state.settings.tienda.nombre = e.target.value; save(); } })
     ]);
-
-    var rubroSel = el("select", { "aria-label": "Rubro" });
-    Object.keys(RUBROS).forEach(function (id) {
-      rubroSel.appendChild(el("option", { value: id, text: RUBROS[id].emoji + "  " + RUBROS[id].label }));
-    });
-    rubroSel.value = state.settings.rubro || "general";
-    rubroSel.addEventListener("change", function () {
-      state.settings.rubro = rubroSel.value;
-      /* el rubro vuelve a mandar sobre los módulos que él decide */
-      var m = state.settings.modulos || {};
-      state.settings.modulos = Object.assign({}, RUBROS[rubroSel.value].modulos, {
-        tienda: m.tienda !== false,
-        materiales: m.materiales !== false,
-        fabricados: m.fabricados === true
-      });
-      save(); aplicarLenguaje(); render();
-      toast("Rubro actualizado");
-    });
-    negocioCard.appendChild(rubroSel);
-    negocioCard.appendChild(el("p", { class: "note",
-      text: "Define cómo se llaman tus " + rubro().insumoPlural + " y qué secciones ves." }));
 
     negocioCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Moneda" }));
     var monedaSel = el("select", { "aria-label": "Moneda" });
@@ -3975,45 +4528,13 @@
     });
     negocioCard.appendChild(monedaSel);
 
-    negocioCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Cómo vendes" }));
-    var modoSeg = el("div", { class: "seg tiny" });
-    [["encargo", "Por encargo"], ["stock", "Con stock listo"], ["mixta", "Las dos"]].forEach(function (o) {
-      modoSeg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": state.settings.modo === o[0],
-        onclick: function () {
-          state.settings.modo = o[0];
-          state.settings.modulos = Object.assign({}, modulos(), {
-            materiales: o[0] !== "stock",
-            fabricados: o[0] !== "encargo"
-          });
-          if (!vistaValida(ui.vista)) ui.vista = vistasInventario()[0];
-          save(); render();
-          toast("Listo: " + o[1].toLowerCase());
-        } }));
-    });
-    negocioCard.appendChild(modoSeg);
-    negocioCard.appendChild(el("p", { class: "note",
-      text: state.settings.modo === "mixta"
-        ? "Llevas " + rubro().insumoPlural + " y unidades ya fabricadas: al entregar se usan primero las hechas."
-        : state.settings.modo === "stock"
-          ? "Solo llevas la cuenta de lo que tienes hecho."
-          : "Produces al recibir el pedido, descontando " + rubro().insumoPlural + "." }));
-
-    var invChk = el("input", { type: "checkbox", id: "modInv" });
-    invChk.checked = moduloActivo("inventario");
-    invChk.addEventListener("change", function () {
-      state.settings.modulos = Object.assign({}, modulos(), { inventario: invChk.checked });
-      save(); aplicarLenguaje(); render();
-    });
-    negocioCard.appendChild(el("label", { class: "switch", style: "margin-top:12px" },
-      [invChk, el("span", { text: "Llevar inventario de existencias" })]));
-
     var tdaChk = el("input", { type: "checkbox", id: "modTienda" });
     tdaChk.checked = moduloActivo("tienda");
     tdaChk.addEventListener("change", function () {
       state.settings.modulos = Object.assign({}, modulos(), { tienda: tdaChk.checked });
       save(); render();
     });
-    negocioCard.appendChild(el("label", { class: "switch", style: "margin-top:8px" },
+    negocioCard.appendChild(el("label", { class: "switch", style: "margin-top:12px" },
       [tdaChk, el("span", { text: "Tener página pública para recibir pedidos" })]));
     root.appendChild(negocioCard);
 

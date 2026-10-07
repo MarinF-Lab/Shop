@@ -1,9 +1,23 @@
-# Costos y precios
+# Costos y precios — flores de limpiapipas
 
-Aplicación web para emprendedores: calcula el costo real de lo que produces,
-le pone precio con el margen que definas, y lleva materiales, inventario y
-pedidos. Incluye una tienda pública para que tus clientes vean el catálogo y
-te dejen su pedido.
+Aplicación web para un taller de flores de limpiapipas: calcula el costo real
+de cada flor, lleva materiales e inventario por color, y registra los pedidos
+con los colores que pidió cada cliente y cómo pagó. Incluye una tienda pública
+para que tus clientes vean el catálogo y te dejen su pedido.
+
+## Flores y pedidos
+
+- **Receta de la flor**: tipo de limpiapipas de los pétalos, cuántos pétalos
+  lleva en un color y cuántos en bicolor (primario + secundario), hojas (tipo y
+  cantidad) y los materiales fijos (barra metálica, cinta…).
+- **Pedido**: por cada flor eliges un color o bicolor, el primario, el
+  secundario y el color de las hojas, entre los que tienes en stock. Al
+  entregar se descuentan exactamente esos colores y el pedido guarda lo que se
+  usó.
+- **Pagos**: efectivo o transferencia, con abonos; un pago mixto son dos pagos.
+  Cada pedido indica si está pagado, abonado o por cobrar.
+- **Inicio** resume cuánto entró este mes en efectivo y por transferencia, lo
+  que queda por cobrar y los colores más usados en los últimos 30 días.
 
 Son dos páginas HTML sin dependencias ni compilación:
 
@@ -119,8 +133,14 @@ un desplegable con las que ya usaste, o se crea al vuelo desde la ficha.
 
 Cada categoría se pliega y muestra, sin abrirla, cuántos ítems tiene y cuánto
 dinero representa; dentro, cada material es una línea que se abre al tocarla.
-Al buscar, las categorías con coincidencias se abren solas. El desplegable de
-materiales dentro de cada producto queda agrupado igual.
+Al buscar, las categorías con coincidencias se abren solas. El lápiz de la
+cabecera permite renombrar la categoría —si le pones el nombre de otra, se
+fusionan— o eliminarla, en cuyo caso sus materiales pasan a "Sin categoría"
+sin perderse.
+
+Al armar un producto, el material se elige con botones dentro del propio
+recuadro: primero la categoría, luego el color. Con menos de ocho materiales se
+muestran todos directamente.
 
 ## Historial de costos
 
