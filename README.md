@@ -15,6 +15,10 @@ para que tus clientes vean el catálogo y te dejen su pedido.
   reciente al más antiguo. Cada pedido guarda cliente, Instagram, teléfono,
   fecha de pedido (se pone sola y es editable), fecha de entrega, forma de
   entrega con dirección y notas.
+  Cada pedido es una fila corta con el día, el cliente, las flores, el total y
+  el estado de pago; al tocarla se ve un resumen, y el formulario completo solo
+  con *Editar*. En *Hechos* se ve el último mes; lo anterior, con *Ver
+  anteriores* o con el buscador.
 - **Colores por pedido**: por cada flor eliges un color o bicolor, el primario,
   el secundario y el color de las hojas, entre los que tienes en stock.
 - **Materiales**: en los pedidos por hacer ves lo que usarán frente al stock;

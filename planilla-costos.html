@@ -549,6 +549,39 @@
   .chip.pago-pagado { background: var(--gain-soft); color: var(--gain); font-weight: 600; }
   .chip.pago-abonado { background: var(--cost-soft); color: var(--cost); font-weight: 600; }
   .chip.pago-porcobrar { background: var(--paper); color: var(--muted); font-weight: 600; }
+  /* ---------- agenda ---------- */
+  .agenda-item { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; margin-bottom: 8px; }
+  .agenda-item.abierto { border-color: var(--accent); }
+  .agenda-fila { display: flex; align-items: center; gap: 12px; padding: 10px 12px; cursor: pointer; border-radius: 10px; }
+  .agenda-fila:hover { background: #F7F9FB; }
+  .agenda-fila:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .agenda-dia {
+    flex: none; width: 46px; text-align: center; line-height: 1.05;
+    background: var(--accent-soft); color: var(--accent); border-radius: 8px; padding: 5px 0;
+  }
+  .agenda-dia.tarde { background: #F7E4E2; color: var(--danger); }
+  .agenda-dia.cancelado { background: var(--paper); color: var(--muted); }
+  .agenda-dia .dsem, .agenda-dia .dmes { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: .3px; }
+  .agenda-dia .dnum { display: block; font-size: 19px; font-weight: 700; font-family: var(--num); }
+  .agenda-info { flex: 1; min-width: 0; }
+  .agenda-titulo { font-size: 14px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .agenda-sub { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin-top: 3px;
+    font-family: var(--num); font-size: 12.5px; color: var(--muted); }
+  .agenda-sub .chip { font-family: var(--sans); font-size: 11px; padding: 2px 7px; }
+  .agenda-flecha { flex: none; color: var(--muted); font-size: 18px; }
+  .agenda-resumen { padding: 2px 14px 12px 70px; }
+  .agenda-linea { display: flex; gap: 10px; font-size: 13px; padding: 3px 0; }
+  .agenda-linea .et { flex: none; width: 92px; color: var(--muted); }
+  .agenda-linea .va { flex: 1; min-width: 0; }
+  .agenda-linea.aviso .va { color: var(--cost); font-weight: 600; }
+  .agenda-acciones { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+  .agenda-form { border-top: 1px solid var(--line-soft); padding-top: 12px; }
+  @media (max-width: 420px) {
+    .agenda-resumen { padding-left: 14px; }
+    .agenda-linea .et { width: 78px; }
+  }
+  .ver-anteriores { width: 100%; margin: 4px 0 14px; }
+
   .toast {
     position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
     background: var(--ink); color: #fff; font-size: 13px;
@@ -689,7 +722,7 @@
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
   var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
-    verCategoria: {}, cambiando: {} };
+    verCategoria: {}, cambiando: {}, editando: {}, hechosAntiguos: false };
 
   /* ---------------- utilidades ---------------- */
 
@@ -3290,7 +3323,25 @@
           listaPedidos.appendChild(el("p", { class: "note", style: "margin:0 2px 14px", text: g[2] }));
           return;
         }
-        g[1].forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
+        var lista = g[1], antiguos = [];
+        /* lo hecho crece sin fin: a la vista, el último mes; lo demás, a pedido.
+           Buscando se muestra todo, o el buscador no encontraría lo antiguo. */
+        var buscando = !!(filtro("pedidos").q || filtro("pedidos").tag);
+        if (g[0] === "Hechos" && !buscando && !ui.hechosAntiguos) {
+          var corte = new Date(); corte.setDate(corte.getDate() - 30);
+          var desde = fechaLocal(corte);
+          lista = g[1].filter(function (o) { return String(o.entregado || o.fecha || o.creado || "") >= desde; });
+          antiguos = g[1].filter(function (o) { return lista.indexOf(o) < 0; });
+        }
+        lista.forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
+        if (!lista.length) {
+          listaPedidos.appendChild(el("p", { class: "note", style: "margin:0 2px 8px", text: "Nada entregado en el último mes." }));
+        }
+        if (antiguos.length) {
+          listaPedidos.appendChild(el("button", { class: "btn small ver-anteriores", type: "button",
+            text: "Ver anteriores (" + antiguos.length + ")",
+            onclick: function () { ui.hechosAntiguos = true; pintarPedidos(); } }));
+        }
       });
     }
 
@@ -3357,32 +3408,127 @@
     return sec;
   }
 
+  /* resumen de las flores: "Tulipán ×2, Rosa ×1" */
+  function resumenFlores(o) {
+    var cuenta = {}, orden = [];
+    (o.items || []).forEach(function (it) {
+      var p = productById(it.productId);
+      var n = p ? (p.name || "Flor") : "Flor sin elegir";
+      if (!(n in cuenta)) { cuenta[n] = 0; orden.push(n); }
+      cuenta[n] += parseNum(it.qty);
+    });
+    if (!orden.length) return "sin flores";
+    return orden.map(function (n) { return n + " ×" + fmtQty(cuenta[n]); }).join(", ");
+  }
+
+  /* Tres niveles para que la agenda no se vuelva interminable:
+     una fila corta; al tocarla, un resumen; el formulario, solo con Editar. */
   function orderCard(o) {
     var t = orderTotals(o);
-    var plan = shoppingFor(o.items);
     var open = !!ui.open[o.id];
-
-    var head = el("div", { class: "card-head" + (open ? " open" : ""), onclick: function () {
-      ui.open[o.id] = !ui.open[o.id]; render();
-    } }, [
-      el("span", { class: "caret", text: "▶" }),
-      el("h3", { text: (o.cliente || "Sin nombre") + " · " + t.unidades + (t.unidades === 1 ? " flor" : " flores") })
-    ]);
-
+    var editando = open && !!ui.editando[o.id];
     var abierto = o.estado === "pendiente" || o.estado === "proceso";
-    var chips = el("div", { class: "chips" }, [
-      el("span", { class: "chip est-" + o.estado, text: estadoLabel(o.estado) }),
-      el("span", { class: "chip" + (abierto && atrasado(o) ? " neg" : ""),
-        text: o.fecha ? "Entrega " + fechaCorta(o.fecha) : "Sin fecha de entrega" }),
-      el("span", { class: "chip p", html: "Total <b>" + money(t.ingreso) + "</b>" }),
-      el("span", { class: "chip pago-" + estadoPago(o).id, text: estadoPago(o).label }),
-      abierto && !plan.ok ? el("span", { class: "chip neg", text: "Falta material" }) : null
+    var pago = estadoPago(o);
+
+    /* la fecha que manda: entrega para lo pendiente, entregado para lo hecho */
+    var fechaRef = abierto ? o.fecha : (o.entregado || o.fecha);
+    var dt = fechaRef ? new Date(String(fechaRef).slice(0, 10) + "T12:00:00") : null;
+    var tarde = abierto && atrasado(o);
+    var dia = el("div", { class: "agenda-dia" + (tarde ? " tarde" : "") + (o.estado === "cancelado" ? " cancelado" : "") },
+      dt && !isNaN(dt) ? [
+        el("span", { class: "dsem", text: DIAS_CORTOS[dt.getDay()] }),
+        el("span", { class: "dnum", text: String(dt.getDate()) }),
+        el("span", { class: "dmes", text: MESES_CORTOS[dt.getMonth()] })
+      ] : [el("span", { class: "dsem", text: "sin" }), el("span", { class: "dmes", text: "fecha" })]);
+
+    var fila = el("div", { class: "agenda-fila", role: "button", tabindex: "0", "aria-expanded": open,
+      onclick: function () { ui.open[o.id] = !open; if (open) ui.editando[o.id] = false; render(); } }, [
+      dia,
+      el("div", { class: "agenda-info" }, [
+        el("div", { class: "agenda-titulo", text: (o.cliente || "Sin nombre") + " · " + resumenFlores(o) }),
+        el("div", { class: "agenda-sub" }, [
+          el("span", { text: money(t.ingreso) }),
+          el("span", { class: "chip pago-" + pago.id, text: pago.label }),
+          o.estado === "proceso" ? el("span", { class: "chip est-proceso", text: "En proceso" }) : null,
+          o.estado === "cancelado" ? el("span", { class: "chip est-cancelado", text: "Cancelado" }) : null,
+          tarde ? el("span", { class: "chip neg", text: "Atrasado" }) : null
+        ])
+      ]),
+      el("span", { class: "agenda-flecha", text: open ? "▾" : "›" })
     ]);
+    fila.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fila.click(); }
+    });
 
-    var card = el("div", { class: "card " + (plan.ok ? "producto" : "servicio") }, [head, chips]);
+    var card = el("div", { class: "agenda-item" + (open ? " abierto" : "") }, [fila]);
     if (!open) return card;
+    card.appendChild(editando ? formularioPedido(o) : resumenPedido(o));
+    return card;
+  }
 
-    var body = el("div", { class: "card-body" });
+  /* lo esencial en pocas líneas, con las dos acciones habituales */
+  function resumenPedido(o) {
+    var t = orderTotals(o);
+    var abierto = o.estado === "pendiente" || o.estado === "proceso";
+    var caja = el("div", { class: "agenda-resumen" });
+    function linea(etiqueta, texto, cls) {
+      if (!texto) return;
+      caja.appendChild(el("div", { class: "agenda-linea" + (cls ? " " + cls : "") }, [
+        el("span", { class: "et", text: etiqueta }), el("span", { class: "va", text: texto })
+      ]));
+    }
+
+    (o.items || []).forEach(function (it) {
+      var p = productById(it.productId);
+      if (!p) return;
+      var col = describirColores(p, it);
+      linea(fmtQty(it.qty) + " × " + (p.name || "Flor"), col || "—");
+    });
+    linea("Entrega", [o.metodo, o.comuna].filter(Boolean).join(" · ") +
+      (o.fecha ? " · " + fechaCorta(o.fecha) : ""));
+    linea("Contacto", [o.instagram, o.whatsapp].filter(Boolean).join(" · "));
+    linea("Pedido el", o.creado ? fechaCorta(o.creado) : "");
+    linea("Notas", o.notas);
+    var pago = estadoPago(o);
+    linea("Pago", money(cobrado(o)) + " de " + money(t.ingreso) +
+      (pago.saldo > 0.5 ? " · faltan " + money(pago.saldo) : ""), pago.id === "pagado" ? "" : "aviso");
+
+    /* materiales: lo que usará o lo que se usó */
+    if (abierto) {
+      var plan = planEntrega(o), uso = {};
+      plan.lineas.forEach(function (l) { l.consumos.forEach(function (c) {
+        uso[c.material.id] = uso[c.material.id] || { m: c.material, n: 0 }; uso[c.material.id].n += c.use; }); });
+      var txt = Object.keys(uso).map(function (k) {
+        var u = uso[k], falta = u.n - parseNum(u.m.stock);
+        return (u.m.name || "?") + " " + fmtQty(u.n) + (falta > 1e-9 ? " (faltan " + fmtQty(falta) + ")" : "");
+      }).join(", ");
+      linea("Usará", txt || "elige flores y colores", plan.ok ? "" : "aviso");
+    } else if ((o.consumo || []).length) {
+      linea("Se usó", o.consumo.map(function (c) { return c.nombre + " " + fmtQty(c.cantidad); }).join(", "));
+    }
+
+    var acciones = el("div", { class: "agenda-acciones" }, [
+      el("button", { class: "btn small", type: "button", text: "Editar",
+        onclick: function () { ui.editando[o.id] = true; render(); } })
+    ]);
+    if (abierto) {
+      acciones.appendChild(el("button", { class: "btn small primary", type: "button", text: "Marcar entregado",
+        onclick: function () { abrirEntrega(o); } }));
+    }
+    caja.appendChild(acciones);
+    return caja;
+  }
+
+  /* el formulario completo del pedido, solo al editar */
+  function formularioPedido(o) {
+    var t = orderTotals(o);
+    var plan = shoppingFor(o.items);
+    var abierto = o.estado === "pendiente" || o.estado === "proceso";
+    var body = el("div", { class: "card-body agenda-form" });
+    body.appendChild(el("div", { class: "agenda-acciones", style: "margin-top:0" }, [
+      el("button", { class: "btn small primary", type: "button", text: "Listo",
+        onclick: function () { ui.editando[o.id] = false; render(); } })
+    ]));
 
     function campo(label, key, placeholder, tipo) {
       return el("div", { class: "grow" }, [
@@ -3521,8 +3667,7 @@
       } })
     ]));
 
-    card.appendChild(body);
-    return card;
+    return body;
   }
 
   function addOrder() {
@@ -3532,6 +3677,7 @@
       estado: "pendiente", creado: hoy(), origen: "manual" };
     state.orders.push(o);
     ui.open[o.id] = true;
+    ui.editando[o.id] = true;   /* nuevo: hay que llenarlo */
     save(o); render();
   }
 
