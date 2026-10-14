@@ -1,0 +1,20 @@
+{
+  "name": "Flores de limpiapipas",
+  "short_name": "Flores",
+  "description": "Costos, inventario por color, pedidos y pagos del taller de flores de limpiapipas.",
+  "lang": "es",
+  "id": "./planilla-costos.html",
+  "start_url": "./planilla-costos.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EDF0F3",
+  "theme_color": "#15202C",
+  "icons": [
+    { "src": "favicon.ico", "type": "image/x-icon", "sizes": "16x16 32x32" },
+    { "src": "icon-192.png", "type": "image/png", "sizes": "192x192" },
+    { "src": "icon-512.png", "type": "image/png", "sizes": "512x512" },
+    { "src": "icon-192-maskable.png", "type": "image/png", "sizes": "192x192", "purpose": "maskable" },
+    { "src": "icon-512-maskable.png", "type": "image/png", "sizes": "512x512", "purpose": "maskable" }
+  ]
+}

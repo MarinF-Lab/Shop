@@ -4,6 +4,14 @@
 <meta charset="utf-8">
 <title>Costos y precios</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#15202C">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Flores">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -5063,6 +5071,13 @@
     var tras = document.querySelector('.tabs button[data-tab="' + ui.tab + '"]');
     if (tras) tras.focus();
   });
+
+  /* instalable como app: el service worker guarda la planilla para abrir sin señal */
+  if ("serviceWorker" in navigator && location.protocol !== "file:") {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () {});
+    });
+  }
 
   document.getElementById("btnGoogle").addEventListener("click", entrarConGoogle);
   gateOcupado(true, "Comprobando sesión…");

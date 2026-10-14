@@ -26,6 +26,27 @@ Son dos páginas HTML sin dependencias ni compilación:
 | `planilla-costos.html` | Panel de gestión. Requiere cuenta de Google. |
 | `tienda.html` | Tienda pública. La abre cualquiera, sin cuenta. |
 | `firestore.rules` | Reglas de seguridad de la base de datos. |
+| `manifest.webmanifest`, `sw.js`, iconos | Instalación como app y apertura sin señal. |
+
+## Instalar en el teléfono
+
+La planilla es una PWA: desde el navegador del teléfono, **Agregar a la pantalla
+de inicio** (Android: menú ⋮ → *Instalar aplicación*; iPhone: Compartir →
+*Agregar a inicio*). Se abre como una app, con el icono de la flor y sin barra
+del navegador.
+
+El service worker (`sw.js`) guarda la planilla, los iconos y el SDK de Firebase,
+así que con la sesión ya iniciada la app abre aunque no haya señal; los datos
+salen de la caché offline de Firestore y se suben al volver la conexión. No
+intercepta Firestore ni el inicio de sesión, que siempre van a la red.
+
+La página siempre se pide primero a la red, así que los cambios publicados
+llegan solos. Si cambias la lógica de `sw.js` o la lista de archivos que guarda,
+sube su `VERSION` para que se renueve la caché.
+
+La PWA necesita HTTPS (o `localhost`): abriendo el archivo con doble clic no se
+instala. La tienda pública lleva el icono, pero no es instalable: la app es la
+planilla del taller.
 
 ## Cómo funciona
 
