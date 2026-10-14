@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Costos y precios</title>
+<title>Eternal Garden</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#15202C">
 <link rel="manifest" href="manifest.webmanifest">
@@ -10,7 +10,7 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Flores">
+<meta name="apple-mobile-web-app-title" content="Eternal Garden">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
@@ -564,7 +564,7 @@
 
 <div class="gate" id="gate">
   <div class="gate-card">
-    <h1>Costos y precios</h1>
+    <h1>Eternal Garden</h1>
     <p>Calcula cuánto te cuesta lo que haces, ponle precio y lleva tus pedidos e inventario. Entra con tu cuenta de Google: tus datos quedan guardados y disponibles en cualquier dispositivo.</p>
     <button class="btn-google" type="button" id="btnGoogle">
       <svg viewBox="0 0 18 18" aria-hidden="true">
@@ -585,7 +585,7 @@
 
 <div class="app" hidden>
   <div class="bar">
-    <h1>Costos y precios<span id="saveState" role="status" aria-live="polite">Cargando…</span></h1>
+    <h1>Eternal Garden<span id="saveState" role="status" aria-live="polite">Cargando…</span></h1>
     <div class="cuenta" id="cuenta"></div>
   </div>
 
@@ -4158,7 +4158,7 @@
     card.appendChild(el("h1", { text: "¿Cómo se llama tu taller?" }));
     card.appendChild(el("p", { class: "intro", text: "Es el nombre que verán tus clientes. Puedes cambiarlo cuando quieras." }));
     var campos = el("div", { class: "campos" });
-    var input = el("input", { type: "text", value: wiz.nombre, placeholder: "Ej: Flores de limpiapipas Aurora",
+    var input = el("input", { type: "text", value: wiz.nombre, placeholder: "Ej: Eternal Garden",
       "aria-label": "Nombre del taller" });
     input.addEventListener("input", function () {
       wiz.nombre = input.value;
@@ -4520,7 +4520,7 @@
     var negocioCard = el("div", { class: "setting" }, [
       el("h4", { text: "Tu taller" }),
       el("label", { class: "field", text: "Nombre" }),
-      el("input", { type: "text", value: state.settings.tienda.nombre, placeholder: "Ej: Flores de limpiapipas Aurora",
+      el("input", { type: "text", value: state.settings.tienda.nombre, placeholder: "Ej: Eternal Garden",
         oninput: function (e) { state.settings.tienda.nombre = e.target.value; save(); } })
     ]);
 

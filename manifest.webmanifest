@@ -1,7 +1,7 @@
 {
-  "name": "Flores de limpiapipas",
-  "short_name": "Flores",
-  "description": "Costos, inventario por color, pedidos y pagos del taller de flores de limpiapipas.",
+  "name": "Eternal Garden",
+  "short_name": "Eternal Garden",
+  "description": "Flores de limpiapipas: costos, inventario por color, pedidos y pagos.",
   "lang": "es",
   "id": "./planilla-costos.html",
   "start_url": "./planilla-costos.html",

@@ -1,4 +1,4 @@
-# Costos y precios — flores de limpiapipas
+# Eternal Garden — flores de limpiapipas
 
 Aplicación web para un taller de flores de limpiapipas: calcula el costo real
 de cada flor, lleva materiales e inventario por color, y registra los pedidos
