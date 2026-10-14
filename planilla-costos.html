@@ -592,7 +592,7 @@
   <div class="tabs" role="tablist">
     <button role="tab" data-tab="inicio" aria-selected="true">Inicio</button>
     <button role="tab" data-tab="productos" aria-selected="false">Flores</button>
-    <button role="tab" data-tab="pedidos" aria-selected="false">Pedidos</button>
+    <button role="tab" data-tab="pedidos" aria-selected="false">Agenda</button>
     <button role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
     <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
   </div>
@@ -1269,7 +1269,14 @@
     return o.fecha < hoy();
   }
 
-  function hoy() { return new Date().toISOString().slice(0, 10); }
+  /* fecha local AAAA-MM-DD: toISOString va en UTC, y en Chile pasadas las
+     21:00 ya marcaba el día siguiente */
+  function fechaLocal(d) {
+    d = d || new Date();
+    return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+  }
+
+  function hoy() { return fechaLocal(new Date()); }
 
   function pendingOrders() {
     return state.orders.filter(function (o) { return o.estado === "pendiente" || o.estado === "proceso"; });
@@ -1371,7 +1378,7 @@
       return p ? { flor: p.name || "Flor", qty: parseNum(it.qty), detalle: describirColores(p, it) } : null;
     }).filter(Boolean);
     o.estado = "entregado";
-    o.entregado = new Date().toISOString().slice(0, 10);
+    o.entregado = hoy();
     return { ok: true, plan: plan };
   }
 
@@ -1764,7 +1771,7 @@
     var d = new Date();
     d.setDate(1);
     d.setMonth(d.getMonth() - 1);
-    return d.toISOString().slice(0, 7);
+    return fechaLocal(d).slice(0, 7);
   }
 
   /* ingreso, costo y ganancia de lo entregado en un mes */
@@ -1854,7 +1861,7 @@
 
     /* --- colores más usados en 30 días --- */
     var desde = new Date(); desde.setDate(desde.getDate() - 30);
-    var desdeIso = desde.toISOString().slice(0, 10), usados = {};
+    var desdeIso = fechaLocal(desde), usados = {};
     state.orders.forEach(function (o) {
       if (o.estado !== "entregado" || String(o.entregado || "") < desdeIso) return;
       (o.consumo || []).forEach(function (c) {
@@ -2197,7 +2204,7 @@
         text: "Se publica como " + money(r.final) + " y se ofrece por encargo: el cliente pide " +
           "la cantidad que quiera y tú la preparas. Tus costos y márgenes no salen a la tienda." }));
     }
-    body.appendChild(pubSec);
+    if (moduloActivo("tienda")) body.appendChild(pubSec);
 
     /* resultado */
     body.appendChild(resultTable(p));
@@ -3148,8 +3155,8 @@
 
     if (!state.products.length) {
       root.appendChild(el("div", { class: "empty" }, [
-        el("p", { text: "Los pedidos se arman con tus productos. Crea al menos uno primero." }),
-        el("button", { class: "btn primary", type: "button", text: "Ir a Productos",
+        el("p", { text: "Los pedidos se arman con tus flores. Crea al menos una primero." }),
+        el("button", { class: "btn primary", type: "button", text: "Ir a Flores",
           onclick: function () { ui.tab = "productos"; render(); } })
       ]));
       return;
@@ -3211,7 +3218,7 @@
 
     if (!state.orders.length) {
       root.appendChild(el("div", { class: "empty", style: "margin-top:10px" }, [
-        el("p", { text: "Sin pedidos todavía. Créalos aquí, o llegarán solos desde la tienda cuando conectes Firebase." })
+        el("p", { text: "Tu agenda está vacía. Anota el primer pedido con “+ Nuevo pedido”." })
       ]));
       return;
     }
@@ -3222,7 +3229,7 @@
 
     var opsPedidos = {
       texto: function (o) {
-        return (o.cliente || "") + " " + (o.whatsapp || "") + " " + (o.comuna || "") + " " + (o.notas || "") + " " +
+        return (o.cliente || "") + " " + (o.instagram || "") + " " + (o.whatsapp || "") + " " + (o.comuna || "") + " " + (o.notas || "") + " " +
           (o.items || []).map(function (it) {
             var p = productById(it.productId);
             return p ? p.name : "";
@@ -3258,23 +3265,96 @@
       ]
     };
 
+    /* agenda: lo que falta por hacer, por fecha de entrega más cercana;
+       debajo, lo hecho, del más reciente al más antiguo */
     function pintarPedidos() {
       listaPedidos.innerHTML = "";
       var visibles = aplicarFiltro("pedidos", state.orders.slice(), opsPedidos);
       if (!visibles.length) { listaPedidos.appendChild(sinResultados("pedidos", pintarPedidos)); return; }
-      visibles.forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
+
+      var porHacer = visibles.filter(function (o) { return o.estado === "pendiente" || o.estado === "proceso"; })
+        .sort(function (a, b) {
+          var fa = a.fecha || "9999-12-31", fb2 = b.fecha || "9999-12-31";
+          return fa !== fb2 ? fa.localeCompare(fb2) : String(a.creado || "").localeCompare(String(b.creado || ""));
+        });
+      var hechos = visibles.filter(function (o) { return o.estado === "entregado" || o.estado === "cancelado"; })
+        .sort(function (a, b) {
+          var fa = a.entregado || a.fecha || a.creado || "", fb2 = b.entregado || b.fecha || b.creado || "";
+          return String(fb2).localeCompare(String(fa));
+        });
+
+      [["Por hacer", porHacer, "Nada pendiente. Anota un pedido con “+ Nuevo pedido”."],
+       ["Hechos", hechos, "Aún no hay pedidos entregados."]].forEach(function (g) {
+        listaPedidos.appendChild(el("h3", { class: "sec-title", text: g[0] + " · " + g[1].length }));
+        if (!g[1].length) {
+          listaPedidos.appendChild(el("p", { class: "note", style: "margin:0 2px 14px", text: g[2] }));
+          return;
+        }
+        g[1].forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
+      });
     }
 
     agregar(root, barraBusqueda({
       lista: "pedidos",
-      placeholder: "Buscar por cliente o producto…",
+      placeholder: "Buscar por cliente, Instagram o flor…",
       total: state.orders.length,
       filtros: opsPedidos.filtros,
-      ordenes: opsPedidos.ordenes,
+      ordenes: [],
       repintar: pintarPedidos
     }));
     root.appendChild(listaPedidos);
     pintarPedidos();
+  }
+
+  /* "sáb 18 oct": la fecha de entrega se lee de un vistazo en la agenda */
+  var DIAS_CORTOS = ["dom", "lun", "mar", "mié", "jue", "vie", "sáb"];
+  var MESES_CORTOS = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+
+  function fechaCorta(iso) {
+    var d = new Date(String(iso).slice(0, 10) + "T12:00:00");
+    if (isNaN(d)) return String(iso || "");
+    var dias = diasHasta(String(iso).slice(0, 10));
+    var base = DIAS_CORTOS[d.getDay()] + " " + d.getDate() + " " + MESES_CORTOS[d.getMonth()];
+    if (dias === 0) return "hoy, " + base;
+    if (dias === 1) return "mañana, " + base;
+    if (d.getFullYear() !== new Date().getFullYear()) base += " " + d.getFullYear();
+    return base;
+  }
+
+  /* lo que este pedido va a consumir con los colores elegidos, frente al stock */
+  function seccionMaterialesPorUsar(o) {
+    var plan = planEntrega(o);
+    var consumo = {};
+    plan.lineas.forEach(function (l) {
+      l.consumos.forEach(function (c) {
+        if (!consumo[c.material.id]) consumo[c.material.id] = { material: c.material, use: 0 };
+        consumo[c.material.id].use += c.use;
+      });
+    });
+    var sec = el("div", { class: "sec" });
+    sec.appendChild(el("header", {}, [el("h4", { text: "Materiales que usará" })]));
+    var claves = Object.keys(consumo);
+    if (!claves.length) {
+      sec.appendChild(el("p", { class: "note", style: "margin:0",
+        text: "Elige las flores y sus colores para ver qué materiales necesita." }));
+      return sec;
+    }
+    var lista = el("div", { class: "plan" });
+    claves.forEach(function (k) {
+      var c = consumo[k], stock = parseNum(c.material.stock), falta = c.use - stock;
+      lista.appendChild(el("div", { class: "plan-row" + (falta > 1e-9 ? " short" : "") }, [
+        el("span", { class: "plan-name", text: c.material.name || "Sin nombre" }),
+        el("span", { class: "plan-use", text: conUnidad(c.use, stockUnit(c.material)) +
+          (falta > 1e-9 ? " · faltan " + fmtQty(falta) : " · hay " + fmtQty(stock)) })
+      ]));
+    });
+    sec.appendChild(lista);
+    var pend = plan.faltantes.filter(function (f) { return f.sinCantidad; });
+    if (pend.length) {
+      sec.appendChild(el("p", { class: "note aviso", style: "margin:6px 0 0",
+        text: pend.map(function (f) { return f.nombre; }).join(" · ") }));
+    }
+    return sec;
   }
 
   function orderCard(o) {
@@ -3286,15 +3366,17 @@
       ui.open[o.id] = !ui.open[o.id]; render();
     } }, [
       el("span", { class: "caret", text: "▶" }),
-      el("h3", { text: (o.cliente || "Sin nombre") + " · " + t.unidades + (t.unidades === 1 ? " unidad" : " unidades") })
+      el("h3", { text: (o.cliente || "Sin nombre") + " · " + t.unidades + (t.unidades === 1 ? " flor" : " flores") })
     ]);
 
+    var abierto = o.estado === "pendiente" || o.estado === "proceso";
     var chips = el("div", { class: "chips" }, [
       el("span", { class: "chip est-" + o.estado, text: estadoLabel(o.estado) }),
-      el("span", { class: "chip p", html: "Ingreso <b>" + money(t.ingreso) + "</b>" }),
-      el("span", { class: "chip " + (t.ganancia < 0 ? "neg" : "g"), html: "Ganancia <b>" + money(t.ganancia) + "</b>" }),
-      el("span", { class: "chip " + (plan.ok ? "g" : "neg"), text: plan.ok ? "Hay material" : "Falta material" }),
-      el("span", { class: "chip pago-" + estadoPago(o).id, text: estadoPago(o).label })
+      el("span", { class: "chip" + (abierto && atrasado(o) ? " neg" : ""),
+        text: o.fecha ? "Entrega " + fechaCorta(o.fecha) : "Sin fecha de entrega" }),
+      el("span", { class: "chip p", html: "Total <b>" + money(t.ingreso) + "</b>" }),
+      el("span", { class: "chip pago-" + estadoPago(o).id, text: estadoPago(o).label }),
+      abierto && !plan.ok ? el("span", { class: "chip neg", text: "Falta material" }) : null
     ]);
 
     var card = el("div", { class: "card " + (plan.ok ? "producto" : "servicio") }, [head, chips]);
@@ -3302,26 +3384,45 @@
 
     var body = el("div", { class: "card-body" });
 
-    /* datos del cliente */
-    function campo(label, key, placeholder) {
-      return el("div", { class: "sec" }, [
+    function campo(label, key, placeholder, tipo) {
+      return el("div", { class: "grow" }, [
         el("label", { class: "field", text: label }),
-        el("input", { type: "text", value: o[key] || "", placeholder: placeholder || "",
-          oninput: function (e) { o[key] = e.target.value; save(o); } })
+        el("input", { type: tipo || "text", value: o[key] || "", placeholder: placeholder || "", "aria-label": label,
+          oninput: function (e) { o[key] = e.target.value; save(o); },
+          onchange: tipo === "date" ? function () { renderPronto(); } : null })
       ]);
     }
-    body.appendChild(campo("Cliente", "cliente", "Nombre"));
-    body.appendChild(campo("WhatsApp", "whatsapp", "+56 9 ..."));
 
-    var metodoSel = el("select", { "aria-label": "Método de entrega" });
+    /* cliente: el contacto es por Instagram; el teléfono, solo como dato */
+    body.appendChild(el("div", { class: "sec" }, [
+      el("header", {}, [el("h4", { text: "Cliente" })]),
+      campo("Nombre", "cliente", "Nombre"),
+      el("div", { class: "row measures", style: "margin-top:8px" }, [
+        campo("Instagram", "instagram", "@usuario"),
+        campo("Teléfono", "whatsapp", "+56 9 …", "tel")
+      ])
+    ]));
+
+    /* fechas: cuándo se pidió y cuándo se entrega */
+    body.appendChild(el("div", { class: "sec" }, [
+      el("header", {}, [el("h4", { text: "Fechas" })]),
+      el("div", { class: "row measures" }, [
+        campo("Pedido el", "creado", "", "date"),
+        campo("Entrega el", "fecha", "", "date")
+      ])
+    ]));
+
+    /* entrega */
+    var metodoSel = el("select", { "aria-label": "Forma de entrega" });
     METODOS.forEach(function (mth) { metodoSel.appendChild(el("option", { value: mth, text: mth })); });
     metodoSel.value = o.metodo || METODOS[0];
     metodoSel.addEventListener("change", function () { o.metodo = metodoSel.value; save(o); });
-    body.appendChild(el("div", { class: "sec" }, [el("label", { class: "field", text: "Entrega" }), metodoSel]));
-
-    body.appendChild(campo("Comuna o ciudad", "comuna", "Ej: Ñuñoa"));
-    body.appendChild(campo("Fecha de entrega", "fecha", "Ej: 2026-09-20"));
-    body.appendChild(campo("Notas", "notas", "Colores, dedicatoria, etc."));
+    body.appendChild(el("div", { class: "sec" }, [
+      el("header", {}, [el("h4", { text: "Entrega" })]),
+      metodoSel,
+      el("div", { style: "margin-top:8px" }, [campo("Dirección o comuna", "comuna", "Ej: Av. Grecia 1234, Ñuñoa")]),
+      el("div", { style: "margin-top:8px" }, [campo("Notas", "notas", "Dedicatoria, envoltorio, detalles")])
+    ]));
 
     /* items */
     var itemsSec = el("div", { class: "sec" });
@@ -3367,33 +3468,8 @@
       } }));
     body.appendChild(itemsSec);
 
-    /* material */
-    if (o.items && o.items.length) {
-      var faltan = plan.lines.filter(function (l) { return l.falta > 1e-9; });
-      var matSec = el("div", { class: "sec" });
-      matSec.appendChild(el("header", {}, [el("h4", { text: rubro().insumo })]));
-      if (!faltan.length) {
-        matSec.appendChild(el("div", { class: "unit-cost" }, [
-          el("span", { text: "Alcanza con el stock actual" }),
-          el("b", { text: money(0) })
-        ]));
-      } else {
-        var det = el("div", { class: "plan" });
-        faltan.forEach(function (l) {
-          det.appendChild(el("div", { class: "plan-row short" }, [
-            el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-            el("span", { class: "plan-use", text: "faltan " + conUnidad(l.falta, stockUnit(l.material)) }),
-            el("span", { class: "plan-cost", text: l.packs ? l.packs + " paq · " + money(l.cost) : money(l.cost) })
-          ]));
-        });
-        matSec.appendChild(det);
-        matSec.appendChild(el("div", { class: "unit-cost low" }, [
-          el("span", { text: "Comprar para cumplir este pedido" }),
-          el("b", { text: money(plan.total) })
-        ]));
-      }
-      body.appendChild(matSec);
-    }
+    /* materiales: lo que usará (por hacer) o lo que se usó (hecho) */
+    if (abierto && o.items && o.items.length) body.appendChild(seccionMaterialesPorUsar(o));
 
     /* resultado */
     body.appendChild(el("div", { class: "result" }, [el("table", {}, [el("tbody", {}, [
@@ -3423,7 +3499,7 @@
         : "Marcar entregado descuenta los " + rubro().insumoPlural + " del inventario." })
     ]));
 
-    if (o.whatsapp) {
+    if (CONEXION_EXTERNA && o.whatsapp) {
       body.appendChild(el("button", { class: "btn small", type: "button", text: "Abrir WhatsApp del cliente",
         onclick: function () {
           var num = String(o.whatsapp).replace(/[^0-9]/g, "");
@@ -3451,9 +3527,9 @@
 
   function addOrder() {
     var p = state.products[0];
-    var o = { id: uid(), cliente: "", whatsapp: "", metodo: METODOS[0], comuna: "", fecha: "", notas: "",
+    var o = { id: uid(), cliente: "", instagram: "", whatsapp: "", metodo: METODOS[0], comuna: "", fecha: "", notas: "",
       items: p ? [{ productId: p.id, qty: 1, price: Math.round(calc(p).final) }] : [],
-      estado: "pendiente", creado: new Date().toISOString().slice(0, 10), origen: "manual" };
+      estado: "pendiente", creado: hoy(), origen: "manual" };
     state.orders.push(o);
     ui.open[o.id] = true;
     save(o); render();
@@ -4078,7 +4154,15 @@
     return Object.assign({}, rubro().modulos, state.settings.modulos || {});
   }
 
-  function moduloActivo(nombre) { return modulos()[nombre] !== false; }
+  /* Lo que conecta con clientes (tienda pública, catálogo, enlace) queda
+     escondido mientras la app sea solo la agenda del taller. El código sigue
+     ahí: para volver a abrirlo basta con poner esto en true. */
+  var CONEXION_EXTERNA = false;
+
+  function moduloActivo(nombre) {
+    if (nombre === "tienda" && !CONEXION_EXTERNA) return false;
+    return modulos()[nombre] !== false;
+  }
 
   /* ---------------- asistente de configuración ---------------- */
 
@@ -4536,14 +4620,16 @@
     });
     negocioCard.appendChild(monedaSel);
 
-    var tdaChk = el("input", { type: "checkbox", id: "modTienda" });
-    tdaChk.checked = moduloActivo("tienda");
-    tdaChk.addEventListener("change", function () {
-      state.settings.modulos = Object.assign({}, modulos(), { tienda: tdaChk.checked });
-      save(); render();
-    });
-    negocioCard.appendChild(el("label", { class: "switch", style: "margin-top:12px" },
-      [tdaChk, el("span", { text: "Tener página pública para recibir pedidos" })]));
+    if (CONEXION_EXTERNA) {
+      var tdaChk = el("input", { type: "checkbox", id: "modTienda" });
+      tdaChk.checked = moduloActivo("tienda");
+      tdaChk.addEventListener("change", function () {
+        state.settings.modulos = Object.assign({}, modulos(), { tienda: tdaChk.checked });
+        save(); render();
+      });
+      negocioCard.appendChild(el("label", { class: "switch", style: "margin-top:12px" },
+        [tdaChk, el("span", { text: "Tener página pública para recibir pedidos" })]));
+    }
     root.appendChild(negocioCard);
 
     /* tienda pública y cuenta */

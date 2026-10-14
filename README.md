@@ -5,28 +5,29 @@ de cada flor, lleva materiales e inventario por color, y registra los pedidos
 con los colores que pidió cada cliente y cómo pagó. Incluye una tienda pública
 para que tus clientes vean el catálogo y te dejen su pedido.
 
-## Flores y pedidos
+## Flores y agenda de pedidos
 
 - **Receta de la flor**: tipo de limpiapipas de los pétalos, cuántos pétalos
   lleva en un color y cuántos en bicolor (primario + secundario), hojas (tipo y
   cantidad) y los materiales fijos (barra metálica, cinta…).
-- **Pedido**: por cada flor eliges un color o bicolor, el primario, el
-  secundario y el color de las hojas, entre los que tienes en stock. Al
-  entregar se descuentan exactamente esos colores y el pedido guarda lo que se
-  usó.
+- **Agenda**: los pedidos los anotas tú. Arriba, *Por hacer*, ordenados por la
+  fecha de entrega más cercana (los atrasados en rojo); abajo, *Hechos*, del más
+  reciente al más antiguo. Cada pedido guarda cliente, Instagram, teléfono,
+  fecha de pedido (se pone sola y es editable), fecha de entrega, forma de
+  entrega con dirección y notas.
+- **Colores por pedido**: por cada flor eliges un color o bicolor, el primario,
+  el secundario y el color de las hojas, entre los que tienes en stock.
+- **Materiales**: en los pedidos por hacer ves lo que usarán frente al stock;
+  al entregar se descuentan esos colores y el pedido guarda lo que se usó.
 - **Pagos**: efectivo o transferencia, con abonos; un pago mixto son dos pagos.
   Cada pedido indica si está pagado, abonado o por cobrar.
 - **Inicio** resume cuánto entró este mes en efectivo y por transferencia, lo
   que queda por cobrar y los colores más usados en los últimos 30 días.
 
-Son dos páginas HTML sin dependencias ni compilación:
-
-| Archivo | Para quién |
-|---|---|
-| `planilla-costos.html` | Panel de gestión. Requiere cuenta de Google. |
-| `tienda.html` | Tienda pública. La abre cualquiera, sin cuenta. |
-| `firestore.rules` | Reglas de seguridad de la base de datos. |
-| `manifest.webmanifest`, `sw.js`, iconos | Instalación como app y apertura sin señal. |
+Por ahora la app no conecta con clientes: la tienda pública, la publicación
+del catálogo y su enlace están ocultos. El código sigue en `tienda.html` y en
+la planilla; para volver a mostrarlos, basta con poner `CONEXION_EXTERNA = true`
+en `planilla-costos.html`.
 
 ## Instalar en el teléfono
 
