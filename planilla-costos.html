@@ -695,7 +695,9 @@
   .mat-elegido { border-radius: 12px; }
   .colores-pedido { background: #FBF8F2; border-left-color: var(--gain-soft); }
 
-  .sheet-bg { background: rgba(43,42,38,.45); padding: 0; place-items: end center; }
+  .sheet-bg { background: rgba(43,42,38,.45); padding: 0; place-items: end center;
+    font-family: var(--sans); color: var(--ink); line-height: 1.45; font-variant-numeric: tabular-nums; }
+  .toast { font-family: var(--sans); }
   .sheet {
     border-radius: 24px 24px 0 0; max-width: 560px; padding: 18px 20px calc(22px + env(safe-area-inset-bottom));
     max-height: 92vh;
@@ -707,6 +709,112 @@
   .gate-card h1 { font-style: italic; font-weight: 500; font-size: 26px; }
   .btn-google { border-radius: 14px; border-width: 1.5px; min-height: 48px; }
   .toast { bottom: calc(96px + env(safe-area-inset-bottom)); }
+  .chip.pago-pagado { background: var(--gain-soft); color: var(--gain); }
+  .chip.pago-abonado { background: var(--cost-soft); color: var(--cost); }
+  .chip.pago-porcobrar { background: var(--danger-soft); color: var(--danger); }
+  .chip.est-listo { background: var(--gain-soft); color: var(--gain); font-weight: 700; }
+
+  /* ---------- Ramo ---------- */
+  .franja .etiqueta { margin-top: 4px; }
+  .franja-fila { display: flex; gap: 8px; overflow-x: auto; padding: 2px 2px 8px; }
+  .franja-chip {
+    flex: 0 0 84px; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 4px;
+    border-radius: 18px; border: 2px solid var(--surface); background: var(--surface); box-shadow: var(--shadow);
+    font: inherit; color: var(--ink); cursor: pointer;
+  }
+  .franja-chip.tarde { border-color: #E9C4B4; }
+  .franja-chip.on { border-color: var(--accent); background: var(--accent-soft); }
+  .franja-chip .nom { font-size: 13px; font-weight: 800; max-width: 76px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .franja-chip .dia { font-size: 11px; font-weight: 700; color: var(--soft-ink); }
+  .cuando { font-size: 11px; font-weight: 800; color: var(--soft-ink); }
+  .cuando.tarde { color: var(--danger); }
+  .cuando.hoy { color: var(--gain); }
+  .ramo-card {
+    background: var(--surface); border-radius: 28px; padding: 16px 18px 18px; box-shadow: var(--shadow);
+    display: flex; flex-direction: column; gap: 12px;
+  }
+  .ramo-dibujo { position: relative; align-self: center; width: 220px; height: 230px; }
+  .ramo-dibujo svg { display: block; }
+  .ramo-mas { position: absolute; right: 0; top: 4px; background: var(--ink); color: #FFFFFF; font-size: 12px; font-weight: 800; padding: 3px 8px; border-radius: 999px; }
+  .ramo-titulo { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; }
+  .ramo-titulo h2 { margin: 4px 0 0; font-size: 28px; font-weight: 700; line-height: 1.1; overflow-wrap: anywhere; }
+  .ramo-titulo p { margin: 0; font-size: 14px; color: var(--soft-ink); }
+  .cuando-chip { font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: 999px; background: var(--line-soft); color: var(--soft-ink); }
+  .cuando-chip.tarde { background: var(--danger-soft); color: var(--danger); }
+  .cuando-chip.hoy { background: var(--gain-soft); color: var(--gain); }
+  .ramo-lineas, .lista-ramo, .consumo-lista, .resumen-pago { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .ramo-lineas li { display: flex; gap: 10px; align-items: center; background: var(--paper); border-radius: 14px; padding: 8px 12px; }
+  .punto-color { flex: none; width: 18px; height: 18px; border-radius: 50%; border: 1px solid rgba(60,40,20,.25); }
+  .ramo-lineas .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .ramo-lineas .txt strong { font-size: 15px; }
+  .ramo-lineas .txt span { font-size: 12px; color: var(--soft-ink); }
+  .ramo-lineas .sub { font-size: 14px; font-weight: 700; }
+  .ramo-datos { display: flex; flex-direction: column; gap: 2px; font-size: 13px; color: var(--soft-ink); padding: 0 4px; }
+  .ramo-aviso { margin: 0; padding: 8px 12px; border-radius: 12px; background: var(--danger-soft); color: var(--danger); font-size: 13px; font-weight: 700; }
+  .ramo-etapas button { min-height: 44px; font-weight: 800; }
+  .ramo-pago { display: flex; align-items: center; gap: 8px; font-size: 14px; padding: 0 4px; flex-wrap: wrap; }
+  .ramo-pago .grow { flex: 1; }
+  .ramo-pago .falta { font-weight: 800; color: var(--danger); }
+  .ramo-acciones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .ramo-vacio { text-align: center; padding: 28px 8px 8px; color: var(--muted); font-size: 16px; }
+  .ramo-vacio p { margin: 0 0 14px; }
+  .fila-ramo {
+    width: 100%; display: flex; gap: 10px; align-items: center; text-align: left; cursor: pointer;
+    background: var(--surface); border: 2px solid var(--surface); border-radius: 16px; padding: 8px 12px 8px 8px;
+    box-shadow: var(--shadow); font: inherit; color: var(--ink);
+  }
+  .fila-ramo.tarde { border-color: #E9C4B4; }
+  .fila-ramo.on { border-color: var(--accent); background: var(--accent-soft); }
+  .fila-dia { flex: 0 0 44px; height: 48px; border-radius: 12px; background: var(--paper); display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .fila-dia.tarde { background: var(--danger-soft); color: var(--danger); }
+  .fila-dia.hoy { background: var(--gain-soft); color: var(--gain); }
+  .fila-dia .dsem { font-size: 11px; font-weight: 800; text-transform: uppercase; }
+  .fila-dia .dnum { font-family: var(--serif); font-size: 18px; font-weight: 700; line-height: 1; }
+  .fila-info { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .fila-info .cli { font-size: 15px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fila-info .res { font-size: 12px; color: var(--soft-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .buscar-pedidos { width: 100%; margin: 0 0 10px; font: inherit; font-size: 15px; padding: 10px 12px; border: 1.5px solid var(--line); border-radius: 12px; background: var(--surface); color: var(--ink); min-height: 44px; }
+  .ver-anteriores { margin: 10px 0 0; border-style: dashed; border-color: var(--line); color: var(--soft-ink); }
+
+  /* ---------- hojas ---------- */
+  .seg.pasos { margin-bottom: 16px; }
+  .seg.pasos button, .seg.formas button { font-size: 13px; line-height: 1.15; }
+  .hoja-campo { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
+  .hoja-campo label, .hoja-grupo legend { font-size: 13px; font-weight: 800; color: var(--ink); }
+  .hoja-grupo { border: 0; margin: 0 0 12px; padding: 0; min-width: 0; }
+  .hoja-grupo legend { padding: 0; margin-bottom: 6px; }
+  .hoja-fila { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .lineas-pedido { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .linea-chip {
+    min-height: 44px; padding: 0 12px 0 6px; border-radius: 999px; border: 2px solid var(--line-soft);
+    background: var(--surface); display: flex; align-items: center; gap: 6px; cursor: pointer;
+    font: inherit; font-size: 14px; font-weight: 800; color: var(--ink);
+  }
+  .linea-chip .punto-color { width: 28px; height: 28px; }
+  .linea-chip.on { border-color: var(--accent); }
+  .linea-chip.mas { border: 1.5px dashed var(--accent); color: var(--accent-dark); padding: 0 14px; }
+  .vista-flor { display: flex; align-items: center; gap: 12px; background: var(--paper); border-radius: 16px; padding: 10px 14px; margin-bottom: 12px; }
+  .vista-flor div { display: flex; flex-direction: column; min-width: 0; }
+  .vista-flor strong { font-size: 15px; }
+  .vista-flor span { font-size: 13px; color: var(--soft-ink); }
+  .stepper { display: flex; align-items: center; gap: 12px; margin-top: 10px; }
+  .stepper output { font-family: var(--serif); font-size: 24px; font-weight: 700; min-width: 36px; text-align: center; }
+  .pie-hoja { display: flex; gap: 8px; margin-top: 18px; }
+  .pie-hoja .btn { flex: 1; min-height: 52px; font-size: 16px; }
+  .pie-hoja .btn.primary { flex: 2; }
+  .error-hoja { margin: 12px 0 0; color: var(--danger); font-size: 14px; font-weight: 700; }
+  .resto { margin: 0 0 12px; border-style: dashed; }
+  .resumen-pago { gap: 4px; }
+  .resumen-pago li { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+  .total-pago { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid var(--line-soft); margin-top: 8px; padding-top: 8px; font-weight: 800; }
+  .total-pago strong { font-family: var(--serif); font-size: 24px; }
+  .consumo-lista li { display: flex; align-items: center; gap: 10px; background: var(--paper); border-radius: 14px; padding: 6px 6px 6px 12px; }
+  .consumo-lista .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .consumo-lista .txt strong { font-size: 14px; }
+  .consumo-lista .queda { font-size: 12px; font-weight: 700; color: var(--soft-ink); }
+  .consumo-lista .queda.falta { color: var(--danger); }
+  .consumo-lista output { min-width: 32px; text-align: center; font-size: 17px; font-weight: 800; }
+  .consumo-lista .icon-btn { background: var(--surface); }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -837,8 +945,9 @@
   ];
 
   var ESTADOS = [
-    { id: "pendiente", label: "Pendiente" },
-    { id: "proceso", label: "En proceso" },
+    { id: "pendiente", label: "Anotado" },
+    { id: "proceso", label: "Armando" },
+    { id: "listo", label: "Listo" },
     { id: "entregado", label: "Entregado" },
     { id: "cancelado", label: "Cancelado" }
   ];
@@ -846,7 +955,7 @@
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
   var ui = { tab: "pedidos", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
-    verCategoria: {}, cambiando: {}, editando: {}, hechosAntiguos: false };
+    verCategoria: {}, cambiando: {}, editando: {}, hechosAntiguos: false, foco: null, buscarPedidos: "" };
 
   /* ---------------- utilidades ---------------- */
 
@@ -1422,7 +1531,7 @@
   /* un pedido está atrasado si su fecha comprometida ya pasó y sigue abierto */
   function atrasado(o) {
     if (!o.fecha) return false;
-    if (o.estado !== "pendiente" && o.estado !== "proceso") return false;
+    if (!estaAbierto(o)) return false;
     return o.fecha < hoy();
   }
 
@@ -1436,7 +1545,7 @@
   function hoy() { return fechaLocal(new Date()); }
 
   function pendingOrders() {
-    return state.orders.filter(function (o) { return o.estado === "pendiente" || o.estado === "proceso"; });
+    return state.orders.filter(estaAbierto);
   }
 
   function pendingItems() {
@@ -1504,32 +1613,46 @@
     return res;
   }
 
-  function deliverOrder(o) {
+  /* ajuste: cantidades por material que reemplazan lo calculado por la receta
+     (lo que de verdad se usó). Con ajuste, la falta de stock no impide entregar:
+     el material ya se gastó y el stock queda en cero. */
+  function deliverOrder(o, ajuste) {
     var plan = planEntrega(o);
-    if (!plan.ok) return { error: textoFaltantes(plan) };
+    var sinElegir = plan.faltantes.filter(function (f) { return f.sinCantidad; });
+    if (ajuste ? sinElegir.length : !plan.ok) return { error: textoFaltantes(plan) };
 
+    var usos = {}, orden = [];
     plan.lineas.forEach(function (l) {
       if (l.deHechos > 0) {
         l.producto.stock = hechos(l.producto) - l.deHechos;
         marcarSucio(l.producto);
       }
       l.consumos.forEach(function (c) {
-        c.material.stock = Math.max(0, parseNum(c.material.stock) - c.use);
-        marcarSucio(c.material);
+        if (!usos[c.material.id]) { usos[c.material.id] = { material: c.material, use: 0 }; orden.push(c.material.id); }
+        usos[c.material.id].use += c.use;
       });
+    });
+    Object.keys(ajuste || {}).forEach(function (k) {
+      if (!usos[k]) {
+        var m = materialById(k);
+        if (!m) return;
+        usos[k] = { material: m, use: 0 }; orden.push(k);
+      }
+      usos[k].use = Math.max(0, parseNum(ajuste[k]));
+    });
+    orden.forEach(function (k) {
+      var c = usos[k];
+      if (c.use <= 0) return;
+      c.material.stock = Math.max(0, parseNum(c.material.stock) - c.use);
+      marcarSucio(c.material);
     });
     /* lo consumido queda en el pedido, con el nombre de ese día:
        si el material se renombra o se borra, el registro sigue siendo cierto */
-    var consumo = {};
-    plan.lineas.forEach(function (l) {
-      l.consumos.forEach(function (c) {
-        var k = c.material.id;
-        if (!consumo[k]) consumo[k] = { materialId: k, nombre: c.material.name || "Sin nombre",
-          categoria: (c.material.categoria || "").trim(), cantidad: 0, unidad: stockUnit(c.material) };
-        consumo[k].cantidad += c.use;
-      });
+    o.consumo = orden.filter(function (k) { return usos[k].use > 0; }).map(function (k) {
+      var m = usos[k].material;
+      return { materialId: k, nombre: m.name || "Sin nombre", categoria: (m.categoria || "").trim(),
+        cantidad: usos[k].use, unidad: stockUnit(m) };
     });
-    o.consumo = Object.keys(consumo).map(function (k) { return consumo[k]; });
     o.colores = (o.items || []).map(function (it) {
       var p = productById(it.productId);
       return p ? { flor: p.name || "Flor", qty: parseNum(it.qty), detalle: describirColores(p, it) } : null;
@@ -3306,6 +3429,156 @@
     return id;
   }
 
+  /* ---------------- Ramo: la agenda ----------------
+     Arriba, todo lo que falta hacer en una franja; al centro, el pedido más
+     urgente (o el elegido) dibujado como ramo; debajo, la lista completa en
+     orden de entrega y lo entregado el último mes. */
+
+  var ETAPAS = [["pendiente", "Anotado"], ["proceso", "Armando"], ["listo", "Listo"]];
+
+  function estaAbierto(o) { return o.estado === "pendiente" || o.estado === "proceso" || o.estado === "listo"; }
+
+  function ordenEntrega(a, b) {
+    var fa = a.fecha || "9999-12-31", fb2 = b.fecha || "9999-12-31";
+    return fa !== fb2 ? fa.localeCompare(fb2) : String(a.creado || "").localeCompare(String(b.creado || ""));
+  }
+
+  /* el color de un limpiapipas se deduce de su nombre: "Rosa", "Verde claro"… */
+  var COLORES_NOMBRE = [
+    ["verde claro", "#7BBF5A"], ["verde lima", "#A4CF3E"], ["lima", "#A4CF3E"], ["verde oscuro", "#2F6B3A"],
+    ["verde agua", "#7FD1B9"], ["menta", "#9ED9C0"], ["verde", "#4E9F3D"],
+    ["rosa palo", "#F1C1C9"], ["rosado", "#F28DB2"], ["fucsia", "#D63384"], ["magenta", "#C2185B"], ["rosa", "#F28DB2"],
+    ["rojo", "#D7263D"], ["burdeo", "#7B1E2B"], ["vino", "#7B1E2B"], ["coral", "#F27059"], ["salmon", "#F4A28C"],
+    ["naranjo", "#F08A24"], ["naranja", "#F08A24"], ["amarillo", "#F6C431"], ["mostaza", "#D4A017"],
+    ["dorado", "#D4AF37"], ["oro", "#D4AF37"],
+    ["lila", "#B79CED"], ["lavanda", "#C3B1E1"], ["morado", "#6B3FA0"], ["violeta", "#7F4FC9"], ["purpura", "#6B3FA0"],
+    ["celeste", "#7EC8E3"], ["turquesa", "#30B5B0"], ["calipso", "#30B5B0"], ["azul", "#2F5DA8"],
+    ["blanco", "#FFFFFF"], ["crema", "#F5ECD7"], ["beige", "#E8D8B8"], ["cafe", "#7A5230"], ["marron", "#7A5230"],
+    ["gris", "#9A9A9A"], ["plateado", "#C0C0C0"], ["plata", "#C0C0C0"], ["negro", "#2B2A26"]
+  ];
+
+  /* neutro: para materiales que no son de color (tallos, cinta) */
+  function colorDe(materialId, neutro) {
+    var m = materialById(materialId);
+    if (!m) return "#E6DCCB";
+    if (/^#[0-9a-f]{3,8}$/i.test(String(m.color || ""))) return m.color;
+    var n = norm(m.name || "");
+    for (var i = 0; i < COLORES_NOMBRE.length; i++) {
+      if (n.indexOf(COLORES_NOMBRE[i][0]) > -1) return COLORES_NOMBRE[i][1];
+    }
+    if (neutro) return "#D9CFBF";
+    /* sin pista en el nombre: un tono suave, siempre el mismo para ese material */
+    var h = 0;
+    for (var j = 0; j < n.length; j++) h = (h * 31 + n.charCodeAt(j)) % 360;
+    return "hsl(" + h + ", 55%, 70%)";
+  }
+
+  function coloresLinea(it) {
+    var p = productById(it.productId);
+    if (!p) return null;
+    var e = eleccionDe(p, it);
+    var p1 = colorDe(e.primario);
+    return { p1: p1, p2: e.modo === "dos" && e.secundario ? colorDe(e.secundario) : p1,
+      hoja: e.hojas ? colorDe(e.hojas) : "#4E9F3D" };
+  }
+
+  function coloresPedido(o) {
+    var items = o.items || [];
+    for (var i = 0; i < items.length; i++) {
+      var c = coloresLinea(items[i]);
+      if (c) return c;
+    }
+    return { p1: "#E6DCCB", p2: "#E6DCCB", hoja: "#4E9F3D" };
+  }
+
+  function degradado(c) { return "background:linear-gradient(90deg," + c.p1 + " 50%," + c.p2 + " 50%)"; }
+
+  function petalosSvg(a, b, tam) {
+    var s = '<svg viewBox="0 0 48 48" width="' + tam + '" height="' + tam + '" aria-hidden="true"><g transform="translate(24 24)">';
+    for (var i = 0; i < 6; i++) {
+      s += '<ellipse cx="0" cy="-10" rx="6.5" ry="10.5" fill="' + (i % 2 ? b : a) +
+        '" stroke="#5B4A3A" stroke-opacity="0.35" transform="rotate(' + (i * 60) + ')"/>';
+    }
+    return s + '<circle r="4.5" fill="#E9B949"/></g></svg>';
+  }
+
+  function svgEl(html) { var t = document.createElement("span"); t.innerHTML = html; return t.firstChild; }
+
+  /* el ramo del pedido: hasta siete flores con sus colores, tallos del color de las hojas */
+  var POS_RAMO = [[110, 44, 0], [72, 66, -18], [148, 66, 18], [44, 104, -30], [176, 104, 30], [90, 108, -8], [130, 110, 10]];
+
+  function ramoSvg(o, tarde) {
+    var u = [];
+    (o.items || []).forEach(function (it) {
+      var c = coloresLinea(it);
+      if (!c) return;
+      for (var k = 0; k < parseNum(it.qty) && u.length < POS_RAMO.length; k++) u.push(c);
+    });
+    var s = '<svg viewBox="0 0 220 230" width="220" height="230" aria-hidden="true">' +
+      '<circle cx="110" cy="100" r="90" fill="' + (tarde ? "#F7E2D9" : "#EEF5E8") + '"/>';
+    u.forEach(function (c, i) {
+      var q = POS_RAMO[i];
+      s += '<line x1="' + q[0] + '" y1="' + q[1] + '" x2="110" y2="196" stroke="' + c.hoja + '" stroke-width="3" stroke-linecap="round"/>';
+    });
+    u.forEach(function (c, i) {
+      var q = POS_RAMO[i], a = i % 2 ? c.p2 : c.p1, b = i % 2 ? c.p1 : c.p2;
+      s += '<g transform="translate(' + q[0] + ' ' + q[1] + ') rotate(' + q[2] + ') scale(1.04)">';
+      for (var j = 0; j < 6; j++) {
+        s += '<ellipse cx="0" cy="-10" rx="6.5" ry="10.5" fill="' + (j % 2 ? b : a) +
+          '" stroke="#5B4A3A" stroke-opacity="0.35" transform="rotate(' + (j * 60) + ')"/>';
+      }
+      s += '<circle r="4.5" fill="#E9B949"/></g>';
+    });
+    s += '<path d="M62 168 L158 168 L114 228 L106 228 Z" fill="#D9B98C"/>' +
+      '<path d="M62 168 L110 176 L158 168 L150 180 L110 186 L70 180 Z" fill="#C9A672"/>' +
+      '<path d="M96 196 Q110 204 124 196 L120 206 Q110 211 100 206 Z" fill="#2F5D3A"/>';
+    return s + "</svg>";
+  }
+
+  /* "jue 15 oct" */
+  function diaCorto(iso) {
+    var d = new Date(String(iso).slice(0, 10) + "T12:00:00");
+    if (isNaN(d)) return String(iso || "");
+    return DIAS_CORTOS[d.getDay()] + " " + d.getDate() + " " + MESES_CORTOS[d.getMonth()];
+  }
+
+  function cuandoTxt(o) {
+    var n = diasHasta(o.fecha);
+    if (n === null) return "Sin fecha";
+    if (n < 0) return "Atrasado " + (-n) + (n === -1 ? " día" : " días");
+    if (n === 0) return "Hoy";
+    if (n === 1) return "Mañana";
+    return "En " + n + " días";
+  }
+
+  function claseCuando(o) {
+    if (estaAbierto(o) && atrasado(o)) return " tarde";
+    return diasHasta(o.fecha) === 0 ? " hoy" : "";
+  }
+
+  /* "6 tulipanes"; si el nombre tiene varias palabras, "Rosa grande ×6" */
+  function nombreFlor(p, q) {
+    var n = p.name || "Flor";
+    if (q === 1) return "1 " + n;
+    if (/\s/.test(n.trim())) return n + " ×" + fmtQty(q);
+    var plural;
+    if (/[aeiouáéíóú]$/i.test(n)) plural = n + "s";
+    else if (/z$/i.test(n)) plural = n.slice(0, -1) + "ces";
+    else {
+      var sin = { "á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u" };
+      plural = n.replace(/([áéíóú])([^aeiouáéíóú]*)$/i, function (x, v, r) { return (sin[v] || v) + r; }) + "es";
+    }
+    return fmtQty(q) + " " + plural.toLowerCase();
+  }
+
+  function textoPedido(o) {
+    return (o.cliente || "") + " " + (o.instagram || "") + " " + (o.whatsapp || "") + " " + (o.comuna || "") + " " +
+      (o.notas || "") + " " + (o.items || []).map(function (it) {
+        var p = productById(it.productId);
+        return p ? p.name : "";
+      }).join(" ");
+  }
+
   function renderPedidos() {
     var root = document.getElementById("tab-pedidos");
     root.innerHTML = "";
@@ -3319,166 +3592,199 @@
       return;
     }
 
-    /* totales comprometidos */
-    var pend = pendingOrders(), tot = { ingreso: 0, costo: 0, ganancia: 0 };
-    pend.forEach(function (o) {
-      var t = orderTotals(o);
-      tot.ingreso += t.ingreso; tot.costo += t.costo; tot.ganancia += t.ganancia;
-    });
+    var porHacer = state.orders.filter(estaAbierto).sort(ordenEntrega);
+    var foco = porHacer.filter(function (o) { return o.id === ui.foco; })[0] || porHacer[0] || null;
 
-    var strip = el("dl", { class: "strip" });
-    [["Comprometido", money(tot.ingreso), ""],
-     ["Costo material", money(tot.costo), "cost"],
-     ["Ganancia prevista", money(tot.ganancia), tot.ganancia < 0 ? "loss" : "gain"]].forEach(function (c) {
-      strip.appendChild(el("div", {}, [
-        el("dt", { text: c[0] }),
-        el("dd", { text: c[1], style: c[2] === "gain" ? "color:var(--gain)" : c[2] === "loss" ? "color:var(--danger)"
-          : c[2] === "cost" ? "color:var(--cost)" : "" })
+    if (porHacer.length > 1) root.appendChild(franjaPorHacer(porHacer, foco));
+    if (foco) {
+      root.appendChild(el("p", { class: "etiqueta", text: foco.id === ui.foco ? "Pedido elegido" : "Lo más urgente" }));
+      root.appendChild(tarjetaRamo(foco));
+    } else {
+      root.appendChild(el("div", { class: "ramo-vacio" }, [
+        el("p", { text: state.orders.length ? "No queda nada por hacer. ¡A descansar!" : "Tu agenda está vacía." }),
+        el("button", { class: "btn primary", type: "button", text: "Anotar un pedido", onclick: addOrder })
+      ]));
+    }
+    if (porHacer.length > 1) root.appendChild(listaPorHacer(porHacer, foco));
+    root.appendChild(seccionHechos());
+  }
+
+  function franjaPorHacer(lista, foco) {
+    var caja = el("div", { class: "franja" }, [el("h3", { class: "etiqueta", text: "Por hacer · " + lista.length })]);
+    var fila = el("div", { class: "franja-fila", role: "group", "aria-label": "Pedidos por hacer" });
+    lista.forEach(function (o) {
+      var c = coloresPedido(o), on = !!foco && o.id === foco.id;
+      var b = el("button", { type: "button", class: "franja-chip" + (on ? " on" : "") + claseCuando(o),
+        "aria-pressed": on, "aria-label": (o.cliente || "Sin nombre") + ", " + resumenFlores(o) + ", " + cuandoTxt(o),
+        onclick: function () { ui.foco = o.id; render(); } });
+      b.appendChild(svgEl(petalosSvg(c.p1, c.p2, 32)));
+      b.appendChild(el("span", { class: "nom", text: (o.cliente || "Sin nombre").split(" ")[0] }));
+      b.appendChild(el("span", { class: "dia", text: o.fecha ? diaCorto(o.fecha) : "sin fecha" }));
+      b.appendChild(el("span", { class: "cuando" + claseCuando(o), text: cuandoTxt(o) }));
+      fila.appendChild(b);
+    });
+    caja.appendChild(fila);
+    return caja;
+  }
+
+  function tarjetaRamo(o) {
+    var t = orderTotals(o), pago = estadoPago(o), tarde = atrasado(o);
+    var card = el("article", { class: "ramo-card", "aria-labelledby": "foco-nombre" });
+
+    var dibujo = el("div", { class: "ramo-dibujo" });
+    dibujo.innerHTML = ramoSvg(o, tarde);
+    if (t.unidades > POS_RAMO.length) dibujo.appendChild(el("span", { class: "ramo-mas", text: "×" + fmtQty(t.unidades) }));
+    card.appendChild(dibujo);
+
+    card.appendChild(el("div", { class: "ramo-titulo" }, [
+      el("span", { class: "cuando-chip" + claseCuando(o), text: cuandoTxt(o) + (o.fecha ? " · " + diaCorto(o.fecha) : "") }),
+      el("h2", { id: "foco-nombre", text: o.cliente || "Sin nombre" }),
+      el("p", { text: [o.instagram, o.whatsapp].filter(Boolean).join(" · ") || "Sin contacto" })
+    ]));
+
+    var lineas = el("ul", { class: "ramo-lineas" });
+    (o.items || []).forEach(function (it) {
+      var p = productById(it.productId);
+      if (!p) return;
+      var q = parseNum(it.qty);
+      lineas.appendChild(el("li", {}, [
+        el("span", { class: "punto-color", style: degradado(coloresLinea(it)) }),
+        el("span", { class: "txt" }, [
+          el("strong", { text: nombreFlor(p, q) }),
+          el("span", { text: describirColores(p, it) || "—" })
+        ]),
+        el("span", { class: "sub", text: money((parseNum(it.price) || calc(p).final) * q) })
       ]));
     });
-    root.appendChild(strip);
+    card.appendChild(lineas);
 
-    /* lista de compra que cubre todos los pendientes de una vez */
-    if (pend.length) {
-      var plan = shoppingFor(pendingItems());
-      var faltan = plan.lines.filter(function (l) { return l.falta > 1e-9; });
-      var compra = el("div", { class: "mat-card" });
-      compra.appendChild(el("h4", { style: "margin:0 0 6px;font-size:14px", text: "Para cubrir los pendientes" }));
+    card.appendChild(el("div", { class: "ramo-datos" }, [
+      el("strong", { text: [o.metodo, o.comuna].filter(Boolean).join(" · ") || "Entrega por definir" }),
+      o.creado ? el("span", { text: "Pedido el " + diaCorto(o.creado) }) : null,
+      o.notas ? el("span", { text: "Notas: " + o.notas }) : null
+    ]));
 
-      if (!faltan.length) {
-        compra.appendChild(el("div", { class: "unit-cost" }, [
-          el("span", { text: "Te alcanzan los " + rubro().insumoPlural + " para todos los pedidos pendientes" }),
-          el("b", { text: money(0) })
-        ]));
-      } else {
-        var detalle = el("div", { class: "plan" });
-        faltan.forEach(function (l) {
-          var unidad = stockUnit(l.material);
-          detalle.appendChild(el("div", { class: "plan-row short" }, [
-            el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-            el("span", { class: "plan-use", text: "necesitas " + conUnidad(l.need, unidad) + " · tienes " + fmtQty(l.stock) }),
-            el("span", { class: "plan-cost", text: l.packs
-              ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
-          ]));
-        });
-        compra.appendChild(detalle);
-        compra.appendChild(el("div", { class: "unit-cost low" }, [
-          el("span", { text: "Comprar antes de producir" }),
-          el("b", { text: money(plan.total) })
-        ]));
-      }
-      root.appendChild(compra);
+    var plan = planEntrega(o);
+    if (!plan.ok) card.appendChild(el("p", { class: "ramo-aviso", text: textoFaltantes(plan) }));
+
+    var etapas = el("div", { class: "seg ramo-etapas", role: "group", "aria-label": "Avance del pedido" });
+    ETAPAS.forEach(function (e2) {
+      etapas.appendChild(el("button", { type: "button", text: e2[1], "aria-pressed": o.estado === e2[0],
+        onclick: function () { o.estado = e2[0]; sincronizarEstado(o); save(o); render(); } }));
+    });
+    card.appendChild(etapas);
+
+    card.appendChild(el("div", { class: "ramo-pago" }, [
+      el("span", { class: "chip pago-" + pago.id, text: pago.label }),
+      el("span", { class: "grow" }, [document.createTextNode("Pagado "), el("strong", { text: money(cobrado(o)) }),
+        document.createTextNode(" de " + money(t.ingreso))]),
+      pago.saldo > 0.5 ? el("span", { class: "falta", text: "Falta " + money(pago.saldo) }) : null
+    ]));
+
+    card.appendChild(el("div", { class: "ramo-acciones" }, [
+      el("button", { class: "btn", type: "button", text: "Editar", onclick: function () { abrirPedido(o); } }),
+      el("button", { class: "btn", type: "button", text: "Registrar abono", onclick: function () { abrirAbono(o); } })
+    ]));
+    card.appendChild(el("button", { class: "btn primary grande wide", type: "button", text: "Marcar como entregado",
+      onclick: function () { abrirEntrega(o); } }));
+    return card;
+  }
+
+  /* una fila de la agenda: bloque de fecha, cliente, flores y pago */
+  function filaPedido(o, on, onclick) {
+    var abiertoYa = estaAbierto(o), pago = estadoPago(o);
+    var ref = abiertoYa ? o.fecha : (o.entregado || o.fecha);
+    var dt = ref ? new Date(String(ref).slice(0, 10) + "T12:00:00") : null;
+    var dia = el("span", { class: "fila-dia" + (abiertoYa ? claseCuando(o) : ""), "aria-hidden": "true" },
+      dt && !isNaN(dt) ? [el("span", { class: "dsem", text: DIAS_CORTOS[dt.getDay()] }),
+        el("span", { class: "dnum", text: String(dt.getDate()) })]
+        : [el("span", { class: "dsem", text: "sin" }), el("span", { class: "dnum", text: "—" })]);
+    var cuando = abiertoYa ? cuandoTxt(o)
+      : o.estado === "cancelado" ? "Cancelado"
+      : "Entregado" + (o.entregado ? " el " + diaCorto(o.entregado) : "");
+    var b = el("button", { type: "button", class: "fila-ramo" + (on ? " on" : "") + (abiertoYa ? claseCuando(o) : ""),
+      "aria-label": (o.cliente || "Sin nombre") + ", " + resumenFlores(o) + ", " + cuando + ", " + pago.label +
+        (on ? ", en la tarjeta" : ""),
+      onclick: onclick }, [
+      dia,
+      el("span", { class: "fila-info" }, [
+        el("span", { class: "cli", text: o.cliente || "Sin nombre" }),
+        el("span", { class: "res", text: resumenFlores(o) }),
+        el("span", { class: "cuando" + (abiertoYa ? claseCuando(o) : ""), text: cuando })
+      ]),
+      el("span", { class: "chip pago-" + pago.id, text: abiertoYa || pago.saldo > 0.5 ? pago.label : money(orderTotals(o).ingreso) })
+    ]);
+    if (on) b.setAttribute("aria-current", "true");
+    return b;
+  }
+
+  function listaPorHacer(lista, foco) {
+    var caja = el("div", {}, [el("h3", { class: "etiqueta", text: "Por hacer · en orden de entrega" })]);
+    var ul = el("ul", { class: "lista-ramo" });
+    lista.forEach(function (o) {
+      ul.appendChild(el("li", {}, [filaPedido(o, !!foco && foco.id === o.id, function () {
+        ui.foco = o.id; render(); window.scrollTo(0, 0);
+      })]));
+    });
+    caja.appendChild(ul);
+    return caja;
+  }
+
+  /* lo hecho crece sin fin: a la vista, el último mes; lo demás, a pedido.
+     Buscando se recorren todos los pedidos. */
+  function seccionHechos() {
+    var caja = el("div", { class: "hechos" });
+    var titulo = el("h3", { class: "etiqueta" });
+    var buscador = el("input", { type: "search", class: "buscar-pedidos", placeholder: "Buscar en todos los pedidos…",
+      "aria-label": "Buscar pedidos", value: ui.buscarPedidos || "" });
+    var lista = el("div");
+    caja.appendChild(titulo);
+    caja.appendChild(buscador);
+    caja.appendChild(lista);
+
+    function abrirDesdeLista(o) {
+      if (estaAbierto(o)) { ui.foco = o.id; render(); window.scrollTo(0, 0); }
+      else abrirPedido(o);
     }
 
-    root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Nuevo pedido",
-      style: "margin:12px 0 4px", onclick: addOrder }));
-
-    if (!state.orders.length) {
-      root.appendChild(el("div", { class: "empty", style: "margin-top:10px" }, [
-        el("p", { text: "Tu agenda está vacía. Anota el primer pedido con “+ Nuevo pedido”." })
-      ]));
-      return;
-    }
-
-    /* pedidos: pendientes primero, y lo que vence antes arriba */
-    var pesoEstado = { pendiente: 0, proceso: 1, entregado: 2, cancelado: 3 };
-    var listaPedidos = el("div");
-
-    var opsPedidos = {
-      texto: function (o) {
-        return (o.cliente || "") + " " + (o.instagram || "") + " " + (o.whatsapp || "") + " " + (o.comuna || "") + " " + (o.notas || "") + " " +
-          (o.items || []).map(function (it) {
-            var p = productById(it.productId);
-            return p ? p.name : "";
-          }).join(" ");
-      },
-      filtros: [
-        { id: "pendiente", label: "Pendientes",
-          test: function (o) { return o.estado === "pendiente"; },
-          contar: function () { return state.orders.filter(function (o) { return o.estado === "pendiente"; }).length; } },
-        { id: "proceso", label: "En proceso",
-          test: function (o) { return o.estado === "proceso"; },
-          contar: function () { return state.orders.filter(function (o) { return o.estado === "proceso"; }).length; } },
-        { id: "atrasados", label: "Atrasados",
-          test: atrasado,
-          contar: function () { return state.orders.filter(atrasado).length; } },
-        { id: "entregado", label: "Entregados",
-          test: function (o) { return o.estado === "entregado"; },
-          contar: function () { return state.orders.filter(function (o) { return o.estado === "entregado"; }).length; } }
-      ],
-      ordenes: [
-        { id: "urgencia", label: "urgencia", comparar: function (a, b) {
-          var d = (pesoEstado[a.estado] || 0) - (pesoEstado[b.estado] || 0);
-          if (d !== 0) return d;
-          /* sin fecha comprometida, al final: no compite con lo que sí vence */
-          var fa = a.fecha || "9999-12-31", fb2 = b.fecha || "9999-12-31";
-          if (fa !== fb2) return fa.localeCompare(fb2);
-          return String(b.creado || "").localeCompare(String(a.creado || ""));
-        } },
-        { id: "recientes", label: "más recientes", comparar: function (a, b) {
-          return String(b.creado || "").localeCompare(String(a.creado || "")); } },
-        { id: "monto", label: "monto", comparar: function (a, b) {
-          return orderTotals(b).ingreso - orderTotals(a).ingreso; } }
-      ]
-    };
-
-    /* agenda: lo que falta por hacer, por fecha de entrega más cercana;
-       debajo, lo hecho, del más reciente al más antiguo */
-    function pintarPedidos() {
-      listaPedidos.innerHTML = "";
-      var visibles = aplicarFiltro("pedidos", state.orders.slice(), opsPedidos);
-      if (!visibles.length) { listaPedidos.appendChild(sinResultados("pedidos", pintarPedidos)); return; }
-
-      var porHacer = visibles.filter(function (o) { return o.estado === "pendiente" || o.estado === "proceso"; })
-        .sort(function (a, b) {
-          var fa = a.fecha || "9999-12-31", fb2 = b.fecha || "9999-12-31";
-          return fa !== fb2 ? fa.localeCompare(fb2) : String(a.creado || "").localeCompare(String(b.creado || ""));
-        });
-      var hechos = visibles.filter(function (o) { return o.estado === "entregado" || o.estado === "cancelado"; })
-        .sort(function (a, b) {
-          var fa = a.entregado || a.fecha || a.creado || "", fb2 = b.entregado || b.fecha || b.creado || "";
-          return String(fb2).localeCompare(String(fa));
-        });
-
-      [["Por hacer", porHacer, "Nada pendiente. Anota un pedido con “+ Nuevo pedido”."],
-       ["Hechos", hechos, "Aún no hay pedidos entregados."]].forEach(function (g) {
-        listaPedidos.appendChild(el("h3", { class: "sec-title", text: g[0] + " · " + g[1].length }));
-        if (!g[1].length) {
-          listaPedidos.appendChild(el("p", { class: "note", style: "margin:0 2px 14px", text: g[2] }));
+    function pintar() {
+      lista.innerHTML = "";
+      var q = (ui.buscarPedidos || "").trim();
+      var ul = el("ul", { class: "lista-ramo" });
+      if (q) {
+        titulo.textContent = "Resultados";
+        var res = state.orders.filter(function (o) { return coincide(textoPedido(o), q); })
+          .sort(function (a, b) { return String(b.fecha || b.creado || "").localeCompare(String(a.fecha || a.creado || "")); });
+        if (!res.length) {
+          lista.appendChild(el("p", { class: "note", text: "Ningún pedido coincide con “" + q + "”." }));
           return;
         }
-        var lista = g[1], antiguos = [];
-        /* lo hecho crece sin fin: a la vista, el último mes; lo demás, a pedido.
-           Buscando se muestra todo, o el buscador no encontraría lo antiguo. */
-        var buscando = !!(filtro("pedidos").q || filtro("pedidos").tag);
-        if (g[0] === "Hechos" && !buscando && !ui.hechosAntiguos) {
-          var corte = new Date(); corte.setDate(corte.getDate() - 30);
-          var desde = fechaLocal(corte);
-          lista = g[1].filter(function (o) { return String(o.entregado || o.fecha || o.creado || "") >= desde; });
-          antiguos = g[1].filter(function (o) { return lista.indexOf(o) < 0; });
-        }
-        lista.forEach(function (o) { listaPedidos.appendChild(orderCard(o)); });
-        if (!lista.length) {
-          listaPedidos.appendChild(el("p", { class: "note", style: "margin:0 2px 8px", text: "Nada entregado en el último mes." }));
-        }
-        if (antiguos.length) {
-          listaPedidos.appendChild(el("button", { class: "btn small ver-anteriores", type: "button",
-            text: "Ver anteriores (" + antiguos.length + ")",
-            onclick: function () { ui.hechosAntiguos = true; pintarPedidos(); } }));
-        }
+        res.forEach(function (o) { ul.appendChild(el("li", {}, [filaPedido(o, false, function () { abrirDesdeLista(o); })])); });
+        lista.appendChild(ul);
+        return;
+      }
+      titulo.textContent = "Hechos · último mes";
+      var hechos = state.orders.filter(function (o) { return !estaAbierto(o); }).sort(function (a, b) {
+        return String(b.entregado || b.fecha || b.creado || "").localeCompare(String(a.entregado || a.fecha || a.creado || ""));
       });
+      var corte = new Date(); corte.setDate(corte.getDate() - 30);
+      var desde = fechaLocal(corte);
+      var recientes = hechos.filter(function (o) { return String(o.entregado || o.fecha || o.creado || "") >= desde; });
+      var antiguos = hechos.length - recientes.length;
+      var visibles = ui.hechosAntiguos ? hechos : recientes;
+      if (!visibles.length) lista.appendChild(el("p", { class: "note", text: "Aún no entregas nada este mes." }));
+      visibles.forEach(function (o) { ul.appendChild(el("li", {}, [filaPedido(o, false, function () { abrirPedido(o); })])); });
+      if (visibles.length) lista.appendChild(ul);
+      if (antiguos) {
+        lista.appendChild(el("button", { class: "btn wide ver-anteriores", type: "button", "aria-expanded": !!ui.hechosAntiguos,
+          text: ui.hechosAntiguos ? "Ocultar anteriores" : "Ver anteriores (" + antiguos + ")",
+          onclick: function () { ui.hechosAntiguos = !ui.hechosAntiguos; pintar(); } }));
+      }
     }
 
-    agregar(root, barraBusqueda({
-      lista: "pedidos",
-      placeholder: "Buscar por cliente, Instagram o flor…",
-      total: state.orders.length,
-      filtros: opsPedidos.filtros,
-      ordenes: [],
-      repintar: pintarPedidos
-    }));
-    root.appendChild(listaPedidos);
-    pintarPedidos();
+    buscador.addEventListener("input", function () { ui.buscarPedidos = buscador.value; pintar(); });
+    pintar();
+    return caja;
   }
 
   /* "sáb 18 oct": la fecha de entrega se lee de un vistazo en la agenda */
@@ -3545,264 +3851,345 @@
     return orden.map(function (n) { return n + " ×" + fmtQty(cuenta[n]); }).join(", ");
   }
 
-  /* Tres niveles para que la agenda no se vuelva interminable:
-     una fila corta; al tocarla, un resumen; el formulario, solo con Editar. */
-  function orderCard(o) {
-    var t = orderTotals(o);
-    var open = !!ui.open[o.id];
-    var editando = open && !!ui.editando[o.id];
-    var abierto = o.estado === "pendiente" || o.estado === "proceso";
-    var pago = estadoPago(o);
+  /* ---------------- hojas del pedido ----------------
+     Una hoja inferior se repinta con cada render(): los selectores de color
+     y los pagos ya llaman a render() al cambiar, y así se mantiene al día. */
 
-    /* la fecha que manda: entrega para lo pendiente, entregado para lo hecho */
-    var fechaRef = abierto ? o.fecha : (o.entregado || o.fecha);
-    var dt = fechaRef ? new Date(String(fechaRef).slice(0, 10) + "T12:00:00") : null;
-    var tarde = abierto && atrasado(o);
-    var dia = el("div", { class: "agenda-dia" + (tarde ? " tarde" : "") + (o.estado === "cancelado" ? " cancelado" : "") },
-      dt && !isNaN(dt) ? [
-        el("span", { class: "dsem", text: DIAS_CORTOS[dt.getDay()] }),
-        el("span", { class: "dnum", text: String(dt.getDate()) }),
-        el("span", { class: "dmes", text: MESES_CORTOS[dt.getMonth()] })
-      ] : [el("span", { class: "dsem", text: "sin" }), el("span", { class: "dmes", text: "fecha" })]);
+  var hojaActiva = null;
 
-    var fila = el("div", { class: "agenda-fila", role: "button", tabindex: "0", "aria-expanded": open,
-      onclick: function () { ui.open[o.id] = !open; if (open) ui.editando[o.id] = false; render(); } }, [
-      dia,
-      el("div", { class: "agenda-info" }, [
-        el("div", { class: "agenda-titulo", text: (o.cliente || "Sin nombre") + " · " + resumenFlores(o) }),
-        el("div", { class: "agenda-sub" }, [
-          el("span", { text: money(t.ingreso) }),
-          el("span", { class: "chip pago-" + pago.id, text: pago.label }),
-          o.estado === "proceso" ? el("span", { class: "chip est-proceso", text: "En proceso" }) : null,
-          o.estado === "cancelado" ? el("span", { class: "chip est-cancelado", text: "Cancelado" }) : null,
-          tarde ? el("span", { class: "chip neg", text: "Atrasado" }) : null
-        ])
-      ]),
-      el("span", { class: "agenda-flecha", text: open ? "▾" : "›" })
-    ]);
-    fila.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fila.click(); }
+  function abrirHoja(titulo, pintar, alCerrar) {
+    var h = {};
+    abrirVentana(titulo, function (cuerpo, sheet, cerrar) {
+      h.sheet = sheet;
+      h.cerrar = cerrar;
+      h.repintar = function () {
+        if (!document.body.contains(sheet)) { if (hojaActiva === h) hojaActiva = null; return; }
+        var arriba = sheet.scrollTop;
+        var antes = enfocables(sheet), idx = antes.indexOf(document.activeElement);
+        cuerpo.innerHTML = "";
+        pintar(cuerpo, cerrar, h);
+        sheet.scrollTop = arriba;
+        /* el foco vuelve al mismo lugar: sin esto, cada toque lo perdería */
+        if (idx > -1) {
+          var despues = enfocables(sheet);
+          if (despues[idx]) despues[idx].focus({ preventScroll: true });
+        }
+      };
+      hojaActiva = h;
+      pintar(cuerpo, cerrar, h);
+    }, function () {
+      if (hojaActiva === h) hojaActiva = null;
+      if (alCerrar) alCerrar();
     });
-
-    var card = el("div", { class: "agenda-item" + (open ? " abierto" : "") }, [fila]);
-    if (!open) return card;
-    card.appendChild(editando ? formularioPedido(o) : resumenPedido(o));
-    return card;
+    return h;
   }
 
-  /* lo esencial en pocas líneas, con las dos acciones habituales */
-  function resumenPedido(o) {
-    var t = orderTotals(o);
-    var abierto = o.estado === "pendiente" || o.estado === "proceso";
-    var caja = el("div", { class: "agenda-resumen" });
-    function linea(etiqueta, texto, cls) {
-      if (!texto) return;
-      caja.appendChild(el("div", { class: "agenda-linea" + (cls ? " " + cls : "") }, [
-        el("span", { class: "et", text: etiqueta }), el("span", { class: "va", text: texto })
-      ]));
-    }
+  function campoHoja(id, etiqueta, valor, opts) {
+    opts = opts || {};
+    return el("div", { class: "hoja-campo" }, [
+      el("label", { for: id, text: etiqueta }),
+      el("input", { id: id, type: opts.tipo || "text", value: valor || "", placeholder: opts.placeholder || "",
+        inputmode: opts.inputmode || null, autocomplete: "off", oninput: opts.oninput })
+    ]);
+  }
 
+  function nuevaLinea() {
+    var p = state.products[0];
+    return { productId: p ? p.id : "", qty: 1, price: p ? Math.round(calc(p).final) : 0 };
+  }
+
+  var PASOS_PEDIDO = ["Cliente", "Flores", "Entrega", "Pago"];
+
+  function validarPaso(o, paso) {
+    if (paso === 1 && !String(o.cliente || "").trim()) return { msg: "Falta el nombre de quien encarga." };
+    if (paso === 2) {
+      if (!(o.items || []).length) return { msg: "Agrega al menos una flor." };
+      for (var i = 0; i < o.items.length; i++) {
+        var p = productById(o.items[i].productId);
+        if (!p) return { msg: "Elige qué flor es la " + (i + 1) + ".", linea: i };
+        var faltan = coloresPendientes(p, o.items[i]);
+        if (faltan.length) return { msg: "Falta elegir " + faltan.join(" y ") + " de la flor " + (i + 1) + ".", linea: i };
+      }
+    }
+    return null;
+  }
+
+  /* pedido nuevo o existente, en cuatro pasos cortos */
+  function abrirPedido(o, nuevo) {
+    var paso = 1, linea = 0, error = "";
+    abrirHoja(nuevo ? "Nuevo pedido" : "Editar pedido", function (cuerpo, cerrar, h) {
+      /* si el pedido se borró desde otro dispositivo, la hoja no tiene qué mostrar */
+      if (state.orders.indexOf(o) < 0) {
+        var vivo = state.orders.filter(function (x) { return x.id === o.id; })[0];
+        if (!vivo) { cerrar(); return; }
+        o = vivo;
+      }
+      function ir(n) {
+        for (var k = paso; k < n; k++) {
+          var e = validarPaso(o, k);
+          if (e) {
+            error = e.msg; paso = k;
+            if (e.linea != null) linea = e.linea;
+            h.repintar();
+            return false;
+          }
+        }
+        error = ""; paso = n;
+        h.repintar();
+        h.sheet.scrollTop = 0;
+        return true;
+      }
+
+      var pasos = el("div", { class: "seg pasos", role: "group", "aria-label": "Pasos del pedido" });
+      PASOS_PEDIDO.forEach(function (nombre, i) {
+        pasos.appendChild(el("button", { type: "button", text: nombre, "aria-pressed": paso === i + 1,
+          onclick: function () { ir(i + 1); } }));
+      });
+      cuerpo.appendChild(pasos);
+
+      if (paso === 1) pasoCliente(cuerpo, o);
+      else if (paso === 2) pasoFlores(cuerpo, o, linea, function (i) { linea = i; error = ""; h.repintar(); });
+      else if (paso === 3) pasoEntrega(cuerpo, o);
+      else pasoPago(cuerpo, o, cerrar);
+
+      if (error) cuerpo.appendChild(el("p", { class: "error-hoja", role: "alert", text: error }));
+
+      var pie = el("div", { class: "pie-hoja" });
+      if (paso > 1) pie.appendChild(el("button", { class: "btn", type: "button", text: "Atrás",
+        onclick: function () { error = ""; paso--; h.repintar(); h.sheet.scrollTop = 0; } }));
+      if (paso < 4) pie.appendChild(el("button", { class: "btn primary", type: "button", text: "Siguiente",
+        onclick: function () { ir(paso + 1); } }));
+      else pie.appendChild(el("button", { class: "btn primary", type: "button", text: nuevo ? "Guardar pedido" : "Listo",
+        onclick: function () { if (ir(4)) { cerrar(); toast(nuevo ? "Pedido anotado" : "Pedido guardado"); } } }));
+      cuerpo.appendChild(pie);
+    }, function () {
+      /* un pedido nuevo que se cerró sin datos no queda como "Sin nombre" */
+      if (nuevo && !String(o.cliente || "").trim() && !(o.pagos || []).length) {
+        state.orders = state.orders.filter(function (x) { return x.id !== o.id; });
+        marcarBorrado("pedidos", o.id);
+      } else if (nuevo) {
+        ui.foco = o.id;
+      }
+      render();
+    });
+  }
+
+  function pasoCliente(cuerpo, o) {
+    cuerpo.appendChild(campoHoja("ped-cliente", "¿Quién lo encarga?", o.cliente,
+      { placeholder: "Nombre", oninput: function (e) { o.cliente = e.target.value; save(o); } }));
+    cuerpo.appendChild(campoHoja("ped-ig", "Instagram", o.instagram,
+      { placeholder: "@usuario", oninput: function (e) { o.instagram = e.target.value; save(o); } }));
+    cuerpo.appendChild(campoHoja("ped-tel", "Teléfono", o.whatsapp,
+      { tipo: "tel", placeholder: "+56 9 …", oninput: function (e) { o.whatsapp = e.target.value; save(o); } }));
+  }
+
+  function pasoFlores(cuerpo, o, linea, elegir) {
+    if (!o.items) o.items = [];
+    if (!o.items.length) { o.items.push(nuevaLinea()); save(o); }
+    linea = Math.max(0, Math.min(linea, o.items.length - 1));
+
+    var chips = el("div", { class: "lineas-pedido", role: "group", "aria-label": "Flores del pedido" });
+    o.items.forEach(function (it, i) {
+      var p = productById(it.productId), c = coloresLinea(it) || coloresPedido({});
+      chips.appendChild(el("button", { type: "button", class: "linea-chip" + (i === linea ? " on" : ""),
+        "aria-pressed": i === linea, onclick: function () { elegir(i); } }, [
+        el("span", { class: "punto-color", style: degradado(c) }),
+        el("span", { text: p ? nombreFlor(p, parseNum(it.qty)) : "Elige la flor" })
+      ]));
+    });
+    chips.appendChild(el("button", { type: "button", class: "linea-chip mas", text: "+ Otra flor",
+      onclick: function () { o.items.push(nuevaLinea()); save(o); elegir(o.items.length - 1); } }));
+    cuerpo.appendChild(chips);
+
+    var it = o.items[linea], p = productById(it.productId), q = parseNum(it.qty);
+    var c = coloresLinea(it) || coloresPedido({});
+    cuerpo.appendChild(el("div", { class: "vista-flor" }, [
+      svgEl(petalosSvg(c.p1, c.p2, 52)),
+      el("div", {}, [
+        el("strong", { text: p ? nombreFlor(p, q) + " · " + money((parseNum(it.price) || calc(p).final) * q) : "Elige la flor" }),
+        el("span", { "aria-live": "polite", text: p ? describirColores(p, it) : "" })
+      ])
+    ]));
+
+    var flores = el("div", { class: "chips-filtro", role: "group", "aria-label": "Flor" });
+    state.products.forEach(function (p2) {
+      flores.appendChild(el("button", { type: "button", class: "chip-filtro", "aria-pressed": it.productId === p2.id,
+        text: (p2.name || "Sin nombre") + " · " + money(calc(p2).final),
+        onclick: function () { it.productId = p2.id; it.price = Math.round(calc(p2).final); save(o); render(); } }));
+    });
+    cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Flor y cantidad" }), flores,
+      el("div", { class: "stepper" }, [
+        el("button", { class: "icon-btn", type: "button", "aria-label": "Una menos", text: "−",
+          onclick: function () { it.qty = Math.max(1, parseNum(it.qty) - 1); save(o); render(); } }),
+        el("output", { "aria-live": "polite", text: fmtQty(q) }),
+        el("button", { class: "icon-btn", type: "button", "aria-label": "Una más", text: "+",
+          onclick: function () { it.qty = parseNum(it.qty) + 1; save(o); render(); } })
+      ])]));
+
+    if (p) cuerpo.appendChild(coloresDePedido(o, it, p));
+    if (o.items.length > 1) {
+      cuerpo.appendChild(el("button", { class: "btn peligro wide", type: "button", text: "Quitar esta flor",
+        style: "margin-top:10px", onclick: function () { o.items.splice(linea, 1); save(o); elegir(Math.max(0, linea - 1)); } }));
+    }
+    cuerpo.appendChild(seccionMaterialesPorUsar(o));
+  }
+
+  function pasoEntrega(cuerpo, o) {
+    cuerpo.appendChild(el("div", { class: "hoja-fila" }, [
+      campoHoja("ped-creado", "Pedido el", o.creado, { tipo: "date", oninput: function (e) { o.creado = e.target.value; save(o); } }),
+      campoHoja("ped-fecha", "Entrega el", o.fecha, { tipo: "date", oninput: function (e) { o.fecha = e.target.value; save(o); } })
+    ]));
+    var formas = el("div", { class: "seg formas", role: "group", "aria-label": "Forma de entrega" });
+    METODOS.forEach(function (m) {
+      formas.appendChild(el("button", { type: "button", text: m, "aria-pressed": (o.metodo || METODOS[0]) === m,
+        onclick: function () { o.metodo = m; save(o); render(); } }));
+    });
+    cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Forma de entrega" }), formas]));
+    cuerpo.appendChild(campoHoja("ped-dir", "Dirección o comuna", o.comuna,
+      { placeholder: "Ej: Ñuñoa, o el punto de encuentro", oninput: function (e) { o.comuna = e.target.value; save(o); } }));
+    cuerpo.appendChild(campoHoja("ped-notas", "Notas", o.notas,
+      { placeholder: "Dedicatoria, envoltorio, detalles", oninput: function (e) { o.notas = e.target.value; save(o); } }));
+  }
+
+  function pasoPago(cuerpo, o, cerrar) {
+    var t = orderTotals(o);
+    var lineas = el("ul", { class: "resumen-pago" });
     (o.items || []).forEach(function (it) {
       var p = productById(it.productId);
       if (!p) return;
-      var col = describirColores(p, it);
-      linea(fmtQty(it.qty) + " × " + (p.name || "Flor"), col || "—");
+      var q = parseNum(it.qty), precio = parseNum(it.price) || calc(p).final;
+      lineas.appendChild(el("li", {}, [el("span", { text: nombreFlor(p, q) + " × " + money(precio) }),
+        el("span", { text: money(precio * q) })]));
     });
-    linea("Entrega", [o.metodo, o.comuna].filter(Boolean).join(" · ") +
-      (o.fecha ? " · " + fechaCorta(o.fecha) : ""));
-    linea("Contacto", [o.instagram, o.whatsapp].filter(Boolean).join(" · "));
-    linea("Pedido el", o.creado ? fechaCorta(o.creado) : "");
-    linea("Notas", o.notas);
-    var pago = estadoPago(o);
-    linea("Pago", money(cobrado(o)) + " de " + money(t.ingreso) +
-      (pago.saldo > 0.5 ? " · faltan " + money(pago.saldo) : ""), pago.id === "pagado" ? "" : "aviso");
+    cuerpo.appendChild(lineas);
+    cuerpo.appendChild(el("div", { class: "total-pago" }, [el("span", { text: "Total" }), el("strong", { text: money(t.ingreso) })]));
+    cuerpo.appendChild(seccionPagos(o));
 
-    /* materiales: lo que usará o lo que se usó */
-    if (abierto) {
-      var plan = planEntrega(o), uso = {};
-      plan.lineas.forEach(function (l) { l.consumos.forEach(function (c) {
-        uso[c.material.id] = uso[c.material.id] || { m: c.material, n: 0 }; uso[c.material.id].n += c.use; }); });
-      var txt = Object.keys(uso).map(function (k) {
-        var u = uso[k], falta = u.n - parseNum(u.m.stock);
-        return (u.m.name || "?") + " " + fmtQty(u.n) + (falta > 1e-9 ? " (faltan " + fmtQty(falta) + ")" : "");
-      }).join(", ");
-      linea("Usará", txt || "elige flores y colores", plan.ok ? "" : "aviso");
-    } else if ((o.consumo || []).length) {
-      linea("Se usó", o.consumo.map(function (c) { return c.nombre + " " + fmtQty(c.cantidad); }).join(", "));
-    }
-
-    var acciones = el("div", { class: "agenda-acciones" }, [
-      el("button", { class: "btn small", type: "button", text: "Editar",
-        onclick: function () { ui.editando[o.id] = true; render(); } })
-    ]);
-    if (abierto) {
-      acciones.appendChild(el("button", { class: "btn small primary", type: "button", text: "Marcar entregado",
-        onclick: function () { abrirEntrega(o); } }));
-    }
-    caja.appendChild(acciones);
-    return caja;
-  }
-
-  /* el formulario completo del pedido, solo al editar */
-  function formularioPedido(o) {
-    var t = orderTotals(o);
-    var plan = shoppingFor(o.items);
-    var abierto = o.estado === "pendiente" || o.estado === "proceso";
-    var body = el("div", { class: "card-body agenda-form" });
-    body.appendChild(el("div", { class: "agenda-acciones", style: "margin-top:0" }, [
-      el("button", { class: "btn small primary", type: "button", text: "Listo",
-        onclick: function () { ui.editando[o.id] = false; render(); } })
-    ]));
-
-    function campo(label, key, placeholder, tipo) {
-      return el("div", { class: "grow" }, [
-        el("label", { class: "field", text: label }),
-        el("input", { type: tipo || "text", value: o[key] || "", placeholder: placeholder || "", "aria-label": label,
-          oninput: function (e) { o[key] = e.target.value; save(o); },
-          onchange: tipo === "date" ? function () { renderPronto(); } : null })
-      ]);
-    }
-
-    /* cliente: el contacto es por Instagram; el teléfono, solo como dato */
-    body.appendChild(el("div", { class: "sec" }, [
-      el("header", {}, [el("h4", { text: "Cliente" })]),
-      campo("Nombre", "cliente", "Nombre"),
-      el("div", { class: "row measures", style: "margin-top:8px" }, [
-        campo("Instagram", "instagram", "@usuario"),
-        campo("Teléfono", "whatsapp", "+56 9 …", "tel")
-      ])
-    ]));
-
-    /* fechas: cuándo se pidió y cuándo se entrega */
-    body.appendChild(el("div", { class: "sec" }, [
-      el("header", {}, [el("h4", { text: "Fechas" })]),
-      el("div", { class: "row measures" }, [
-        campo("Pedido el", "creado", "", "date"),
-        campo("Entrega el", "fecha", "", "date")
-      ])
-    ]));
-
-    /* entrega */
-    var metodoSel = el("select", { "aria-label": "Forma de entrega" });
-    METODOS.forEach(function (mth) { metodoSel.appendChild(el("option", { value: mth, text: mth })); });
-    metodoSel.value = o.metodo || METODOS[0];
-    metodoSel.addEventListener("change", function () { o.metodo = metodoSel.value; save(o); });
-    body.appendChild(el("div", { class: "sec" }, [
-      el("header", {}, [el("h4", { text: "Entrega" })]),
-      metodoSel,
-      el("div", { style: "margin-top:8px" }, [campo("Dirección o comuna", "comuna", "Ej: Av. Grecia 1234, Ñuñoa")]),
-      el("div", { style: "margin-top:8px" }, [campo("Notas", "notas", "Dedicatoria, envoltorio, detalles")])
-    ]));
-
-    /* items */
-    var itemsSec = el("div", { class: "sec" });
-    itemsSec.appendChild(el("header", {}, [
-      el("h4", { text: "Flores del pedido" }),
-      el("span", { class: "sub", text: money(t.ingreso) })
-    ]));
-
-    (o.items || []).forEach(function (it, idx) {
-      var sel = el("select", {});
-      sel.appendChild(el("option", { value: "", text: "Elige una flor" }));
-      state.products.forEach(function (p) {
-        sel.appendChild(el("option", { value: p.id, text: (p.name || "Sin nombre") + " · " + money(calc(p).final) }));
+    if (o.estado === "entregado") {
+      cuerpo.appendChild(el("p", { class: "note", text: "Entregado" + (o.entregado ? " el " + diaCorto(o.entregado) : "") + "." }));
+      agregar(cuerpo, seccionConsumo(o));
+    } else {
+      var estados = el("div", { class: "seg", role: "group", "aria-label": "Estado del pedido" });
+      ETAPAS.concat([["cancelado", "Cancelado"]]).forEach(function (e2) {
+        estados.appendChild(el("button", { type: "button", text: e2[1], "aria-pressed": o.estado === e2[0],
+          onclick: function () { o.estado = e2[0]; sincronizarEstado(o); save(o); render(); } }));
       });
-      sel.value = it.productId || "";
-      sel.addEventListener("change", function () {
-        it.productId = sel.value;
-        var p = productById(sel.value);
-        if (p) it.price = Math.round(calc(p).final);
-        save(o); render();
-      });
+      cuerpo.appendChild(el("fieldset", { class: "hoja-grupo", style: "margin-top:16px" }, [el("legend", { text: "Estado" }), estados]));
+    }
 
-      itemsSec.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "grow" }, [sel]),
-        /* repintar en cada tecla quitaría el foco: los totales se recalculan al salir */
-        el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
-          value: it.qty, "aria-label": "Cantidad",
-          oninput: function (e) { it.qty = e.target.value; save(o); },
-          onchange: function () { renderPronto(); } })]),
-        deleteButton("Quitar flor", function () { o.items.splice(idx, 1); save(o); render(); })
-      ]));
-
-      /* colores de esta línea: un color o bicolor, y las hojas */
-      var flor = productById(it.productId);
-      if (flor) itemsSec.appendChild(coloresDePedido(o, it, flor));
-    });
-
-    itemsSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Flor",
+    cuerpo.appendChild(el("button", { class: "btn peligro wide", type: "button", text: "Eliminar pedido", style: "margin-top:16px",
       onclick: function () {
-        var p = state.products[0];
-        o.items.push({ productId: p ? p.id : "", qty: 1, price: p ? Math.round(calc(p).final) : 0 });
-        save(o); render();
-      } }));
-    body.appendChild(itemsSec);
-
-    /* materiales: lo que usará (por hacer) o lo que se usó (hecho) */
-    if (abierto && o.items && o.items.length) body.appendChild(seccionMaterialesPorUsar(o));
-
-    /* resultado */
-    body.appendChild(el("div", { class: "result" }, [el("table", {}, [el("tbody", {}, [
-      el("tr", {}, [el("th", { scope: "row", text: "Ingreso" }), el("td", { text: money(t.ingreso) })]),
-      el("tr", {}, [el("th", { scope: "row", text: "Costo" }), el("td", { text: money(t.costo) })]),
-      el("tr", { class: "total" }, [el("th", { scope: "row", text: "Ganancia" }),
-        el("td", { class: t.ganancia < 0 ? "loss" : "gain", text: money(t.ganancia) })])
-    ])])]));
-
-    agregar(body, seccionConsumo(o));
-    body.appendChild(seccionPagos(o));
-
-    /* estado */
-    var segEstado = el("div", { class: "seg tiny", style: "margin-top:14px" });
-    ESTADOS.forEach(function (e2) {
-      segEstado.appendChild(el("button", { type: "button", text: e2.label, "aria-pressed": o.estado === e2.id,
-        onclick: function () {
-          /* entregar abre su ventana: hay que ver de dónde sale cada unidad */
-          if (e2.id === "entregado") { abrirEntrega(o); return; }
-          o.estado = e2.id; sincronizarEstado(o); save(o); render();
-        } }));
-    });
-    body.appendChild(el("div", { class: "sec" }, [
-      el("label", { class: "field", text: "Estado" }), segEstado,
-      el("p", { class: "note", text: llevaFabricados()
-        ? "Al entregar se usan primero las unidades ya hechas; el resto se descuenta de los " + rubro().insumoPlural + "."
-        : "Marcar entregado descuenta los " + rubro().insumoPlural + " del inventario." })
-    ]));
-
-    if (CONEXION_EXTERNA && o.whatsapp) {
-      body.appendChild(el("button", { class: "btn small", type: "button", text: "Abrir WhatsApp del cliente",
-        onclick: function () {
-          var num = String(o.whatsapp).replace(/[^0-9]/g, "");
-          window.open("https://wa.me/" + num, "_blank");
-        } }));
-    }
-
-    body.appendChild(el("div", { class: "sec" }, [
-      el("button", { class: "btn small peligro", type: "button", text: "Eliminar pedido", onclick: function () {
         if (ui.confirming === o.id) {
           state.orders = state.orders.filter(function (x) { return x.id !== o.id; });
           marcarBorrado("pedidos", o.id);
-          ui.confirming = null; render(); toast("Pedido eliminado");
+          ui.confirming = null;
+          cerrar(); render(); toast("Pedido eliminado");
         } else {
           ui.confirming = o.id;
           toast("Toca otra vez para eliminar");
           setTimeout(function () { if (ui.confirming === o.id) ui.confirming = null; }, 3000);
         }
-      } })
-    ]));
+      } }));
+  }
 
-    return body;
+  function abrirAbono(o, resto) {
+    var saldo0 = Math.max(0, estadoPago(o).saldo);
+    var monto = resto && saldo0 > 0 ? String(Math.round(saldo0 * 100) / 100) : "", metodo = "transferencia", error = "";
+    abrirHoja("Registrar abono", function (cuerpo, cerrar, h) {
+      var total = orderTotals(o).ingreso, saldo = Math.max(0, estadoPago(o).saldo);
+      cuerpo.appendChild(el("p", { class: "lead", text: (o.cliente || "Sin nombre") + " · falta " + money(saldo) + " de " + money(total) }));
+      cuerpo.appendChild(campoHoja("abono-monto", "Monto", monto,
+        { inputmode: "decimal", placeholder: "0", oninput: function (e) { monto = e.target.value; } }));
+      if (saldo > 0.5) {
+        cuerpo.appendChild(el("button", { class: "btn wide resto", type: "button", text: "Pagó el resto (" + money(saldo) + ")",
+          onclick: function () { monto = String(Math.round(saldo * 100) / 100); error = ""; h.repintar(); } }));
+      }
+      var medios = el("div", { class: "seg", role: "group", "aria-label": "Medio de pago" });
+      METODOS_PAGO.forEach(function (m) {
+        medios.appendChild(el("button", { type: "button", text: m[1], "aria-pressed": metodo === m[0],
+          onclick: function () { metodo = m[0]; h.repintar(); } }));
+      });
+      cuerpo.appendChild(medios);
+      if (error) cuerpo.appendChild(el("p", { class: "error-hoja", role: "alert", text: error }));
+      cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
+        el("button", { class: "btn primary", type: "button", text: "Guardar abono", onclick: function () {
+          var n = parseNum(monto);
+          if (!(n > 0)) { error = "Escribe el monto del abono."; h.repintar(); return; }
+          if (!o.pagos) o.pagos = [];
+          o.pagos.push({ id: uid(), fecha: hoy(), metodo: metodo, monto: n });
+          save(o); cerrar(); render(); toast("Abono registrado");
+        } })
+      ]));
+    });
+  }
+
+  /* entregar: lo que se usará según la receta, ajustable antes de descontar */
+  function abrirEntrega(o) {
+    var plan0 = planEntrega(o), ajuste = {}, orden = [];
+    plan0.lineas.forEach(function (l) {
+      l.consumos.forEach(function (c) {
+        if (!(c.material.id in ajuste)) { ajuste[c.material.id] = 0; orden.push(c.material.id); }
+        ajuste[c.material.id] += c.use;
+      });
+    });
+    orden.forEach(function (k) { ajuste[k] = Math.round(ajuste[k] * 100) / 100; });
+
+    abrirHoja("Entregar a " + (o.cliente || "cliente"), function (cuerpo, cerrar, h) {
+      var plan = planEntrega(o);
+      var sinElegir = plan.faltantes.filter(function (f) { return f.sinCantidad; });
+      cuerpo.appendChild(el("p", { class: "lead", text: orden.length
+        ? "Esto es lo que se usará según la receta. Ajusta si usaste más o menos; se descuenta del stock."
+        : "Este pedido no descuenta materiales del inventario." }));
+      if (plan.deHechos > 0) {
+        cuerpo.appendChild(el("p", { class: "note", text: fmtQty(plan.deHechos) + " ya estaban hechas y salen de lo fabricado." }));
+      }
+      if (sinElegir.length) {
+        cuerpo.appendChild(el("p", { class: "ramo-aviso", text: sinElegir.map(function (f) { return f.nombre; }).join(", ") +
+          ". Elige los colores en Editar antes de entregar." }));
+      }
+      var ul = el("ul", { class: "consumo-lista" });
+      orden.forEach(function (k) {
+        var m = materialById(k);
+        if (!m) return;
+        var nombre = m.name || "Sin nombre";
+        var queda = parseNum(m.stock) - ajuste[k];
+        ul.appendChild(el("li", {}, [
+          el("span", { class: "punto-color", style: "background:" + colorDe(k, true) }),
+          el("span", { class: "txt" }, [
+            el("strong", { text: nombre }),
+            el("span", { class: "queda" + (queda < -1e-9 ? " falta" : ""),
+              text: queda < -1e-9 ? "Te faltan " + fmtQty(-queda) : "Quedarán " + fmtQty(queda) })
+          ]),
+          el("button", { class: "icon-btn", type: "button", text: "−", "aria-label": "Una menos de " + nombre.toLowerCase(),
+            onclick: function () { ajuste[k] = Math.max(0, ajuste[k] - 1); h.repintar(); } }),
+          el("output", { "aria-live": "polite", text: fmtQty(ajuste[k]) }),
+          el("button", { class: "icon-btn", type: "button", text: "+", "aria-label": "Una más de " + nombre.toLowerCase(),
+            onclick: function () { ajuste[k] = ajuste[k] + 1; h.repintar(); } })
+        ]));
+      });
+      if (orden.length) cuerpo.appendChild(ul);
+      cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
+        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
+        el("button", { class: "btn primary", type: "button", text: "Confirmar entrega", disabled: sinElegir.length > 0,
+          onclick: function () {
+            var res = deliverOrder(o, ajuste);
+            if (res.error) { toast(res.error); return; }
+            sincronizarEstado(o);
+            if (ui.foco === o.id) ui.foco = null;
+            save(o); cerrar(); render();
+            toast("Pedido entregado");
+          } })
+      ]));
+    });
   }
 
   function addOrder() {
-    var p = state.products[0];
     var o = { id: uid(), cliente: "", instagram: "", whatsapp: "", metodo: METODOS[0], comuna: "", fecha: "", notas: "",
-      items: p ? [{ productId: p.id, qty: 1, price: Math.round(calc(p).final) }] : [],
+      items: state.products.length ? [nuevaLinea()] : [], pagos: [],
       estado: "pendiente", creado: hoy(), origen: "manual" };
     state.orders.push(o);
-    ui.open[o.id] = true;
-    ui.editando[o.id] = true;   /* nuevo: hay que llenarlo */
-    save(o); render();
+    if (ui.tab !== "pedidos") { ui.tab = "pedidos"; render(); }
+    abrirPedido(o, true);
   }
 
   /* ---------------- render: inventario ---------------- */
@@ -4655,7 +5042,7 @@
     return Array.prototype.filter.call(nodos, function (n) { return n.offsetParent !== null; });
   }
 
-  function abrirVentana(titulo, construir) {
+  function abrirVentana(titulo, construir, alCerrar) {
     var devolverFoco = document.activeElement;
     var tituloId = "ventana-" + (++contadorVentanas);
 
@@ -4665,7 +5052,9 @@
       [el("h3", { id: tituloId, text: titulo }), cuerpo]);
 
     function cerrar() {
+      if (!bg.parentNode) return;
       bg.remove();
+      if (alCerrar) alCerrar();
       document.removeEventListener("keydown", teclado, true);
       /* el foco vuelve a donde estaba: sin esto se pierde al principio de la página */
       if (devolverFoco && devolverFoco.focus) devolverFoco.focus();
@@ -4791,69 +5180,6 @@
   }
 
   /* entregar un pedido: qué sale de lo hecho y qué hay que fabricar */
-  function abrirEntrega(o) {
-    abrirVentana("Entregar pedido de " + (o.cliente || "cliente"), function (cuerpo, sheet, cerrar) {
-      var plan = planEntrega(o);
-
-      var detalle = el("div", { class: "plan" });
-      plan.lineas.forEach(function (l) {
-        var partes = [];
-        if (l.deHechos > 0) partes.push(fmtQty(l.deHechos) + " de lo ya hecho");
-        if (l.aFabricar > 0) partes.push(fmtQty(l.aFabricar) + " por fabricar");
-        detalle.appendChild(filaPlan(l.producto.name || "Sin nombre",
-          fmtQty(l.qty) + " × · " + (partes.join(" + ") || "sin consumo")));
-      });
-      if (!plan.lineas.length) {
-        detalle.appendChild(el("p", { class: "note", text: "Este pedido no tiene productos de tu catálogo." }));
-      }
-      cuerpo.appendChild(detalle);
-
-      if (plan.aFabricar > 0 && llevaMateriales()) {
-        var consumo = {};
-        plan.lineas.forEach(function (l) {
-          l.consumos.forEach(function (c) {
-            if (!consumo[c.material.id]) consumo[c.material.id] = { material: c.material, use: 0 };
-            consumo[c.material.id].use += c.use;
-          });
-        });
-        var claves = Object.keys(consumo);
-        if (claves.length) {
-          cuerpo.appendChild(el("h4", { style: "margin:14px 0 0;font-size:13px",
-            text: rubro().insumos + " que se descuentan" }));
-          var mats = el("div", { class: "plan" });
-          claves.forEach(function (k) {
-            var c = consumo[k];
-            var queda = parseNum(c.material.stock) - c.use;
-            mats.appendChild(filaPlan(c.material.name || "Sin nombre",
-              conUnidad(c.use, stockUnit(c.material)) + " · quedan " + fmtQty(Math.max(0, queda)),
-              queda < 0 ? "short" : ""));
-          });
-          cuerpo.appendChild(mats);
-        }
-      }
-
-      var resumen = el("div", { class: "unit-cost" + (plan.ok ? "" : " low") });
-      if (plan.ok) {
-        resumen.appendChild(el("span", { text: "Todo listo para entregar" }));
-        resumen.appendChild(el("b", { text: money(orderTotals(o).ingreso) }));
-      } else {
-        resumen.appendChild(el("span", { text: textoFaltantes(plan) }));
-      }
-      cuerpo.appendChild(resumen);
-
-      sheet.appendChild(el("div", { class: "actions" }, [
-        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
-        el("button", { class: "btn primary", type: "button", text: "Confirmar entrega", disabled: !plan.ok,
-          onclick: function () {
-            var res = deliverOrder(o);
-            if (res.error) { toast(res.error); return; }
-            sincronizarEstado(o);
-            save(o); render(); cerrar();
-            toast("Pedido entregado");
-          } })
-      ]));
-    });
-  }
 
   /* ---------------- render: ajustes ---------------- */
 
@@ -5414,6 +5740,7 @@
     var cuenta = document.getElementById("btnCuenta");
     if (cuenta) cuenta.setAttribute("aria-pressed", ui.tab === "ajustes" ? "true" : "false");
     pintarContadores();
+    if (hojaActiva) hojaActiva.repintar();
   }
 
   /* ---------------- arranque ---------------- */
