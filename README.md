@@ -51,6 +51,38 @@ del catálogo y su enlace están ocultos. El código sigue en `tienda.html` y en
 la planilla; para volver a mostrarlos, basta con poner `CONEXION_EXTERNA = true`
 en `planilla-costos.html`.
 
+## Dónde se publica: Firebase Hosting
+
+La app se publica en Firebase Hosting, en el mismo dominio que usa el inicio de
+sesión de Google:
+
+**https://tiendas-f9af9.firebaseapp.com/planilla-costos.html**
+
+Desde GitHub Pages la página y el inicio de sesión quedan en dominios distintos,
+y Safari (iPhone, iPad) y las apps instaladas lo bloquean: eliges la cuenta y
+vuelves a la pantalla de entrada. En Firebase Hosting no pasa. Los datos son
+los mismos: es el mismo proyecto de Firebase.
+
+Configuración, una sola vez:
+
+1. En la consola de Firebase, abre **Hosting** y pulsa **Comenzar** (no hace
+   falta instalar nada en el computador; basta con avanzar hasta el final).
+2. En **Configuración del proyecto → Cuentas de servicio**, pulsa **Generar
+   nueva clave privada**. Se descarga un archivo `.json`.
+3. En GitHub, en el repositorio: **Settings → Secrets and variables → Actions
+   → New repository secret**. Nombre: `FIREBASE_SERVICE_ACCOUNT_TIENDAS_F9AF9`.
+   Valor: todo el contenido del archivo `.json`. Después borra el archivo.
+4. En la pestaña **Actions** de GitHub, abre *Publicar en Firebase Hosting* y
+   pulsa **Run workflow**. Desde entonces, cada cambio que llegue a `main` se
+   publica solo.
+
+`firebase.json` dice qué se publica (las reglas y el README quedan fuera) y
+que la planilla, el manifest y el service worker no queden guardados en caché
+viejos. Si usas la dirección `tiendas-f9af9.web.app`, agrega además
+`https://tiendas-f9af9.web.app/__/auth/handler` a los URI de redirección
+autorizados del cliente OAuth web en Google Cloud (APIs y servicios →
+Credenciales); con la dirección `firebaseapp.com` no hace falta.
+
 ## Instalar en el teléfono
 
 La planilla es una PWA: desde el navegador del teléfono, **Agregar a la pantalla

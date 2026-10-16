@@ -1,0 +1,28 @@
+# Publica la app en Firebase Hosting cada vez que algo llega a main.
+# Necesita el secreto FIREBASE_SERVICE_ACCOUNT_TIENDAS_F9AF9 (ver README);
+# mientras no exista, el trabajo se salta en vez de fallar.
+name: Publicar en Firebase Hosting
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    env:
+      TIENE_CUENTA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TIENDAS_F9AF9 != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Publicar
+        if: env.TIENE_CUENTA == 'true'
+        uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_TIENDAS_F9AF9 }}
+          channelId: live
+          projectId: tiendas-f9af9
+      - name: Falta configurar
+        if: env.TIENE_CUENTA != 'true'
+        run: echo "Falta el secreto FIREBASE_SERVICE_ACCOUNT_TIENDAS_F9AF9; no se publicó. Ver README."

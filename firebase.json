@@ -1,0 +1,27 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      "firestore.rules",
+      "README.md",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "redirects": [
+      { "source": "/", "destination": "/planilla-costos.html", "type": 302 }
+    ],
+    "headers": [
+      { "source": "/sw.js", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "**/*.html", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
+      { "source": "/manifest.webmanifest", "headers": [
+        { "key": "Content-Type", "value": "application/manifest+json" },
+        { "key": "Cache-Control", "value": "no-cache" }
+      ] }
+    ]
+  },
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

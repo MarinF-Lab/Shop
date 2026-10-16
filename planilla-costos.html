@@ -1014,9 +1014,13 @@
   /* Configuración del proyecto de Firebase. Son valores públicos por diseño:
      viajan dentro de la página. Lo que protege los datos son las reglas de
      Firestore, no el secreto de estas claves. */
+  /* Servida desde Firebase Hosting, la app inicia sesión en su mismo dominio:
+     Safari y las apps instaladas bloquean el inicio de sesión cuando la página
+     y el dominio de autenticación son distintos (por ejemplo, desde GitHub Pages). */
+  var DOMINIOS_FIREBASE = ["tiendas-f9af9.firebaseapp.com", "tiendas-f9af9.web.app"];
   var FIREBASE = {
     apiKey: "AIzaSyAAE6l_UwOVE1KB1QiXBNXhunzhJs78tL8",
-    authDomain: "tiendas-f9af9.firebaseapp.com",
+    authDomain: DOMINIOS_FIREBASE.indexOf(location.hostname) > -1 ? location.hostname : DOMINIOS_FIREBASE[0],
     projectId: "tiendas-f9af9",
     appId: "1:39811090432:web:9e462dc5388f39265b30e5"
   };
