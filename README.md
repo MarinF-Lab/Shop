@@ -193,6 +193,28 @@ nuevo. En la ficha del material aparece cuánto subió y desde cuándo, y en
 Flores se avisa de los productos cuyo precio quedó corto porque sus insumos
 subieron.
 
+## Compras · PPP
+
+En el Taller, la planilla de compras registra cada bolsa que compras: fecha,
+proveedor, tipo (Limpiapipas, Varillas, Cinta, Envoltura u otro que crees),
+material, unidades por bolsa, cantidad de bolsas y precio por bolsa. Calcula
+sola el total de unidades, el total gastado y el precio unitario de cada fila.
+Cada celda se edita tocándola.
+
+Cada tipo tiene su **precio promedio ponderado (PPP)**: gasto total ÷ unidades
+totales de todas sus compras. Todos los colores de limpiapipas comparten un
+mismo PPP, sin rastrear de qué bolsa sale cada uno. Por ejemplo, una bolsa de
+30 a $800, una de 100 a $1.800, una de 100 a $2.000 y cinco de 100 a $900 dan
+$9.100 por 730 unidades: PPP $12,47.
+
+- Cada compra suma sus unidades al stock del material; corregirla o quitarla
+  ajusta el stock.
+- Los materiales comprados pasan a costar el PPP de su tipo, así que el costo
+  y la ganancia de cada flor se actualizan solos, y el cambio queda en el
+  historial de costos.
+- **Cargar stock actual** anota lo que ya tienes como compra inicial, a su
+  costo de hoy, sin volver a sumarlo al stock.
+
 ## Seguridad
 
 Las reglas de `firestore.rules` garantizan que:

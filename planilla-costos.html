@@ -887,6 +887,32 @@
   .colores-usados .barra { flex: 1; height: 10px; border-radius: 999px; background: var(--line-soft); overflow: hidden; display: flex; }
   .colores-usados .barra span { background: var(--accent); border-radius: 999px; }
   .colores-usados .cant { flex: none; font-size: 13px; color: var(--soft-ink); }
+  /* ---------- Compras · PPP ---------- */
+  .solo-lector { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .fichas-ppp { list-style: none; margin: 0 0 12px; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .fichas-ppp li { background: var(--surface); border-radius: 20px; padding: 12px 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .fichas-ppp .tipo { font-size: 12px; font-weight: 800; color: var(--soft-ink); }
+  .fichas-ppp strong { font-family: var(--serif); font-size: 22px; font-weight: 700; color: var(--accent-dark); }
+  .fichas-ppp .det { font-size: 12px; color: var(--soft-ink); }
+  .barra-compras { margin: 0 0 10px; }
+  .planilla-caja { overflow-x: auto; background: var(--surface); border-radius: 18px; box-shadow: var(--shadow); }
+  .planilla-caja:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .planilla { border-collapse: separate; border-spacing: 0; min-width: 980px; width: 100%; font-size: 13px; }
+  .planilla th { background: var(--paper); color: var(--soft-ink); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; text-align: left; padding: 8px 6px; white-space: nowrap; }
+  .planilla th.n, .planilla td.n { text-align: right; }
+  .planilla td { padding: 4px; border-top: 1px solid var(--line-soft); vertical-align: middle; }
+  .planilla td.fecha, .planilla th:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface); }
+  .planilla th:first-child { background: var(--paper); z-index: 2; }
+  .planilla tr.inicial td { background: #FBF8F2; }
+  .planilla input[type="text"], .planilla input[type="date"] { min-height: 40px; border-radius: 10px; font-size: 14px; padding: 0 8px; }
+  .planilla td.fecha input { width: 136px; }
+  .planilla td:nth-child(2) input { width: 130px; }
+  .planilla td.n input { width: 84px; text-align: right; }
+  .planilla td.calc { font-weight: 700; white-space: nowrap; padding: 4px 8px; }
+  .celda-btn { min-height: 40px; min-width: 96px; max-width: 150px; padding: 0 10px; border-radius: 10px; border: 1.5px solid var(--line); background: var(--surface); font: inherit; font-size: 14px; font-weight: 700; color: var(--ink); text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+  .celda-btn.falta { border-style: dashed; border-color: var(--danger); color: var(--danger); }
+  .acciones-compras { display: flex; gap: 8px; margin-top: 10px; }
+  .acciones-compras .btn { flex: 1; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1002,7 +1028,8 @@
       materials: [],
       products: [],
       orders: [],
-      historial: []
+      historial: [],
+      compras: []
     };
   }
 
@@ -1013,7 +1040,8 @@
     { nombre: "materiales", campo: "materials" },
     { nombre: "productos", campo: "products" },
     { nombre: "pedidos", campo: "orders" },
-    { nombre: "historial", campo: "historial" }
+    { nombre: "historial", campo: "historial" },
+    { nombre: "compras", campo: "compras" }
   ];
 
   var ESTADOS = [
@@ -1027,7 +1055,8 @@
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
   var ui = { tab: "pedidos", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
-    verCategoria: {}, cambiando: {}, editando: {}, hechosAntiguos: false, foco: null, buscarPedidos: "" };
+    verCategoria: {}, cambiando: {}, editando: {}, hechosAntiguos: false, foco: null, buscarPedidos: "",
+    filtroCompras: "", todasCompras: false, ultimoTipo: "" };
 
   /* ---------------- utilidades ---------------- */
 
@@ -1098,6 +1127,9 @@
   /* costo por unidad de uso (por cm², m², kg, hora, etc.) */
   function materialCost(m) {
     if (!m) return 0;
+    /* lo comprado en la planilla de compras cuesta el PPP de su tipo */
+    var ppp = costoPPP(m);
+    if (ppp != null) return ppp;
     if (m.mode === "compra") {
       if (isArea(m.unit)) {
         var qty = parseNum(m.sheetQty) || 1;
@@ -1768,8 +1800,8 @@
      tecla guardada, y por encima de quinientos el lote de Firestore ni
      siquiera se acepta. Aquí se anota solo lo que cambió. */
 
-  var sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
-  var borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+  var sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {}, compras: {} };
+  var borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {}, compras: {} };
   var sucioAjustes = false;
 
   function coleccionDe(obj) {
@@ -1778,6 +1810,7 @@
     if (state.products.indexOf(obj) > -1) return "productos";
     if (state.orders.indexOf(obj) > -1) return "pedidos";
     if (state.historial.indexOf(obj) > -1) return "historial";
+    if ((state.compras || []).indexOf(obj) > -1) return "compras";
     return null;
   }
 
@@ -1803,8 +1836,8 @@
   }
 
   function limpiarPendientes() {
-    sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
-    borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+    sucios = { materiales: {}, productos: {}, pedidos: {}, historial: {}, compras: {} };
+    borrados = { materiales: {}, productos: {}, pedidos: {}, historial: {}, compras: {} };
     sucioAjustes = false;
   }
 
@@ -1812,6 +1845,7 @@
      seguir trabajando sin señal. `que` es el objeto que cambió: un material,
      un producto o un pedido. Sin argumento, se entiende que son los ajustes. */
   function save(que) {
+    invalidarPPP();
     if (fb && fb.aplicando) return;
     marcarSucio(que);
     pedirSubida();
@@ -1867,6 +1901,8 @@
       if (Array.isArray(data.products)) { state.products = data.products; state.products.forEach(migrarPrecio); }
       if (Array.isArray(data.orders)) state.orders = data.orders;
       if (Array.isArray(data.historial)) state.historial = data.historial;
+      if (Array.isArray(data.compras)) state.compras = data.compras;
+      invalidarPPP();
       state.materials.forEach(function (m) {
         if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
       });
@@ -2333,6 +2369,342 @@
     });
     caja.appendChild(ul);
     return caja;
+  }
+
+  /* ---------------- Compras · PPP ----------------
+     Cada compra es una fila: qué se compró, de qué tipo, cuántas bolsas y a
+     qué precio. El costo unitario de cada tipo es el precio promedio
+     ponderado (PPP): gasto total ÷ unidades totales de todas sus compras. Así
+     no hay que rastrear de qué bolsa sale cada limpiapipa. Los materiales
+     comprados toman como costo el PPP de su tipo. */
+
+  var TIPOS_COMPRA = ["Limpiapipas", "Varillas", "Cinta", "Envoltura"];
+
+  function tiposCompra() {
+    if (!Array.isArray(state.settings.tiposCompra) || !state.settings.tiposCompra.length) {
+      state.settings.tiposCompra = TIPOS_COMPRA.slice();
+    }
+    return state.settings.tiposCompra;
+  }
+
+  function unidadesCompra(c) { return parseNum(c.unidadesBolsa) * parseNum(c.bolsas); }
+  function gastoCompra(c) { return parseNum(c.precioBolsa) * parseNum(c.bolsas); }
+  function unitarioCompra(c) { var u = parseNum(c.unidadesBolsa); return u > 0 ? parseNum(c.precioBolsa) / u : 0; }
+
+  /* se recalcula solo cuando algo cambió: materialCost se consulta muchas veces por pintada */
+  var pppCache = null;
+  function invalidarPPP() { pppCache = null; }
+
+  function datosPPP() {
+    if (pppCache) return pppCache;
+    var tipos = {}, deMaterial = {}, fechaMaterial = {};
+    (state.compras || []).forEach(function (c) {
+      /* una fila a medio llenar no mueve el promedio */
+      if (!c.tipo || unidadesCompra(c) <= 0 || gastoCompra(c) <= 0) return;
+      var t = tipos[c.tipo] || (tipos[c.tipo] = { unidades: 0, gasto: 0, compras: 0 });
+      t.unidades += unidadesCompra(c);
+      t.gasto += gastoCompra(c);
+      t.compras++;
+      /* el material queda en el tipo de su compra más reciente */
+      if (c.materialId && String(c.fecha || "") >= (fechaMaterial[c.materialId] || "")) {
+        deMaterial[c.materialId] = c.tipo;
+        fechaMaterial[c.materialId] = String(c.fecha || "");
+      }
+    });
+    Object.keys(tipos).forEach(function (k) {
+      tipos[k].ppp = tipos[k].unidades > 0 ? tipos[k].gasto / tipos[k].unidades : 0;
+    });
+    pppCache = { tipos: tipos, deMaterial: deMaterial };
+    return pppCache;
+  }
+
+  function tipoDeMaterial(m) { return m ? datosPPP().deMaterial[m.id] || "" : ""; }
+
+  /* costo por unidad de stock según las compras, o null si no se compró por aquí */
+  function costoPPP(m) {
+    var t = tipoDeMaterial(m);
+    if (!t) return null;
+    var d = datosPPP().tipos[t];
+    if (!d || d.ppp <= 0) return null;
+    /* un material por pliego se compra por pliegos, pero su costo va por cm² o m² */
+    return hasSheet(m) && sheetArea(m) > 0 ? d.ppp / sheetArea(m) : d.ppp;
+  }
+
+  /* cambia las compras y anota en el historial los costos que se movieron.
+     Se anota unos segundos después, con el costo de antes de empezar: llenar
+     una fila celda por celda no debe dejar un registro por cada número. */
+  var antesPPP = {}, timerPPP = null;
+  function conCostos(cambio) {
+    invalidarPPP();
+    var antes = {};
+    state.materials.forEach(function (m) { antes[m.id] = materialCost(m); });
+    cambio();
+    invalidarPPP();
+    state.materials.forEach(function (m) {
+      if (Math.abs(materialCost(m) - antes[m.id]) > 0.001 && !(m.id in antesPPP)) antesPPP[m.id] = antes[m.id];
+    });
+    clearTimeout(timerPPP);
+    timerPPP = setTimeout(function () {
+      Object.keys(antesPPP).forEach(function (id) {
+        var m = materialById(id);
+        if (m) registrarCosto(m, antesPPP[id]);
+      });
+      antesPPP = {};
+    }, 4000);
+  }
+
+  /* tipo probable de un material, por su categoría o su nombre */
+  function tipoSugerido(m) {
+    if (!m) return "";
+    var n = norm(m.name), cat = (m.categoria || "").trim();
+    var deFlor = state.products.some(function (p) { var f = florDe(p); return cat && (f.catPetalos === cat || f.catHojas === cat); });
+    if (deFlor || n.indexOf("limpiapipa") > -1) return "Limpiapipas";
+    if (/varilla|barra|alambre|tallo/.test(n)) return "Varillas";
+    if (/cinta/.test(n)) return "Cinta";
+    if (/envolt|papel|celofan|bolsa/.test(n)) return "Envoltura";
+    return "";
+  }
+
+  /* la compra suma (o resta, al corregirla) sus unidades al stock; la inicial no, ya estaba */
+  function aplicarStock(c, signo) {
+    if (c.inicial) return;
+    var m = materialById(c.materialId);
+    var n = unidadesCompra(c);
+    if (!m || !n) return;
+    m.stock = Math.max(0, Math.round((parseNum(m.stock) + signo * n) * 100) / 100);
+    marcarSucio(m);
+  }
+
+  function moneyPPP(n) {
+    return cfg().symbol + " " + (isFinite(n) ? n : 0).toLocaleString("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function nuevaCompra() {
+    var ultima = (state.compras || []).slice().sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); })[0];
+    var c = { id: uid(), fecha: hoy(), proveedor: ultima ? ultima.proveedor || "" : "",
+      tipo: "", materialId: "", unidadesBolsa: "", bolsas: 1, precioBolsa: "" };
+    state.compras.push(c);
+    save(c);
+    render();
+    elegirMaterialCompra(c);
+  }
+
+  /* lo que ya había en stock entra como una compra inicial a su costo de hoy */
+  function cargarStockActual() {
+    var creadas = 0, sinCosto = 0;
+    state.materials.forEach(function (m) {
+      var stock = parseNum(m.stock);
+      if (stock <= 0) return;
+      var valor = stockUnitValue(m);
+      if (valor <= 0) { sinCosto++; return; }
+      var c = { id: uid(), fecha: hoy(), proveedor: "Stock inicial", tipo: tipoSugerido(m), materialId: m.id,
+        unidadesBolsa: stock, bolsas: 1, precioBolsa: Math.round(stock * valor), inicial: true };
+      state.compras.push(c);
+      marcarSucio(c);
+      creadas++;
+    });
+    invalidarPPP();
+    pedirSubida();
+    render();
+    toast(creadas ? creadas + (creadas === 1 ? " material cargado" : " materiales cargados") +
+      (sinCosto ? " · " + sinCosto + " sin costo quedaron fuera" : "") : "No hay materiales con stock y costo para cargar");
+  }
+
+  function seccionCompras() {
+    if (!state.compras) state.compras = [];
+    var caja = el("div", { class: "compras-ppp" }, [el("h3", { class: "etiqueta", text: "Compras · PPP" })]);
+    var d = datosPPP();
+
+    /* fichas: un PPP por tipo */
+    var conDatos = tiposCompra().filter(function (t) { return d.tipos[t] && d.tipos[t].compras; });
+    Object.keys(d.tipos).forEach(function (t) { if (conDatos.indexOf(t) < 0) conDatos.push(t); });
+    if (conDatos.length) {
+      var fichas = el("ul", { class: "fichas-ppp" });
+      conDatos.forEach(function (t) {
+        var x = d.tipos[t];
+        fichas.appendChild(el("li", {}, [
+          el("span", { class: "tipo", text: t }),
+          el("strong", { text: moneyPPP(x.ppp) }),
+          el("span", { class: "det", text: fmtQty(x.unidades) + " u · " + money(x.gasto) })
+        ]));
+      });
+      caja.appendChild(fichas);
+    }
+
+    if (!state.compras.length) {
+      caja.appendChild(el("div", { class: "empty" }, [
+        el("p", { text: "Anota cada bolsa que compras: el costo de cada tipo se calcula solo con el precio promedio ponderado (gasto total ÷ unidades)." }),
+        el("button", { class: "btn primary", type: "button", text: "+ Compra", onclick: nuevaCompra }),
+        el("button", { class: "btn", type: "button", text: "Cargar stock actual", style: "margin-left:8px", onclick: cargarStockActual })
+      ]));
+      return caja;
+    }
+
+    /* filtro por tipo y alta */
+    var filtro = ui.filtroCompras || "";
+    var barra = el("div", { class: "chips-filtro barra-compras", role: "group", "aria-label": "Filtrar por tipo" });
+    barra.appendChild(botonChip("Todas", !filtro, function () { ui.filtroCompras = ""; render(); }));
+    tiposCompra().forEach(function (t) {
+      if (!d.tipos[t]) return;
+      barra.appendChild(botonChip(t, filtro === t, function () { ui.filtroCompras = filtro === t ? "" : t; render(); }));
+    });
+    caja.appendChild(barra);
+
+    var filas = state.compras.filter(function (c) { return !filtro || c.tipo === filtro; })
+      .sort(function (a, b) { return String(b.fecha || "").localeCompare(String(a.fecha || "")); });
+    var limite = ui.todasCompras ? filas.length : 30;
+
+    var proveedores = {};
+    state.compras.forEach(function (c) { if (c.proveedor) proveedores[c.proveedor] = true; });
+    caja.appendChild(el("datalist", { id: "lista-proveedores" }, Object.keys(proveedores).map(function (p) {
+      return el("option", { value: p });
+    })));
+
+    var tabla = el("table", { class: "planilla" }, [
+      el("caption", { class: "solo-lector", text: "Compras registradas; cada celda se puede editar" }),
+      el("thead", {}, [el("tr", {}, ["Fecha", "Proveedor", "Tipo", "Material", "Unid./bolsa", "Bolsas", "Precio bolsa",
+        "Total u.", "Total $", "$ / u", ""].map(function (h, i) {
+        return el("th", { scope: "col", class: i >= 4 && i <= 9 ? "n" : "", text: h });
+      }))])
+    ]);
+    var cuerpo = el("tbody");
+    filas.slice(0, limite).forEach(function (c) { cuerpo.appendChild(filaCompra(c)); });
+    tabla.appendChild(cuerpo);
+    caja.appendChild(el("div", { class: "planilla-caja", tabindex: "0", role: "region", "aria-label": "Planilla de compras" }, [tabla]));
+
+    if (filas.length > limite) {
+      caja.appendChild(el("button", { class: "btn wide ver-anteriores", type: "button", text: "Ver todas (" + filas.length + ")",
+        onclick: function () { ui.todasCompras = true; render(); } }));
+    }
+    caja.appendChild(el("div", { class: "acciones-compras" }, [
+      el("button", { class: "btn primary", type: "button", text: "+ Compra", onclick: nuevaCompra })
+    ]));
+    return caja;
+  }
+
+  function filaCompra(c) {
+    var m = materialById(c.materialId);
+    /* un número se aplica al salir de la celda: así el stock se corrige una sola vez */
+    function celdaNum(campo, etiqueta, dec) {
+      return el("td", { class: "n" }, [el("input", { type: "text", inputmode: dec ? "decimal" : "numeric", class: "num",
+        value: c[campo] === "" || c[campo] == null ? "" : String(c[campo]), "aria-label": etiqueta, placeholder: "0",
+        onchange: function (e) {
+          var v = e.target.value;
+          conCostos(function () { aplicarStock(c, -1); c[campo] = v === "" ? "" : parseNum(v); aplicarStock(c, 1); });
+          save(c); renderPronto();
+        } })]);
+    }
+    return el("tr", { class: c.inicial ? "inicial" : "" }, [
+      el("td", { class: "fecha" }, [el("input", { type: "date", value: c.fecha || "", "aria-label": "Fecha",
+        onchange: function (e) { conCostos(function () { c.fecha = e.target.value; }); save(c); renderPronto(); } })]),
+      el("td", {}, [el("input", { type: "text", value: c.proveedor || "", list: "lista-proveedores", "aria-label": "Proveedor",
+        placeholder: c.inicial ? "Stock inicial" : "Proveedor",
+        onchange: function (e) { c.proveedor = e.target.value; save(c); } })]),
+      el("td", {}, [el("button", { type: "button", class: "celda-btn" + (c.tipo ? "" : " falta"), text: c.tipo || "Elegir",
+        "aria-label": "Tipo: " + (c.tipo || "sin elegir"), onclick: function () { elegirTipoCompra(c); } })]),
+      el("td", {}, [el("button", { type: "button", class: "celda-btn" + (m ? "" : " falta"), text: m ? m.name || "Sin nombre" : "Elegir",
+        "aria-label": "Material: " + (m ? m.name : "sin elegir"), onclick: function () { elegirMaterialCompra(c); } })]),
+      celdaNum("unidadesBolsa", "Unidades por bolsa", true),
+      celdaNum("bolsas", "Cantidad de bolsas", false),
+      celdaNum("precioBolsa", "Precio por bolsa", true),
+      el("td", { class: "n calc", text: fmtQty(unidadesCompra(c)) }),
+      el("td", { class: "n calc", text: money(gastoCompra(c)) }),
+      el("td", { class: "n calc", text: moneyPPP(unitarioCompra(c)) }),
+      el("td", {}, [deleteButton("Quitar compra", function () {
+        conCostos(function () {
+          aplicarStock(c, -1);
+          state.compras = state.compras.filter(function (x) { return x !== c; });
+        });
+        marcarBorrado("compras", c.id);
+        render();
+      })])
+    ]);
+  }
+
+  function elegirTipoCompra(c) {
+    var nuevo = "";
+    abrirHoja("Tipo de compra", function (cuerpo, cerrar, h) {
+      cuerpo.appendChild(el("p", { class: "lead", text: "Cada tipo tiene su propio PPP. Todos los colores de limpiapipas comparten uno." }));
+      var chips = el("div", { class: "chips-filtro", role: "group", "aria-label": "Tipos" });
+      tiposCompra().forEach(function (t) {
+        chips.appendChild(botonChip(t, c.tipo === t, function () {
+          conCostos(function () { c.tipo = t; });
+          ui.ultimoTipo = t;
+          save(c); cerrar(); render();
+        }));
+      });
+      cuerpo.appendChild(chips);
+      cuerpo.appendChild(el("div", { class: "hoja-fila", style: "margin-top:16px;align-items:end" }, [
+        campoHoja("tipo-nuevo", "Nuevo tipo", nuevo, { placeholder: "Ej: Ojos móviles", oninput: function (e) { nuevo = e.target.value; } }),
+        el("button", { class: "btn", type: "button", text: "Agregar", style: "margin-bottom:12px", onclick: function () {
+          var t = nuevo.trim();
+          if (!t) return;
+          if (tiposCompra().indexOf(t) < 0) { tiposCompra().push(t); save(); }
+          conCostos(function () { c.tipo = t; });
+          ui.ultimoTipo = t;
+          save(c); cerrar(); render();
+        } })
+      ]));
+    });
+  }
+
+  function elegirMaterialCompra(c) {
+    var nombre = "", categoria = "";
+    abrirHoja("¿Qué compraste?", function (cuerpo, cerrar, h) {
+      function usar(id) {
+        conCostos(function () {
+          aplicarStock(c, -1);
+          c.materialId = id;
+          /* el tipo sale del material: el que ya tiene, o el probable */
+          if (!c.tipo) {
+            var m = materialById(id);
+            c.tipo = tipoDeMaterial(m) || tipoSugerido(m) || ui.ultimoTipo || "";
+          }
+          aplicarStock(c, 1);
+        });
+        save(c); cerrar(); render();
+      }
+      var grupos = {}, orden = [];
+      state.materials.forEach(function (m) {
+        var cat = (m.categoria || "").trim() || "Sin categoría";
+        if (!grupos[cat]) { grupos[cat] = []; orden.push(cat); }
+        grupos[cat].push(m);
+      });
+      orden.sort(function (a, b) { return a.localeCompare(b); }).forEach(function (cat) {
+        cuerpo.appendChild(el("h4", { class: "cat-fichas", text: cat }));
+        var chips = el("div", { class: "chips-filtro", role: "group", "aria-label": cat });
+        grupos[cat].sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); }).forEach(function (m) {
+          chips.appendChild(el("button", { type: "button", class: "chip-filtro chip-mat", "aria-pressed": c.materialId === m.id,
+            onclick: function () { usar(m.id); } }, [
+            el("span", { class: "punto-color", style: "width:14px;height:14px;background:" + colorDe(m.id, true) }),
+            el("span", { class: "nom", text: m.name || "Sin nombre" }),
+            el("small", { text: fmtQty(parseNum(m.stock)) })
+          ]));
+        });
+        cuerpo.appendChild(chips);
+      });
+
+      /* un color o material que aún no está en el inventario */
+      var cats = orden.filter(function (x) { return x !== "Sin categoría"; });
+      cuerpo.appendChild(el("h4", { class: "cat-fichas", style: "margin-top:20px", text: "Otro material" }));
+      cuerpo.appendChild(campoHoja("mat-nuevo", "Nombre", nombre, { placeholder: "Ej: Dorado", oninput: function (e) { nombre = e.target.value; } }));
+      if (cats.length) {
+        var chipsCat = el("div", { class: "chips-filtro", role: "group", "aria-label": "Categoría del material nuevo" });
+        cats.forEach(function (cat) {
+          chipsCat.appendChild(botonChip(cat, categoria === cat, function () { categoria = categoria === cat ? "" : cat; h.repintar(); }));
+        });
+        cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Categoría" }), chipsCat]));
+      }
+      cuerpo.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Crear y usar", onclick: function () {
+        var n = nombre.trim();
+        if (!n) { toast("Escribe el nombre del material"); return; }
+        var m = { id: uid(), name: n, unit: "unidad", mode: "directo", cost: "", buyPrice: "", buyQty: "",
+          sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area", stock: 0, stockMin: "", categoria: categoria };
+        state.materials.push(m);
+        marcarSucio(m);
+        usar(m.id);
+      } }));
+    });
   }
 
   /* ---------------- Taller: lo que tienes frente a lo que piden ---------------- */
@@ -3474,6 +3846,10 @@
       }
 
       detalle.appendChild(readout);
+      if (tipoDeMaterial(m) && costoPPP(m) != null) {
+        detalle.appendChild(el("p", { class: "note aviso", text: "Este costo sale del PPP de " + tipoDeMaterial(m) +
+          " en Compras: " + moneyPPP(datosPPP().tipos[tipoDeMaterial(m)].ppp) + " por unidad. Lo que escribas aquí no se usa mientras tenga compras." }));
+      }
       refresh();
 
       if (hasSheet(m)) {
@@ -4342,6 +4718,7 @@
     if (llevaMateriales()) {
       root.appendChild(tarjetaCompras(pendingOrders()));
       agregar(root, fichasTaller());
+      root.appendChild(seccionCompras());
     }
     root.appendChild(el("h3", { class: "etiqueta", text: "Inventario" }));
 
@@ -4473,7 +4850,7 @@
   /* ---------------- firebase ---------------- */
 
   var fb = { app: null, db: null, auth: null, user: null, unsubs: [], estado: "apagado",
-    aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {}, historial: {} } };
+    aplicando: false, remotos: { materiales: {}, productos: {}, pedidos: {}, historial: {}, compras: {} } };
 
   function loadScript(src) {
     return new Promise(function (resolve, reject) {
@@ -4626,7 +5003,7 @@
   function pararSync() {
     fb.unsubs.forEach(function (u) { try { u(); } catch (e) {} });
     fb.unsubs = [];
-    fb.remotos = { materiales: {}, productos: {}, pedidos: {}, historial: {} };
+    fb.remotos = { materiales: {}, productos: {}, pedidos: {}, historial: {}, compras: {} };
   }
 
   /* Firestore es la fuente de verdad: al entrar bajamos la nube; si está
@@ -4693,6 +5070,7 @@
         fb.remotos[c.nombre] = mapa;
         fb.aplicando = true;
         state[c.campo] = items;
+        invalidarPPP();
         if (c.campo === "materials") {
           state.materials.forEach(function (m) {
             if (m.stockTarget == null && m.stockMin != null) m.stockTarget = m.stockMin;
@@ -5758,6 +6136,8 @@
       state.products = prods;
       if (Array.isArray(data.orders)) state.orders = data.orders;
       if (Array.isArray(data.historial)) state.historial = data.historial;
+      if (Array.isArray(data.compras)) state.compras = data.compras;
+      invalidarPPP();
       if (data.settings) state.settings = Object.assign(state.settings, data.settings);
     } else {
       var idMap = {};

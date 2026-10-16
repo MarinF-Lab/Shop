@@ -46,6 +46,11 @@ service cloud.firestore {
         allow read, write: if esDueno(uid);
       }
 
+      /* compras de materiales para el precio promedio ponderado: privado */
+      match /compras/{docId} {
+        allow read, write: if esDueno(uid);
+      }
+
       /* catálogo publicado: lectura abierta, escritura del dueño */
       match /catalogo/{docId} {
         allow read: if true;
