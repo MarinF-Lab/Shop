@@ -1,31 +1,76 @@
-# Costos y precios — flores de limpiapipas
+# Eternal Garden — flores de limpiapipas
 
 Aplicación web para un taller de flores de limpiapipas: calcula el costo real
 de cada flor, lleva materiales e inventario por color, y registra los pedidos
 con los colores que pidió cada cliente y cómo pagó. Incluye una tienda pública
 para que tus clientes vean el catálogo y te dejen su pedido.
 
-## Flores y pedidos
+## Las cuatro secciones
+
+La app se recorre con la barra de abajo: **Ramo · Flores · Taller · Caja**. Un
+punto naranjo marca la sección que pide atención (pedidos atrasados, precios
+que quedaron cortos, material que falta). La cabecera resume el día y tiene el
+botón **+** para anotar un pedido; el botón redondo de la cuenta abre Ajustes.
+
+- **Ramo** es la agenda. Arriba, la franja *Por hacer* con todos los pedidos
+  sin terminar en orden de entrega; al centro, el pedido más urgente (o el que
+  elijas) dibujado como ramo con sus colores, con sus flores, entrega, notas,
+  avance (*Anotado · Armando · Listo*), pago y los botones *Editar*,
+  *Registrar abono* y *Marcar como entregado*. Debajo, la lista completa y lo
+  entregado el último mes, con buscador.
+- **Flores**: cuánto cuesta cada flor, en cuánto la vendes y cuánto te queda,
+  con el aviso *Revisa estos precios* y el historial de costos.
+- **Taller**: qué falta comprar, lo que tienes frente a lo que usarán los
+  pedidos por hacer, y el inventario editable.
+- **Caja**: lo cobrado del mes en efectivo y por transferencia, lo que falta
+  cobrar pedido por pedido, la ganancia de lo entregado y los colores más usados.
+
+Los colores de los dibujos salen del nombre del material ("Rosa", "Verde
+claro", "Celeste"…).
+
+## Flores y agenda de pedidos
 
 - **Receta de la flor**: tipo de limpiapipas de los pétalos, cuántos pétalos
   lleva en un color y cuántos en bicolor (primario + secundario), hojas (tipo y
   cantidad) y los materiales fijos (barra metálica, cinta…).
-- **Pedido**: por cada flor eliges un color o bicolor, el primario, el
-  secundario y el color de las hojas, entre los que tienes en stock. Al
-  entregar se descuentan exactamente esos colores y el pedido guarda lo que se
-  usó.
+- **Pedidos**: los anotas tú, en una hoja de cuatro pasos (*Cliente*,
+  *Flores*, *Entrega*, *Pago*). Cada pedido guarda cliente, Instagram,
+  teléfono, fecha de pedido (se pone sola y es editable), fecha de entrega,
+  forma de entrega con dirección y notas. En *Hechos* se ve el último mes; lo
+  anterior, con *Ver anteriores* o con el buscador.
+- **Colores por pedido**: por cada flor eliges un color o bicolor, el primario,
+  el secundario y el color de las hojas, entre los que tienes en stock.
+- **Materiales**: en los pedidos por hacer ves lo que usarán frente al stock;
+  al entregar se muestra lo que se usará según la receta, puedes ajustarlo, y
+  se descuenta del stock; el pedido guarda lo que se usó.
 - **Pagos**: efectivo o transferencia, con abonos; un pago mixto son dos pagos.
   Cada pedido indica si está pagado, abonado o por cobrar.
-- **Inicio** resume cuánto entró este mes en efectivo y por transferencia, lo
-  que queda por cobrar y los colores más usados en los últimos 30 días.
 
-Son dos páginas HTML sin dependencias ni compilación:
+Por ahora la app no conecta con clientes: la tienda pública, la publicación
+del catálogo y su enlace están ocultos. El código sigue en `tienda.html` y en
+la planilla; para volver a mostrarlos, basta con poner `CONEXION_EXTERNA = true`
+en `planilla-costos.html`.
 
-| Archivo | Para quién |
-|---|---|
-| `planilla-costos.html` | Panel de gestión. Requiere cuenta de Google. |
-| `tienda.html` | Tienda pública. La abre cualquiera, sin cuenta. |
-| `firestore.rules` | Reglas de seguridad de la base de datos. |
+## Instalar en el teléfono
+
+La planilla es una PWA: desde el navegador del teléfono, **Agregar a la pantalla
+de inicio** (Android: menú ⋮ → *Instalar aplicación*; iPhone: Compartir →
+*Agregar a inicio*). Se abre como una app, con el icono de la flor y sin barra
+del navegador.
+
+El service worker (`sw.js`) guarda la planilla, los iconos y el SDK de Firebase,
+así que con la sesión ya iniciada la app abre aunque no haya señal; los datos
+salen de la caché offline de Firestore y se suben al volver la conexión. No
+intercepta Firestore ni el inicio de sesión, que siempre van a la red.
+
+La página siempre se pide primero a la red, así que los cambios publicados
+llegan solos. Si cambias la lógica de `sw.js` o la lista de archivos que guarda,
+sube su `VERSION` para que se renueve la caché. También guarda las fuentes
+(Fraunces y Nunito Sans) para que sin señal la app se vea igual.
+
+La PWA necesita HTTPS (o `localhost`): abriendo el archivo con doble clic no se
+instala. La tienda pública lleva el icono, pero no es instalable: la app es la
+planilla del taller.
 
 ## Cómo funciona
 
@@ -107,20 +152,19 @@ siguiente.
 
 ## Uso diario
 
-1. Abre `planilla-costos.html` y entra con Google. **Inicio** te muestra los
-   pedidos que urgen, lo que falta comprar y cómo va la ganancia del mes.
+1. Abre `planilla-costos.html` y entra con Google. **Ramo** te muestra lo que
+   hay que hacer; **Caja**, cómo va el mes.
 2. Carga tus materiales con su precio de compra y su unidad.
 3. Crea productos indicando qué materiales lleva cada uno: el costo se calcula
    solo, y tú eliges el margen o el precio final.
-4. En Inventario llevas tus materiales y, si trabajas con stock, las unidades
+4. En Taller llevas tus materiales y, si trabajas con stock, las unidades
    ya fabricadas.
 5. Marca los productos que quieras vender y pulsa **Publicar catálogo**.
 6. Copia la dirección de tu tienda (`tienda.html?tienda=TU_UID`) y compártela.
    Los pedidos que dejen tus clientes entran solos a tu agenda.
 
-Cada lista (productos, pedidos, materiales) tiene su buscador, sus filtros y
-su orden. Los pedidos se ordenan por urgencia: primero los abiertos, y dentro
-de ellos lo que vence antes.
+Flores y el inventario tienen su buscador, sus filtros y su orden; los pedidos
+se buscan desde Ramo y se ordenan por fecha de entrega.
 
 Sin el parámetro `?tienda=`, `tienda.html` muestra su catálogo de ejemplo y
 envía los pedidos por WhatsApp.
@@ -146,8 +190,30 @@ muestran todos directamente.
 
 Cada vez que cambia el costo de un material se anota el valor anterior y el
 nuevo. En la ficha del material aparece cuánto subió y desde cuándo, y en
-Inicio se avisa de los productos cuyo precio quedó corto porque sus insumos
+Flores se avisa de los productos cuyo precio quedó corto porque sus insumos
 subieron.
+
+## Compras · PPP
+
+En el Taller, la planilla de compras registra cada bolsa que compras: fecha,
+proveedor, tipo (Limpiapipas, Varillas, Cinta, Envoltura u otro que crees),
+material, unidades por bolsa, cantidad de bolsas y precio por bolsa. Calcula
+sola el total de unidades, el total gastado y el precio unitario de cada fila.
+Cada celda se edita tocándola.
+
+Cada tipo tiene su **precio promedio ponderado (PPP)**: gasto total ÷ unidades
+totales de todas sus compras. Todos los colores de limpiapipas comparten un
+mismo PPP, sin rastrear de qué bolsa sale cada uno. Por ejemplo, una bolsa de
+30 a $800, una de 100 a $1.800, una de 100 a $2.000 y cinco de 100 a $900 dan
+$9.100 por 730 unidades: PPP $12,47.
+
+- Cada compra suma sus unidades al stock del material; corregirla o quitarla
+  ajusta el stock.
+- Los materiales comprados pasan a costar el PPP de su tipo, así que el costo
+  y la ganancia de cada flor se actualizan solos, y el cambio queda en el
+  historial de costos.
+- **Cargar stock actual** anota lo que ya tienes como compra inicial, a su
+  costo de hoy, sin volver a sumarlo al stock.
 
 ## Seguridad
 

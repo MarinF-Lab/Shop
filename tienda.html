@@ -2,8 +2,10 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Tienda</title>
+<title>Eternal Garden</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
 
@@ -174,7 +176,7 @@
   };
 
   /* Datos de respaldo mientras no conectas Firebase. */
-  var TIENDA_LOCAL = { nombre: "Tienda", whatsapp: "", moneda: "CLP" };
+  var TIENDA_LOCAL = { nombre: "Eternal Garden", whatsapp: "", moneda: "CLP" };
   var CATALOGO_LOCAL = [
     /* Ejemplo. Reemplázalo o bórralo cuando conectes Firebase:
     { id: "demo1", nombre: "Tulipán", descripcion: "Flor artesanal de limpiapipas",
@@ -267,7 +269,7 @@
   /* ---------------- catálogo ---------------- */
 
   function pintar() {
-    document.getElementById("tiendaNombre").textContent = tienda.nombre || "Tienda";
+    document.getElementById("tiendaNombre").textContent = tienda.nombre || "Eternal Garden";
     var sub = document.getElementById("tiendaSub");
     var root = document.getElementById("catalogo");
     root.innerHTML = "";
