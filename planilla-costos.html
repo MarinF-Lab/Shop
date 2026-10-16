@@ -4926,23 +4926,76 @@
     gateOcupado(false);
   }
 
-  function entrarConGoogle() {
-    document.getElementById("gateAviso").textContent = "";
-    gateOcupado(true, "Conectando…");
-    fbInit().then(function () {
-      var prov = new window.firebase.auth.GoogleAuthProvider();
-      prov.setCustomParameters({ prompt: "select_account" });
-      return fb.auth.signInWithPopup(prov).catch(function (err) {
-        /* en móvil o con emergentes bloqueadas se entra por redirección */
-        var code = (err && err.code) || "";
-        if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-          gateOcupado(true, "Redirigiendo…");
-          return fb.auth.signInWithRedirect(prov);
-        }
-        throw err;
-      });
-    }).catch(mostrarErrorAcceso);
+  /* navegadores dentro de otras apps (WhatsApp, Instagram, Facebook…):
+     Google no deja iniciar sesión en ellos */
+  function navegadorInterno() {
+    return /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|Messenger|TikTok/i.test(navigator.userAgent || "");
   }
+
+  function avisoAbrirFuera() {
+    var n = document.getElementById("gateAviso");
+    n.className = "aviso error";
+    n.textContent = "Google no deja entrar desde el navegador de esta app. Abre esta página en Safari o Chrome.";
+    var url = location.href.split("#")[0];
+    var copiar = el("button", { class: "btn small", type: "button", text: "Copiar enlace", onclick: function () {
+      var hecho = function () { copiar.textContent = "Enlace copiado"; };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(hecho, function () { window.prompt("Copia este enlace:", url); });
+      } else {
+        window.prompt("Copia este enlace:", url);
+      }
+    } });
+    n.appendChild(el("span", { style: "display:block;margin-top:10px" }, [copiar]));
+    gateOcupado(false);
+  }
+
+  var popupsBloqueados = 0;
+
+  /* Solo ventana emergente. La redirección falla en navegadores que separan
+     los datos por sitio (Safari en iPhone): al volver de Google, Firebase ya
+     no encuentra el estado y muestra "missing initial state". Y Safari solo
+     deja abrir la ventana en el mismo instante del toque, así que aquí no
+     puede haber una espera entre el toque y signInWithPopup. */
+  function entrarConGoogle() {
+    var aviso = document.getElementById("gateAviso");
+    aviso.className = "aviso";
+    aviso.textContent = "";
+    if (navegadorInterno()) { avisoAbrirFuera(); return; }
+
+    if (!fb.auth) {
+      /* Firebase aún carga: abrir la ventana después ya no contaría como toque */
+      gateOcupado(true, "Cargando…");
+      fbInit().then(function () {
+        gateOcupado(false);
+        aviso.textContent = "Listo. Toca otra vez Entrar con Google.";
+      }).catch(mostrarErrorAcceso);
+      return;
+    }
+
+    gateOcupado(true, "Conectando…");
+    var prov = new window.firebase.auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: "select_account" });
+    fb.auth.signInWithPopup(prov).then(function () { popupsBloqueados = 0; }).catch(function (err) {
+      var code = (err && err.code) || "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") { gateOcupado(false); return; }
+      if (code === "auth/operation-not-supported-in-this-environment") { avisoAbrirFuera(); return; }
+      if (code === "auth/popup-blocked") {
+        popupsBloqueados++;
+        aviso.className = "aviso error";
+        aviso.textContent = popupsBloqueados < 2
+          ? "El navegador bloqueó la ventana de Google. Toca otra vez Entrar con Google."
+          : "La ventana de Google sigue bloqueada. En el iPhone, ve a Ajustes → Apps → Safari y desactiva «Bloquear ventanas»; en otros navegadores, permite las ventanas emergentes de este sitio.";
+        gateOcupado(false);
+        return;
+      }
+      mostrarErrorAcceso(err);
+      /* desde el ícono de inicio del iPhone, iOS no siempre deja volver de Google */
+      if (navigator.standalone) {
+        aviso.textContent += " Si desde el ícono no puedes entrar, abre la app en Safari.";
+      }
+    });
+  }
+
 
   /* ---------------- sesión ---------------- */
 
