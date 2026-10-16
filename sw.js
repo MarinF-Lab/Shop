@@ -3,7 +3,7 @@
    Firestore ya trae su propia caché offline y la autenticación debe ir siempre
    a la red. Al cambiar los archivos de la app, sube VERSION. */
 
-var VERSION = "v2";
+var VERSION = "v3";
 var CACHE_APP = "planilla-app-" + VERSION;
 var CACHE_SDK = "planilla-sdk-" + VERSION;
 
@@ -50,6 +50,20 @@ self.addEventListener("fetch", function (e) {
         return hit || fetch(req).then(function (res) {
           /* <script> de otro dominio sin CORS llega como respuesta opaca (ok = false):
              hay que guardarla igual, o el SDK nunca queda disponible sin señal */
+          if (res.ok || res.type === "opaque") c.put(req, res.clone());
+          return res;
+        });
+      });
+    }));
+    return;
+  }
+
+  /* fuentes de Google (Fraunces y Nunito Sans): también inmutables; sin ellas,
+     sin señal la app se vería con las letras del sistema */
+  if (url.hostname === "fonts.googleapis.com" || url.hostname === "fonts.gstatic.com") {
+    e.respondWith(caches.open(CACHE_SDK).then(function (c) {
+      return c.match(req).then(function (hit) {
+        return hit || fetch(req).then(function (res) {
           if (res.ok || res.type === "opaque") c.put(req, res.clone());
           return res;
         });

@@ -5,28 +5,46 @@ de cada flor, lleva materiales e inventario por color, y registra los pedidos
 con los colores que pidió cada cliente y cómo pagó. Incluye una tienda pública
 para que tus clientes vean el catálogo y te dejen su pedido.
 
+## Las cuatro secciones
+
+La app se recorre con la barra de abajo: **Ramo · Flores · Taller · Caja**. Un
+punto naranjo marca la sección que pide atención (pedidos atrasados, precios
+que quedaron cortos, material que falta). La cabecera resume el día y tiene el
+botón **+** para anotar un pedido; el botón redondo de la cuenta abre Ajustes.
+
+- **Ramo** es la agenda. Arriba, la franja *Por hacer* con todos los pedidos
+  sin terminar en orden de entrega; al centro, el pedido más urgente (o el que
+  elijas) dibujado como ramo con sus colores, con sus flores, entrega, notas,
+  avance (*Anotado · Armando · Listo*), pago y los botones *Editar*,
+  *Registrar abono* y *Marcar como entregado*. Debajo, la lista completa y lo
+  entregado el último mes, con buscador.
+- **Flores**: cuánto cuesta cada flor, en cuánto la vendes y cuánto te queda,
+  con el aviso *Revisa estos precios* y el historial de costos.
+- **Taller**: qué falta comprar, lo que tienes frente a lo que usarán los
+  pedidos por hacer, y el inventario editable.
+- **Caja**: lo cobrado del mes en efectivo y por transferencia, lo que falta
+  cobrar pedido por pedido, la ganancia de lo entregado y los colores más usados.
+
+Los colores de los dibujos salen del nombre del material ("Rosa", "Verde
+claro", "Celeste"…).
+
 ## Flores y agenda de pedidos
 
 - **Receta de la flor**: tipo de limpiapipas de los pétalos, cuántos pétalos
   lleva en un color y cuántos en bicolor (primario + secundario), hojas (tipo y
   cantidad) y los materiales fijos (barra metálica, cinta…).
-- **Agenda**: los pedidos los anotas tú. Arriba, *Por hacer*, ordenados por la
-  fecha de entrega más cercana (los atrasados en rojo); abajo, *Hechos*, del más
-  reciente al más antiguo. Cada pedido guarda cliente, Instagram, teléfono,
-  fecha de pedido (se pone sola y es editable), fecha de entrega, forma de
-  entrega con dirección y notas.
-  Cada pedido es una fila corta con el día, el cliente, las flores, el total y
-  el estado de pago; al tocarla se ve un resumen, y el formulario completo solo
-  con *Editar*. En *Hechos* se ve el último mes; lo anterior, con *Ver
-  anteriores* o con el buscador.
+- **Pedidos**: los anotas tú, en una hoja de cuatro pasos (*Cliente*,
+  *Flores*, *Entrega*, *Pago*). Cada pedido guarda cliente, Instagram,
+  teléfono, fecha de pedido (se pone sola y es editable), fecha de entrega,
+  forma de entrega con dirección y notas. En *Hechos* se ve el último mes; lo
+  anterior, con *Ver anteriores* o con el buscador.
 - **Colores por pedido**: por cada flor eliges un color o bicolor, el primario,
   el secundario y el color de las hojas, entre los que tienes en stock.
 - **Materiales**: en los pedidos por hacer ves lo que usarán frente al stock;
-  al entregar se descuentan esos colores y el pedido guarda lo que se usó.
+  al entregar se muestra lo que se usará según la receta, puedes ajustarlo, y
+  se descuenta del stock; el pedido guarda lo que se usó.
 - **Pagos**: efectivo o transferencia, con abonos; un pago mixto son dos pagos.
   Cada pedido indica si está pagado, abonado o por cobrar.
-- **Inicio** resume cuánto entró este mes en efectivo y por transferencia, lo
-  que queda por cobrar y los colores más usados en los últimos 30 días.
 
 Por ahora la app no conecta con clientes: la tienda pública, la publicación
 del catálogo y su enlace están ocultos. El código sigue en `tienda.html` y en
@@ -47,7 +65,8 @@ intercepta Firestore ni el inicio de sesión, que siempre van a la red.
 
 La página siempre se pide primero a la red, así que los cambios publicados
 llegan solos. Si cambias la lógica de `sw.js` o la lista de archivos que guarda,
-sube su `VERSION` para que se renueve la caché.
+sube su `VERSION` para que se renueve la caché. También guarda las fuentes
+(Fraunces y Nunito Sans) para que sin señal la app se vea igual.
 
 La PWA necesita HTTPS (o `localhost`): abriendo el archivo con doble clic no se
 instala. La tienda pública lleva el icono, pero no es instalable: la app es la
@@ -133,20 +152,19 @@ siguiente.
 
 ## Uso diario
 
-1. Abre `planilla-costos.html` y entra con Google. **Inicio** te muestra los
-   pedidos que urgen, lo que falta comprar y cómo va la ganancia del mes.
+1. Abre `planilla-costos.html` y entra con Google. **Ramo** te muestra lo que
+   hay que hacer; **Caja**, cómo va el mes.
 2. Carga tus materiales con su precio de compra y su unidad.
 3. Crea productos indicando qué materiales lleva cada uno: el costo se calcula
    solo, y tú eliges el margen o el precio final.
-4. En Inventario llevas tus materiales y, si trabajas con stock, las unidades
+4. En Taller llevas tus materiales y, si trabajas con stock, las unidades
    ya fabricadas.
 5. Marca los productos que quieras vender y pulsa **Publicar catálogo**.
 6. Copia la dirección de tu tienda (`tienda.html?tienda=TU_UID`) y compártela.
    Los pedidos que dejen tus clientes entran solos a tu agenda.
 
-Cada lista (productos, pedidos, materiales) tiene su buscador, sus filtros y
-su orden. Los pedidos se ordenan por urgencia: primero los abiertos, y dentro
-de ellos lo que vence antes.
+Flores y el inventario tienen su buscador, sus filtros y su orden; los pedidos
+se buscan desde Ramo y se ordenan por fecha de entrega.
 
 Sin el parámetro `?tienda=`, `tienda.html` muestra su catálogo de ejemplo y
 envía los pedidos por WhatsApp.
@@ -172,7 +190,7 @@ muestran todos directamente.
 
 Cada vez que cambia el costo de un material se anota el valor anterior y el
 nuevo. En la ficha del material aparece cuánto subió y desde cuándo, y en
-Inicio se avisa de los productos cuyo precio quedó corto porque sus insumos
+Flores se avisa de los productos cuyo precio quedó corto porque sus insumos
 subieron.
 
 ## Seguridad

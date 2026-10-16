@@ -5324,6 +5324,7 @@
   function renderAjustes() {
     var root = document.getElementById("tab-ajustes");
     root.innerHTML = "";
+    root.appendChild(el("h2", { text: "Ajustes" }));
 
     var taxCheck = el("input", { type: "checkbox", id: "taxOn" });
     taxCheck.checked = !!state.settings.taxEnabled;
