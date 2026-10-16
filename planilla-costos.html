@@ -4,33 +4,39 @@
 <meta charset="utf-8">
 <title>Eternal Garden</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#15202C">
+<meta name="theme-color" content="#F4EFE6">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Eternal Garden">
-<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
 
+  /* paleta de Eternal Garden: papel crema, verde hoja y tinta cálida */
   :root {
-    --paper: #EDF0F3;
+    --paper: #F4EFE6;
     --surface: #FFFFFF;
-    --ink: #15202C;
-    --muted: #5C6B7A;
-    --line: #D6DCE3;
-    --line-soft: #E8ECF0;
-    --accent: #0B6E75;
-    --accent-soft: #E0EFF0;
-    --gain: #166B4E;
-    --gain-soft: #E3F1EA;
-    --cost: #8A5A12;
-    --cost-soft: #F4EDDF;
-    --danger: #A32C22;
-    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --ink: #2B2A26;
+    --muted: #6A6153;
+    --soft-ink: #4A443A;
+    --line: #D9C9AB;
+    --line-soft: #EFE7D8;
+    --accent: #2F5D3A;
+    --accent-dark: #24482D;
+    --accent-soft: #EEF5E8;
+    --gain: #24482D;
+    --gain-soft: #DDEBD3;
+    --cost: #4F3500;
+    --cost-soft: #FFF0CC;
+    --danger: #8E2F17;
+    --danger-soft: #F7E2D9;
+    --shadow: 0 2px 0 #E3D7C0;
+    --sans: "Nunito Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --serif: "Fraunces", Georgia, "Times New Roman", serif;
+    --num: var(--sans);
   }
 
   .app {
@@ -591,7 +597,120 @@
   @media (prefers-reduced-motion: reduce) {
     .card-head .caret { transition: none; }
   }
+
+  /* ================= Eternal Garden: piel común =================
+     Estas reglas van al final a propósito: visten las piezas de siempre
+     (tarjetas, botones, campos, ventanas) con el aspecto del diseño. */
+  .app, .gate { font-variant-numeric: tabular-nums; }
+  .app { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+  .app h2, .app h3.titulo, .gate-card h1 { font-family: var(--serif); }
+
+  .bar {
+    background: var(--paper); color: var(--ink);
+    padding: 16px 16px 6px; gap: 12px; max-width: 760px; margin: 0 auto;
+  }
+  .bar .logo { width: 36px; height: 36px; flex: none; }
+  .bar .marca { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; }
+  .bar .marca .nombre { font-family: var(--serif); font-style: italic; font-size: 20px; font-weight: 500; line-height: 1.2; }
+  .bar .marca .hoy { font-size: 12px; font-weight: 700; color: var(--muted); }
+  .bar .marca .hoy, .bar .marca .estado { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .bar .marca .estado { font-size: 11px; font-weight: 600; color: var(--muted); }
+  .bar .marca #atrasadosDia { color: var(--danger); font-weight: 800; }
+  .bar .marca #atrasadosDia:not(:empty)::after { content: " · "; color: var(--muted); }
+  .bar .nuevo {
+    flex: none; width: 48px; height: 48px; border-radius: 16px; border: 0;
+    background: var(--accent); display: grid; place-items: center; cursor: pointer;
+  }
+  .bar .cuenta { flex: none; }
+  .bar .cuenta button {
+    width: 44px; height: 44px; padding: 0; border-radius: 50%;
+    background: var(--surface); border: 1.5px solid var(--line); color: var(--ink);
+    display: grid; place-items: center; overflow: hidden;
+  }
+  .bar .cuenta button:hover { background: var(--line-soft); }
+  .bar .cuenta button[aria-pressed="true"] { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+  .bar .cuenta img { width: 100%; height: 100%; border-radius: 50%; }
+
+  /* barra inferior: las cuatro secciones al alcance del pulgar */
+  .tabs {
+    position: fixed; top: auto; left: 12px; right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    max-width: 520px; margin: 0 auto; z-index: 30;
+    background: var(--ink); border: 0; border-radius: 22px; padding: 6px;
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; overflow: visible;
+  }
+  .tabs button {
+    min-height: 52px; border-radius: 16px; border: 0; padding: 0 4px;
+    color: #FFFFFF; font-size: 14px; font-weight: 800;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+  }
+  .tabs button[hidden] { display: none; }
+  .tabs button[aria-selected="true"] { background: var(--surface); color: var(--ink); border: 0; font-weight: 800; }
+  .tabs button:focus-visible { outline: 3px solid #E9B949; outline-offset: 1px; }
+  .tabs .punto { width: 8px; height: 8px; border-radius: 50%; background: #F08A24; flex: none; }
+
+  .wrap { padding: 8px 16px 0; }
+  .wrap > section > h2:first-child { margin: 4px 0 6px; font-size: 24px; font-weight: 700; }
+  .lead { margin: 0 0 14px; font-size: 14px; color: var(--soft-ink); }
+  .etiqueta {
+    margin: 18px 2px 8px; font-size: 12px; font-weight: 800; letter-spacing: .06em;
+    text-transform: uppercase; color: var(--muted);
+  }
+
+  .card, .mat-card, .setting, .strip, .empty, .result, .agenda-item, .cat-head {
+    border: 0; border-radius: 20px; box-shadow: var(--shadow);
+  }
+  .card.producto, .card.servicio { border-left: 0; }
+  .mat-card { border-left: 0; }
+  .mat-card.plegada, .mat-head, .agenda-fila { border-radius: 20px; }
+  .card-head h3 { font-size: 16px; font-weight: 800; }
+  .chip { font-family: var(--sans); font-weight: 700; }
+  .card-head:hover, .cat-head:hover, .mat-head:hover, .agenda-fila:hover { background: #FBF8F2; }
+  .empty { border: 1.5px dashed var(--line); box-shadow: none; }
+
+  input[type="text"], input[type="number"], input[type="date"], input[type="tel"], input[type="email"], select, textarea,
+  .buscador input[type="search"], .buscador select.orden {
+    border: 1.5px solid var(--line); border-radius: 12px; min-height: 44px; background: var(--surface);
+  }
+  input[type="date"] { font: inherit; font-size: 16px; color: var(--ink); padding: 0 10px; width: 100%; min-width: 0; }
+  input::placeholder { color: #8F8576; }
+  .icon-btn { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--line); }
+  .btn {
+    min-height: 44px; border-radius: 14px; border: 1.5px solid var(--accent);
+    color: var(--accent-dark); font-weight: 800;
+  }
+  .btn.small { min-height: 40px; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; font-weight: 800; }
+  .btn.grande { min-height: 56px; font-size: 17px; border-radius: 16px; }
+  .btn.peligro { color: var(--danger); border-color: #E9C4B4; }
+  .btn.peligro:hover { background: #FDF3EF; }
+  .seg { background: var(--paper); border-radius: 14px; padding: 4px; }
+  .seg button { min-height: 40px; border-radius: 11px; font-weight: 700; color: var(--soft-ink); }
+  .seg button[aria-pressed="true"] { background: var(--accent); color: #FFFFFF; box-shadow: none; }
+  .chip-filtro { min-height: 40px; border: 1.5px solid var(--accent); color: var(--ink); font-weight: 700; }
+  .chip-filtro[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: #FFFFFF; }
+  .opcion { border-radius: 16px; }
+  .unit-cost { border-radius: 12px; }
+  .unit-cost.low, .chip.neg { background: var(--danger-soft); color: var(--danger); }
+  .mat-elegido { border-radius: 12px; }
+  .colores-pedido { background: #FBF8F2; border-left-color: var(--gain-soft); }
+
+  .sheet-bg { background: rgba(43,42,38,.45); padding: 0; place-items: end center; }
+  .sheet {
+    border-radius: 24px 24px 0 0; max-width: 560px; padding: 18px 20px calc(22px + env(safe-area-inset-bottom));
+    max-height: 92vh;
+  }
+  .sheet h3 { font-family: var(--serif); font-size: 22px; font-weight: 700; margin-bottom: 12px; }
+  .sheet .cuerpo { max-height: none; overflow: visible; }
+
+  .gate-card { border: 0; border-radius: 28px; box-shadow: var(--shadow); }
+  .gate-card h1 { font-style: italic; font-weight: 500; font-size: 26px; }
+  .btn-google { border-radius: 14px; border-width: 1.5px; min-height: 48px; }
+  .toast { bottom: calc(96px + env(safe-area-inset-bottom)); }
 </style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Nunito+Sans:wght@400;600;700;800&display=swap">
 </head>
 <body>
 
@@ -617,26 +736,31 @@
 </div>
 
 <div class="app" hidden>
-  <div class="bar">
-    <h1>Eternal Garden<span id="saveState" role="status" aria-live="polite">Cargando…</span></h1>
+  <header class="bar">
+    <svg class="logo" viewBox="0 0 40 40" role="img" aria-label="Eternal Garden"><circle cx="20" cy="20" r="20" fill="#2F5D3A"/><g transform="translate(20 20)" fill="#FFFFFF"><ellipse cx="0" cy="-7" rx="4.5" ry="7.5"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(72)"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(144)"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(216)"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(288)"/><circle r="3.2" fill="#2F5D3A"/></g></svg>
+    <div class="marca">
+      <span class="nombre">Eternal Garden</span>
+      <span class="hoy" id="resumenDia"></span>
+      <span class="estado"><span id="atrasadosDia"></span><span id="saveState" role="status" aria-live="polite">Cargando…</span></span>
+    </div>
     <div class="cuenta" id="cuenta"></div>
-  </div>
-
-  <div class="tabs" role="tablist">
-    <button role="tab" data-tab="inicio" aria-selected="true">Inicio</button>
-    <button role="tab" data-tab="productos" aria-selected="false">Flores</button>
-    <button role="tab" data-tab="pedidos" aria-selected="false">Agenda</button>
-    <button role="tab" data-tab="inventario" aria-selected="false">Inventario</button>
-    <button role="tab" data-tab="ajustes" aria-selected="false">Ajustes</button>
-  </div>
+    <button class="nuevo" type="button" id="btnNuevo" aria-label="Anotar pedido nuevo"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"><path d="M12 5 V19"/><path d="M5 12 H19"/></svg></button>
+  </header>
 
   <div class="wrap">
-    <section id="tab-inicio"></section>
+    <section id="tab-pedidos"></section>
     <section id="tab-productos" hidden></section>
-    <section id="tab-pedidos" hidden></section>
     <section id="tab-inventario" hidden></section>
+    <section id="tab-caja" hidden></section>
     <section id="tab-ajustes" hidden></section>
   </div>
+
+  <nav class="tabs" role="tablist" aria-label="Secciones">
+    <button role="tab" data-tab="pedidos" aria-selected="true">Ramo</button>
+    <button role="tab" data-tab="productos" aria-selected="false">Flores</button>
+    <button role="tab" data-tab="inventario" aria-selected="false">Taller</button>
+    <button role="tab" data-tab="caja" aria-selected="false">Caja</button>
+  </nav>
 </div>
 
 <script>
@@ -721,7 +845,7 @@
 
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
-  var ui = { tab: "inicio", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
+  var ui = { tab: "pedidos", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
     verCategoria: {}, cambiando: {}, editando: {}, hechosAntiguos: false };
 
   /* ---------------- utilidades ---------------- */
@@ -1562,7 +1686,7 @@
     state = estadoInicial();
     ui.open = {};
     ui.confirming = null;
-    ui.tab = "inicio";
+    ui.tab = "pedidos";
   }
 
   window.addEventListener("beforeunload", function (e) {
@@ -1836,8 +1960,8 @@
     return "entrega en " + d + " días";
   }
 
-  function renderInicio() {
-    var root = document.getElementById("tab-inicio");
+  function renderCaja() {
+    var root = document.getElementById("tab-caja");
     root.innerHTML = "";
 
     var abiertos = pendingOrders();
@@ -3951,11 +4075,13 @@
     var n = document.getElementById("cuenta");
     n.innerHTML = "";
     if (!fb.user) return;
-    if (fb.user.photoURL) {
-      n.appendChild(el("img", { src: fb.user.photoURL, alt: "" }));
-    }
-    n.appendChild(el("span", { class: "correo", text: fb.user.email || fb.user.displayName || "Mi cuenta" }));
-    n.appendChild(el("button", { type: "button", text: "Salir", onclick: cerrarSesion }));
+    /* la cuenta y los ajustes viven detrás de este botón; cerrar sesión está en Ajustes */
+    var btn = el("button", { type: "button", id: "btnCuenta", "aria-label": "Mi cuenta y ajustes",
+      "aria-pressed": ui.tab === "ajustes",
+      onclick: function () { ui.tab = ui.tab === "ajustes" ? "pedidos" : "ajustes"; render(); } });
+    if (fb.user.photoURL) btn.appendChild(el("img", { src: fb.user.photoURL, alt: "" }));
+    else btn.innerHTML = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg>';
+    n.appendChild(btn);
   }
 
   function cerrarSesion() {
@@ -4493,22 +4619,31 @@
     pintarContadores();
   }
 
-  /* número junto al nombre de cada pestaña: lo que reclama atención */
+  /* un punto en la barra inferior marca la sección que reclama atención,
+     y la cabecera resume el día */
   function pintarContadores() {
-    var cuentas = {
-      productos: state.products.length || null,
-      pedidos: state.orders.filter(function (o) {
-        return o.estado === "pendiente" || o.estado === "proceso";
-      }).length || null,
-      inventario: (llevaMateriales() ? inventoryTotals().bajos : 0) || null
+    var abiertos = pendingOrders();
+    var nAtrasados = abiertos.filter(atrasado).length;
+    var avisos = {
+      pedidos: nAtrasados ? (nAtrasados === 1 ? "1 pedido atrasado" : nAtrasados + " pedidos atrasados") : "",
+      productos: productosErosionados().length ? "hay precios por revisar" : "",
+      inventario: llevaMateriales() && (!shoppingFor(pendingItems()).ok || inventoryTotals().bajos) ? "falta material" : ""
     };
-    Object.keys(cuentas).forEach(function (tab) {
+    Object.keys(avisos).forEach(function (tab) {
       var btn = document.querySelector('.tabs button[data-tab="' + tab + '"]');
       if (!btn) return;
-      var vieja = btn.querySelector(".cuenta-tab");
+      var vieja = btn.querySelector(".punto");
       if (vieja) vieja.remove();
-      if (cuentas[tab]) btn.appendChild(el("span", { class: "cuenta-tab", text: String(cuentas[tab]) }));
+      if (avisos[tab]) btn.appendChild(el("span", { class: "punto", role: "img", "aria-label": avisos[tab] }));
     });
+
+    var d = new Date();
+    var resumen = DIAS_CORTOS[d.getDay()] + " " + d.getDate() + " " + MESES_CORTOS[d.getMonth()] + " · "
+      + (abiertos.length ? abiertos.length + " por hacer" : "nada por hacer");
+    var n = document.getElementById("resumenDia");
+    if (n) n.textContent = resumen;
+    var a = document.getElementById("atrasadosDia");
+    if (a) a.textContent = nAtrasados ? nAtrasados + (nAtrasados === 1 ? " atrasado" : " atrasados") : "";
   }
 
   /* ---------------- ventanas de producción y entrega ---------------- */
@@ -5259,8 +5394,10 @@
   /* ---------------- render general ---------------- */
 
   function render() {
+    /* nombres de pestañas de versiones anteriores */
+    if (ui.tab === "inicio") ui.tab = "pedidos";
     if (ui.tab === "inventario" && !moduloActivo("inventario")) ui.tab = "productos";
-    ["inicio", "productos", "pedidos", "inventario", "ajustes"].forEach(function (t) {
+    ["pedidos", "productos", "inventario", "caja", "ajustes"].forEach(function (t) {
       document.getElementById("tab-" + t).hidden = ui.tab !== t;
     });
     var btns = document.querySelectorAll(".tabs button");
@@ -5269,15 +5406,22 @@
       btns[i].setAttribute("aria-selected", activa ? "true" : "false");
       btns[i].setAttribute("tabindex", activa ? "0" : "-1");
     }
-    if (ui.tab === "inicio") renderInicio();
-    else if (ui.tab === "productos") renderProductos();
+    if (ui.tab === "productos") renderProductos();
     else if (ui.tab === "pedidos") renderPedidos();
     else if (ui.tab === "inventario") renderInventario();
+    else if (ui.tab === "caja") renderCaja();
     else renderAjustes();
+    var cuenta = document.getElementById("btnCuenta");
+    if (cuenta) cuenta.setAttribute("aria-pressed", ui.tab === "ajustes" ? "true" : "false");
     pintarContadores();
   }
 
   /* ---------------- arranque ---------------- */
+
+  document.getElementById("btnNuevo").addEventListener("click", function () {
+    ui.tab = "pedidos";
+    addOrder();
+  });
 
   var tabButtons = document.querySelectorAll(".tabs button");
   for (var i = 0; i < tabButtons.length; i++) {
