@@ -19,30 +19,41 @@ botón **+** para anotar un pedido; el botón redondo de la cuenta abre Ajustes.
   *Registrar abono* y *Marcar como entregado*. Debajo, la lista completa y lo
   entregado el último mes, con buscador.
 - **Flores**: cuánto cuesta cada flor, en cuánto la vendes y cuánto te queda,
-  con el aviso *Revisa estos precios* y el historial de costos.
-- **Taller**: qué falta comprar, lo que tienes frente a lo que usarán los
-  pedidos por hacer, y el inventario editable.
-- **Caja**: lo cobrado del mes en efectivo y por transferencia, lo que falta
+  con el aviso *Revisa estos precios* y el historial de costos. Tocar una flor
+  abre su receta en cinco pasos.
+- **Taller**: lo que falta para los pedidos, el muestrario de materiales por
+  tipo con su PPP, el registro de compras y su historial.
+- **Caja**: el **total caja** (efectivo) y el **total banco** (transferencias)
+  del mes —lo cobrado menos las compras pagadas con ese medio—, lo que falta
   cobrar pedido por pedido, la ganancia de lo entregado y los colores más usados.
 
-Los colores de los dibujos salen del nombre del material ("Rosa", "Verde
-claro", "Celeste"…).
+Los colores de los dibujos salen del color elegido para cada material o, si no
+tiene uno, de su nombre ("Rosa", "Verde claro", "Celeste"…).
 
 ## Flores y agenda de pedidos
 
-- **Receta de la flor**: tipo de limpiapipas de los pétalos, cuántos pétalos
-  lleva en un color y cuántos en bicolor (primario + secundario), hojas (tipo y
-  cantidad) y los materiales fijos (barra metálica, cinta…).
+- **Receta de la flor**, en cinco pasos: *Nombre y precio*; *Pétalos* (puede
+  haber varios: cuántos tiene la flor, cuántos limpiapipas lleva cada uno y
+  cuántos de ellos van de cada color; por ejemplo, el tulipán tiene 4 pétalos
+  de 3 limpiapipas, 2 del color primario y 1 del secundario); *Complementos*
+  (relleno, centro, hojas…, con nombre y cantidades libres); *Otros
+  materiales*, en la medida del inventario (20 cm de una varilla de 30); y
+  *Resumen* con el costo de cada parte y la ganancia. La mano de obra no se
+  cobra ni suma al costo. Las recetas de antes se convierten solas al abrirlas.
 - **Pedidos**: los anotas tú, en una hoja de cuatro pasos (*Cliente*,
   *Flores*, *Entrega*, *Pago*). Cada pedido guarda cliente, Instagram,
   teléfono, fecha de pedido (se pone sola y es editable), fecha de entrega,
   forma de entrega con dirección y notas. En *Hechos* se ve el último mes; lo
   anterior, con *Ver anteriores* o con el buscador.
-- **Colores por pedido**: por cada flor eliges un color o bicolor, el primario,
-  el secundario y el color de las hojas, entre los que tienes en stock.
+- **Colores por pedido**: por cada flor escribes la cantidad y eliges un color
+  por cada color de cada pétalo y por cada complemento; viene marcado el
+  habitual de la receta y se ve cuánto queda de cada uno.
+- **Envoltura del ramo**: en *Entrega* eliges papel, celofán o sin envoltura
+  y cuántos pliegos. No se cobra aparte: cuenta como costo.
 - **Materiales**: en los pedidos por hacer ves lo que usarán frente al stock;
-  al entregar se muestra lo que se usará según la receta, puedes ajustarlo, y
-  se descuenta del stock; el pedido guarda lo que se usó.
+  al entregar se muestra lo que se usará según la receta (con la envoltura),
+  puedes escribir o ajustar cada cantidad, y se descuenta del stock; el pedido
+  guarda lo que se usó.
 - **Pagos**: efectivo o transferencia, con abonos; un pago mixto son dos pagos.
   Cada pedido indica si está pagado, abonado o por cobrar.
 
@@ -169,22 +180,18 @@ se buscan desde Ramo y se ordenan por fecha de entrega.
 Sin el parámetro `?tienda=`, `tienda.html` muestra su catálogo de ejemplo y
 envía los pedidos por WhatsApp.
 
-## Categorías
+## Tipos y materiales
 
-Los materiales se agrupan por categoría: quien trabaja con limpiapipas tiene un
-material en doce colores, no doce materiales sueltos. La categoría se elige de
-un desplegable con las que ya usaste, o se crea al vuelo desde la ficha.
+Cada material tiene un **tipo** (Limpiapipas, Varillas, Cinta, Envoltura u
+otro que crees con *+ Tipo*), un color y la **medida de cada unidad** (una
+varilla mide 30 cm, un rollo de cinta 25 m). El Taller los muestra como un
+muestrario por tipo; tocar uno abre su stock (se escribe directo), lo que
+piden los pedidos y los botones *Editar* y *Registrar compra*. En *Editar* se
+cambian nombre, tipo, color y medida, y en *Más opciones* quedan los datos de
+antes (unidad de uso, costo manual o por paquete, pliegos, stock mínimo).
 
-Cada categoría se pliega y muestra, sin abrirla, cuántos ítems tiene y cuánto
-dinero representa; dentro, cada material es una línea que se abre al tocarla.
-Al buscar, las categorías con coincidencias se abren solas. El lápiz de la
-cabecera permite renombrar la categoría —si le pones el nombre de otra, se
-fusionan— o eliminarla, en cuyo caso sus materiales pasan a "Sin categoría"
-sin perderse.
-
-Al armar un producto, el material se elige con botones dentro del propio
-recuadro: primero la categoría, luego el color. Con menos de ocho materiales se
-muestran todos directamente.
+Los materiales de versiones anteriores toman su tipo de su última compra, de
+su nombre o de la categoría que tenían.
 
 ## Historial de costos
 
@@ -195,11 +202,12 @@ subieron.
 
 ## Compras · PPP
 
-En el Taller, la planilla de compras registra cada bolsa que compras: fecha,
-proveedor, tipo (Limpiapipas, Varillas, Cinta, Envoltura u otro que crees),
-material, unidades por bolsa, cantidad de bolsas y precio por bolsa. Calcula
-sola el total de unidades, el total gastado y el precio unitario de cada fila.
-Cada celda se edita tocándola.
+En el Taller, *+ Compra* registra cada bolsa que compras: tipo (o uno nuevo),
+material (o uno nuevo, con su color), bolsas, unidades por bolsa, precio por
+bolsa, proveedor, fecha y **cómo pagaste** (efectivo o transferencia). Muestra
+el total, el precio por unidad y cómo cambia el PPP del tipo. El historial de
+compras es una lista: tocar una compra la abre para corregirla. Las compras
+anteriores sin medio de pago cuentan como transferencia.
 
 Cada tipo tiene su **precio promedio ponderado (PPP)**: gasto total ÷ unidades
 totales de todas sus compras. Todos los colores de limpiapipas comparten un
