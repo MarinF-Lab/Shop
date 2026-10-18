@@ -183,8 +183,12 @@ envía los pedidos por WhatsApp.
 ## Tipos y materiales
 
 Cada material tiene un **tipo** (Limpiapipas, Varillas, Cinta, Envoltura u
-otro que crees con *+ Tipo*), un color y la **medida de cada unidad** (una
-varilla mide 30 cm, un rollo de cinta 25 m). El Taller los muestra como un
+otro que crees con *+ Tipo*), un color y la **medida de cada unidad** con su
+unidad (u, cm, m, g, ml, pliego u otra que escribas): una varilla mide 30 cm,
+un rollo de cinta 25 m, un limpiapipas 1 u. Se elige al crear el material
+(desde *+ Material* o desde una compra) y en *Editar*. Las cantidades del
+Taller, la compra, la receta, el pedido y la entrega llevan su unidad
+("4 u (120 cm)"). El Taller los muestra como un
 muestrario por tipo; tocar uno abre su stock (se escribe directo), lo que
 piden los pedidos y los botones *Editar* y *Registrar compra*. En *Editar* se
 cambian nombre, tipo, color y medida, y en *Más opciones* quedan los datos de
@@ -222,6 +226,12 @@ $9.100 por 730 unidades: PPP $12,47.
   historial de costos.
 - **Cargar stock actual** anota lo que ya tienes como compra inicial, a su
   costo de hoy, sin volver a sumarlo al stock.
+
+## Guardado
+
+Cada cambio se sube a Firestore al momento, por colección: si una falla (por
+ejemplo, si faltan sus reglas en Firebase), las demás se guardan igual, el
+estado dice qué pasó y se reintenta sola cada 10 segundos.
 
 ## Seguridad
 

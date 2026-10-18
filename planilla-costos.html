@@ -1037,6 +1037,12 @@
   .caja-porcobrar .txt { flex: 1; display: flex; flex-direction: column; font-size: 12px; }
   .caja-porcobrar .et { font-weight: 800; }
   .caja-porcobrar strong { font-family: var(--serif); font-size: 24px; font-weight: 700; }
+  .mat-muestra .uni { font-size: 11px; color: var(--soft-ink); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .fila-medida { display: flex; gap: 8px; align-items: flex-start; flex-wrap: wrap; }
+  .fila-medida > input { width: 80px; font: inherit; font-size: 16px; padding: 0 10px; text-align: center; }
+  .fila-medida .chips-filtro { flex: 1; min-width: 200px; margin: 0; }
+  .fila-medida .chip-filtro { min-height: 40px; min-width: 44px; }
+  .otra-unidad { width: 100%; margin-top: 8px; font: inherit; font-size: 15px; padding: 0 12px; box-sizing: border-box; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1331,7 +1337,32 @@
   function unidadMedidaDe(m) {
     if (!m) return "";
     if (m.unidadMedida) return m.unidadMedida;
-    return parseNum(m.medida) > 1 ? "" : (m.unit === "unidad" || !m.unit ? "u" : m.unit);
+    return m.unit === "unidad" || !m.unit ? "u" : m.unit;
+  }
+
+  var UNIDADES_MEDIDA = ["u", "cm", "m", "g", "ml", "pliego"];
+
+  /* "2 pliegos", "30 cm", "4 u" */
+  function textoMedidaUso(cant, unidad) {
+    var n = parseNum(cant), u = unidad || "u";
+    if (u === "pliego" && Math.abs(n - 1) > 1e-9) u = "pliegos";
+    return fmtQty(n) + " " + u;
+  }
+
+  /* una cantidad de stock con su unidad: "4 u (120 cm)" o "48 u" */
+  function textoCantidad(m, cantStock) {
+    if (!m) return fmtQty(cantStock);
+    if (isArea(m.unit)) return conUnidad(cantStock, stockUnit(m));
+    var med = medidaDe(m), u = unidadMedidaDe(m);
+    if (med === 1) return textoMedidaUso(cantStock, u);
+    return fmtQty(cantStock) + " u (" + textoMedidaUso(parseNum(cantStock) * med, u) + ")";
+  }
+
+  /* qué mide cada unidad: "u", "u de 30 cm" */
+  function textoUnidadMaterial(m) {
+    if (!m || isArea(m.unit)) return m ? stockUnit(m) : "";
+    var med = medidaDe(m), u = unidadMedidaDe(m);
+    return med === 1 ? (u === "u" ? "u" : "1 " + u) : "u de " + textoMedidaUso(med, u);
   }
 
   /* receta vieja: pétalos en un color o bicolor y hojas, por categoría */
@@ -2096,11 +2127,24 @@
         return subirCambios().then(function () {
           pendiente = hayPendientes();
           setSaveState(pendiente ? "Pendiente de subir" : "Sincronizado");
+          if (pendiente) reintentarSubida();
         });
-      }).catch(function () {
-        setSaveState("Pendiente de subir");
+      }).catch(function (err) {
+        var permiso = ((err && err.fallas) || [err]).some(function (f) {
+          var e = f && f.err ? f.err : f;
+          return e && /permission/i.test(String(e.code || e.message || ""));
+        });
+        setSaveState(permiso ? "No se pudo guardar: revisa las reglas de Firebase" : "No se pudo guardar · reintentando");
+        reintentarSubida();
       });
     }, 450);
+  }
+
+  /* sin señal o con un error pasajero, se vuelve a intentar sola */
+  var reintentoTimer = null;
+  function reintentarSubida() {
+    clearTimeout(reintentoTimer);
+    reintentoTimer = setTimeout(function () { if (hayPendientes()) pedirSubida(); }, 10000);
   }
 
   /* lee la caché de esta cuenta para pintar algo mientras baja la nube */
@@ -2879,14 +2923,14 @@
           ]));
           sec.appendChild(el("div", { class: "hoja-fila" }, [
             campoNum("¿Cuántos lleva la flor?", k.cant, function (v) { k.cant = v; guardarR(); }),
-            campoNum(k.tipo === "Limpiapipas" ? "Limpiapipas por cada uno" : "Cuánto usa cada uno", k.uso, function (v) { k.uso = v; guardarR(); })
+            campoNum(k.tipo === "Limpiapipas" ? "Limpiapipas por cada uno" : "Cuánto usa cada uno (" + (unidadMedidaDe(materialById(k.color)) || "u") + ")", k.uso, function (v) { k.uso = v; guardarR(); })
           ]));
           sec.appendChild(chipsTipo(k.tipo, function (t) { k.tipo = t; guardarR(); repintar(); }));
           sec.appendChild(el("span", { class: "sub-etiqueta", text: "Color habitual" }));
           sec.appendChild(muestras(k.tipo, k.color, function (id) { k.color = id; guardarR(); repintar(); }, "Color habitual de " + (k.nombre || "complemento")));
           sec.appendChild(vivo("p", { class: "resumen-parte" }, function () {
             var u = parseNum(k.cant) * parseNum(k.uso);
-            return fmtQty(k.cant) + " × " + fmtQty(k.uso) + " = " + fmtQty(u) + (k.tipo === "Limpiapipas" ? " limpiapipas" : " de " + String(k.tipo).toLowerCase()) +
+            return fmtQty(k.cant) + " × " + fmtQty(k.uso) + " = " + (k.tipo === "Limpiapipas" ? fmtQty(u) + " limpiapipas" : textoMedidaUso(u, unidadMedidaDe(materialById(k.color)) || "u")) +
               " · " + money(costoParte(k.color, u, k.tipo));
           }));
           cuerpo.appendChild(sec);
@@ -2952,13 +2996,14 @@
         });
         R.comps.forEach(function (k) {
           var u = parseNum(k.cant) * parseNum(k.uso);
-          lineas.appendChild(el("li", {}, [el("span", { text: (k.nombre || "Complemento") + ": " + fmtQty(u) + " (" + fmtQty(k.cant) + " × " + fmtQty(k.uso) + ")" }),
+          var uk = k.tipo === "Limpiapipas" ? fmtQty(u) + " limpiapipas" : textoMedidaUso(u, unidadMedidaDe(materialById(k.color)) || "u");
+          lineas.appendChild(el("li", {}, [el("span", { text: (k.nombre || "Complemento") + ": " + uk + " (" + fmtQty(k.cant) + " × " + fmtQty(k.uso) + ")" }),
             el("strong", { text: money(costoParte(k.color, u, k.tipo)) })]));
         });
         (p.materials || []).forEach(function (line) {
           var m = materialById(line.materialId);
           if (!m) return;
-          lineas.appendChild(el("li", {}, [el("span", { text: (m.name || "Material") + (isArea(m.unit) ? "" : ": " + fmtQty(line.qty) + " " + unidadMedidaDe(m)) }),
+          lineas.appendChild(el("li", {}, [el("span", { text: (m.name || "Material") + (isArea(m.unit) ? "" : ": " + textoMedidaUso(line.qty, unidadMedidaDe(m))) }),
             el("strong", { text: money(lineCost(line).cost) })]));
         });
         cuerpo.appendChild(lineas);
@@ -3190,7 +3235,7 @@
             el("strong", { text: (g.nombre || "Pétalo") + (g.colores.length > 1 ? " · " + NOMBRES_COLOR[j] : "") }),
             el("span", { class: "elegido", text: m ? m.name : "sin elegir" })
           ]),
-          el("span", { class: "det", text: fmtQty(c.lp) + " por pétalo · " + fmtQty(q * g.cant * c.lp) + " en total" }),
+          el("span", { class: "det", text: fmtQty(c.lp) + " por pétalo · " + (g.tipo === "Limpiapipas" ? fmtQty(q * g.cant * c.lp) + " limpiapipas" : textoMedidaUso(q * g.cant * c.lp, unidadMedidaDe(m) || "u")) + " en total" }),
           muestras(g.tipo, col.pet[i][j], function (id) { fijar(function () { it.pet[i][j] = id; }); },
             (g.nombre || "Pétalo") + " " + (g.colores.length > 1 ? NOMBRES_COLOR[j].toLowerCase() : ""), disponible)
         ]));
@@ -3204,7 +3249,7 @@
           el("strong", { text: k.nombre || "Complemento" }),
           el("span", { class: "elegido", text: m ? m.name : "sin elegir" })
         ]),
-        el("span", { class: "det", text: fmtQty(k.cant) + " × " + fmtQty(k.uso) + " · " + fmtQty(q * k.cant * k.uso) + " en total" }),
+        el("span", { class: "det", text: fmtQty(k.cant) + " × " + fmtQty(k.uso) + " · " + (k.tipo === "Limpiapipas" ? fmtQty(q * k.cant * k.uso) + " limpiapipas" : textoMedidaUso(q * k.cant * k.uso, unidadMedidaDe(m) || "u")) + " en total" }),
         muestras(k.tipo, col.comp[i], function (id) { fijar(function () { it.comp[i] = id; }); }, k.nombre || "Complemento", disponible)
       ]));
     });
@@ -3724,7 +3769,7 @@
       var c = consumo[k], stock = parseNum(c.material.stock), falta = c.use - stock;
       lista.appendChild(el("div", { class: "plan-row" + (falta > 1e-9 ? " short" : "") }, [
         el("span", { class: "plan-name", text: c.material.name || "Sin nombre" }),
-        el("span", { class: "plan-use", text: conUnidad(c.use, stockUnit(c.material)) +
+        el("span", { class: "plan-use", text: textoCantidad(c.material, c.use) +
           (falta > 1e-9 ? " · faltan " + fmtQty(falta) : " · hay " + fmtQty(stock)) })
       ]));
     });
@@ -3983,7 +4028,7 @@
     if (env) {
       var m = materialById(env.materialId), u = unidadMedidaDe(m);
       grupo.appendChild(el("div", { class: "fila-cantidad", style: "margin-top:8px" }, [
-        el("label", { for: "ped-env", text: "¿Cuántos" + (u && u !== "u" ? " " + (PLURALES[u] || u + "s") : "") + "?" }),
+        el("label", { for: "ped-env", text: "¿Cuántos" + (u && u !== "u" ? " " + (u === "pliego" ? "pliegos" : u) : "") + "?" }),
         el("input", { id: "ped-env", type: "text", inputmode: "decimal", class: "num", value: fmtQty(env.cant), autocomplete: "off",
           oninput: function (e) { env.cant = parseNum(e.target.value); save(o); } })
       ]));
@@ -4103,9 +4148,9 @@
         ul.appendChild(el("li", {}, [
           el("span", { class: "punto-color", style: "background:" + colorDe(k, true) }),
           el("span", { class: "txt" }, [
-            el("strong", { text: nombre }),
+            el("strong", { text: nombre + (textoUnidadMaterial(m) === "u" ? "" : " · " + textoUnidadMaterial(m)) }),
             el("span", { class: "queda" + (queda < -1e-9 ? " falta" : ""),
-              text: queda < -1e-9 ? "Te faltan " + fmtQty(-queda) : "Quedarán " + fmtQty(queda) })
+              text: queda < -1e-9 ? "Te faltan " + textoCantidad(m, -queda) : "Quedarán " + textoCantidad(m, queda) })
           ]),
           el("button", { class: "icon-btn", type: "button", text: "−", "aria-label": "Una menos de " + nombre.toLowerCase(),
             onclick: function () { ajuste[k] = Math.max(0, Math.round((ajuste[k] - 1) * 100) / 100); h.repintar(); } }),
@@ -4115,7 +4160,7 @@
               ajuste[k] = Math.max(0, parseNum(e.target.value));
               var q2 = parseNum(m.stock) - ajuste[k], txt = e.target.closest("li").querySelector(".queda");
               txt.className = "queda" + (q2 < -1e-9 ? " falta" : "");
-              txt.textContent = q2 < -1e-9 ? "Te faltan " + fmtQty(-q2) : "Quedarán " + fmtQty(q2);
+              txt.textContent = q2 < -1e-9 ? "Te faltan " + textoCantidad(m, -q2) : "Quedarán " + textoCantidad(m, q2);
             } }),
           el("button", { class: "icon-btn", type: "button", text: "+", "aria-label": "Una más de " + nombre.toLowerCase(),
             onclick: function () { ajuste[k] = Math.round((ajuste[k] + 1) * 100) / 100; h.repintar(); } })
@@ -4157,7 +4202,7 @@
   function medioDe(c) { return c.medio === "efectivo" ? "efectivo" : "transferencia"; }
 
   function textoMedida(m) {
-    return fmtQty(medidaDe(m)) + " " + (unidadMedidaDe(m) || "u") + " por unidad";
+    return medidaDe(m) > 1 ? "cada unidad mide " + textoMedidaUso(medidaDe(m), unidadMedidaDe(m)) : "se cuenta en " + textoUnidadMaterial(m);
   }
 
   function renderInventario() {
@@ -4187,7 +4232,7 @@
         costo += f * stockUnitValue(m);
         chips.appendChild(el("button", { type: "button", class: "chip-falta", onclick: function () { abrirCompra(null, { materialId: m.id }); } }, [
           el("span", { class: "punto-color", style: "background:" + colorDe(m.id, true) }),
-          el("span", { text: (m.name || "Sin nombre") + " · faltan " + fmtQty(Math.ceil(f * 100) / 100) })
+          el("span", { text: (m.name || "Sin nombre") + " · faltan " + textoCantidad(m, Math.ceil(f * 100) / 100) })
         ]));
       });
       root.appendChild(el("section", { class: "falta-pedidos", "aria-labelledby": "falta-t" }, [
@@ -4232,6 +4277,7 @@
           onclick: function () { abrirMaterial(m); } }, [
           el("span", { class: "madeja-grande", style: "background-color:" + colorDe(m.id, true) }, [el("span", { text: fmtQty(stock) })]),
           el("span", { class: "nom", text: m.name || "Sin nombre" }),
+          el("span", { class: "uni", text: textoUnidadMaterial(m) }),
           el("span", { class: "estado", text: corto ? "faltan " + fmtQty(Math.ceil((need - stock) * 100) / 100) : need ? "alcanza" : " " })
         ]));
       });
@@ -4310,19 +4356,22 @@
       function pintarEstado() {
         var stock = parseNum(m.stock), corto = need - stock > 1e-9;
         estado.className = "estado-material" + (corto ? " corto" : "");
-        estado.textContent = corto ? "Faltan " + fmtQty(need - stock) + " para los pedidos por hacer"
-          : need ? "Alcanza para los pedidos; sobran " + fmtQty(stock - need) : "Ningún pedido lo usa por ahora";
+        estado.textContent = corto ? "Faltan " + textoCantidad(m, need - stock) + " para los pedidos por hacer"
+          : need ? "Alcanza para los pedidos; sobran " + textoCantidad(m, stock - need) : "Ningún pedido lo usa por ahora";
+        total.textContent = medidaDe(m) > 1 ? "En total: " + textoCantidad(m, stock) : "";
       }
+      var total = el("p", { class: "note", style: "margin:6px 4px 0" });
       var campo = el("input", { type: "text", inputmode: "decimal", class: "num stock-grande", value: fmtQty(parseNum(m.stock)), "aria-label": "Stock",
         oninput: function (e) { m.stock = Math.max(0, parseNum(e.target.value)); save(m); pintarEstado(); } });
       function sumar(n) { m.stock = Math.max(0, Math.round((parseNum(m.stock) + n) * 100) / 100); campo.value = fmtQty(m.stock); save(m); pintarEstado(); }
       cuerpo.appendChild(el("div", { class: "fila-stock" }, [
-        el("span", { class: "txt" }, [el("strong", { text: "En stock" }), el("span", { text: "Escribe lo que contaste" })]),
+        el("span", { class: "txt" }, [el("strong", { text: "En stock (" + textoUnidadMaterial(m) + ")" }), el("span", { text: "Escribe lo que contaste" })]),
         el("button", { class: "icon-btn", type: "button", text: "−", "aria-label": "Uno menos", onclick: function () { sumar(-1); } }),
         campo,
         el("button", { class: "icon-btn", type: "button", text: "+", "aria-label": "Uno más", onclick: function () { sumar(1); } })
       ]));
-      cuerpo.appendChild(el("div", { class: "fila-dato" }, [el("span", { text: "Lo que piden los pedidos" }), el("strong", { text: fmtQty(need) })]));
+      cuerpo.appendChild(total);
+      cuerpo.appendChild(el("div", { class: "fila-dato" }, [el("span", { text: "Lo que piden los pedidos" }), el("strong", { text: textoCantidad(m, need) })]));
       pintarEstado();
       cuerpo.appendChild(estado);
       cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
@@ -4340,6 +4389,27 @@
     return grid;
   }
 
+  /* medida de cada unidad: número y unidad (chips o escrita) */
+  function bloqueMedida(medida, unidad, alCambiar, repintar) {
+    var grupo = el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Medida de cada unidad" }),
+      el("p", { class: "note", style: "margin:0 0 6px", text: "La receta usa esta medida: si la varilla mide 30 cm y usas 20, escribes 20 en la flor. Para los limpiapipas, 1 u." })]);
+    var chips = el("div", { class: "chips-filtro", role: "group", "aria-label": "Unidad" });
+    var lista = UNIDADES_MEDIDA.slice();
+    if (unidad && lista.indexOf(unidad) < 0) lista.push(unidad);
+    lista.forEach(function (u) {
+      chips.appendChild(botonChip(u, unidad === u, function () { alCambiar(medida, u); repintar(); }));
+    });
+    grupo.appendChild(el("div", { class: "fila-medida" }, [
+      el("input", { type: "text", inputmode: "decimal", class: "num", value: fmtQty(medida || 1), "aria-label": "Medida",
+        oninput: function (e) { var v = parseNum(e.target.value); medida = v > 0 ? v : 1; alCambiar(medida, unidad); } }),
+      chips
+    ]));
+    grupo.appendChild(el("input", { type: "text", class: "otra-unidad", value: "",
+      placeholder: "¿Otra unidad? Escríbela (ej: rollo)", "aria-label": "Otra unidad",
+      onchange: function (e) { var u = e.target.value.trim(); if (u) { alCambiar(medida, u); repintar(); } } }));
+    return grupo;
+  }
+
   function abrirEditarMaterial(m) {
     abrirHoja("Editar material", function (cuerpo, cerrar, h) {
       if (state.materials.indexOf(m) < 0) { cerrar(); return; }
@@ -4352,14 +4422,10 @@
       cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Color" }),
         paletaColores(colorDe(m.id, true), function (hex) { m.color = hex; save(m); h.repintar(); })]));
       if (!isArea(m.unit)) {
-        cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Medida de cada unidad" }),
-          el("p", { class: "note", style: "margin:0 0 6px", text: "La receta usa esta medida: si la varilla mide 30 cm y usas 20, escribes 20 en la flor." }),
-          el("div", { class: "hoja-fila" }, [
-            el("input", { type: "text", inputmode: "decimal", class: "num", value: fmtQty(medidaDe(m)), "aria-label": "Medida",
-              oninput: function (e) { var v = parseNum(e.target.value); conCostos(function () { m.medida = v > 0 ? v : 1; }); save(m); } }),
-            el("input", { type: "text", value: unidadMedidaDe(m), "aria-label": "Unidad de medida", placeholder: "cm, m, pliego, u",
-              oninput: function (e) { m.unidadMedida = e.target.value.trim(); save(m); } })
-          ])]));
+        cuerpo.appendChild(bloqueMedida(medidaDe(m), unidadMedidaDe(m), function (med, u) {
+          conCostos(function () { m.medida = med; m.unidadMedida = u; });
+          save(m);
+        }, function () { h.repintar(); }));
       }
       var mas = el("details", { class: "mas-opciones" }, [el("summary", { text: "Más opciones" })]);
       if (ui.masOpciones) mas.open = true;
@@ -4427,25 +4493,27 @@
   }
 
   function abrirNuevoMaterial(tipo) {
-    var nombre = "", color = PALETA[0], error = "";
+    var nombre = "", color = PALETA[0], error = "", medida = 1, unidad = "u";
     abrirHoja("Nuevo en " + tipo, function (cuerpo, cerrar, h) {
       cuerpo.appendChild(campoHoja("nm-nombre", "Nombre", nombre, { placeholder: "Ej: Dorado", oninput: function (e) { nombre = e.target.value; } }));
       cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Color" }),
         paletaColores(color, function (hex) { color = hex; h.repintar(); })]));
+      cuerpo.appendChild(bloqueMedida(medida, unidad, function (med, u) { medida = med; unidad = u; }, function () { h.repintar(); }));
       if (error) cuerpo.appendChild(el("p", { class: "error-hoja", role: "alert", text: error }));
       cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
         el("button", { class: "btn primary", type: "button", text: "Agregar al muestrario", onclick: function () {
           if (!nombre.trim()) { error = "Escribe el nombre del material."; h.repintar(); return; }
-          var m = materialNuevo(nombre.trim(), tipo, color);
+          var m = materialNuevo(nombre.trim(), tipo, color, medida, unidad);
           cerrar(); render(); toast(m.name + " agregado a " + tipo);
         } })
       ]));
     });
   }
 
-  function materialNuevo(nombre, tipo, color) {
+  function materialNuevo(nombre, tipo, color, medida, unidad) {
     var m = { id: uid(), name: nombre, tipo: tipo, color: color, unit: "unidad", mode: "directo", cost: "",
-      buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area", stock: 0, stockMin: "", categoria: "", medida: 1 };
+      buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area", stock: 0, stockMin: "", categoria: "",
+      medida: parseNum(medida) > 0 ? parseNum(medida) : 1, unidadMedida: unidad || "u" };
     state.materials.push(m);
     save(m);
     return m;
@@ -4487,11 +4555,24 @@
       : { fecha: hoy(), proveedor: ultima && !ultima.inicial ? ultima.proveedor || "" : "", materialId: preset.materialId || "", bolsas: 1,
         unidadesBolsa: "", precioBolsa: "", medio: "transferencia" };
     var tipo = mPre ? tipoDe(mPre) : (c && c.tipo) || preset.tipo || tiposTodos()[0] || "Limpiapipas";
-    var nuevo = "", colorNuevo = PALETA[3], creandoTipo = false, tipoNuevo = "", error = "";
+    var nuevo = "", colorNuevo = PALETA[3], creandoTipo = false, tipoNuevo = "", error = "", medidaNueva = 1, unidadNueva = "u";
     abrirHoja(c ? "Corregir compra" : "Registrar compra", function (cuerpo, cerrar, h) {
       var resumen = el("div", { class: "resumen-compra", "aria-live": "polite" });
+      /* en qué se cuentan las unidades: las del material elegido o las del nuevo */
+      function medidaCompra() {
+        var m = materialById(d.materialId);
+        if (m) return { med: medidaDe(m), u: unidadMedidaDe(m) };
+        return { med: nuevo.trim() ? medidaNueva : 1, u: nuevo.trim() ? unidadNueva : "u" };
+      }
+      function etiquetaUnidades() {
+        var lbl = cuerpo.querySelector('label[for="co-unid"]');
+        if (!lbl) return;
+        var mc = medidaCompra();
+        lbl.textContent = "Unidades por bolsa (" + (mc.med === 1 ? mc.u : "de " + textoMedidaUso(mc.med, mc.u)) + ")";
+      }
       function pintarResumen() {
         var u = parseNum(d.unidadesBolsa) * parseNum(d.bolsas), g = parseNum(d.precioBolsa) * parseNum(d.bolsas);
+        var mc = medidaCompra();
         var base = datosPPP().tipos[tipo] || { unidades: 0, gasto: 0, ppp: 0 };
         var u0 = base.unidades, g0 = base.gasto;
         if (c) {
@@ -4500,7 +4581,8 @@
         }
         var antes = u0 > 0 ? g0 / u0 : 0, despues = u0 + u > 0 ? (g0 + g) / (u0 + u) : 0;
         resumen.innerHTML = "";
-        [["Total", fmtQty(u) + " u · " + money(g)], ["Precio por unidad", u > 0 ? moneyPPP(g / u) : "—"],
+        var totalTxt = mc.med === 1 ? textoMedidaUso(u, mc.u) : fmtQty(u) + " u = " + textoMedidaUso(u * mc.med, mc.u);
+        [["Total", totalTxt + " · " + money(g)], ["Precio por unidad", u > 0 ? moneyPPP(g / u) : "—"],
          ["PPP de " + tipo, antes > 0 && Math.abs(despues - antes) > 0.004 ? moneyPPP(antes) + " → " + moneyPPP(despues) : despues > 0 ? moneyPPP(despues) : "—"]]
           .forEach(function (f) { resumen.appendChild(el("div", {}, [el("span", { text: f[0] }), el("strong", { text: f[1] })])); });
       }
@@ -4549,6 +4631,7 @@
           nuevo = e.target.value;
           if (nuevo.trim()) d.materialId = "";
           if (antes !== !!nuevo.trim()) pintarColorNuevo();
+          etiquetaUnidades(); pintarResumen();
         } }));
       function pintarColorNuevo() {
         avisoColor.innerHTML = "";
@@ -4556,10 +4639,13 @@
         avisoColor.appendChild(el("span", { class: "sub-etiqueta", text: "Color del material nuevo" }));
         avisoColor.appendChild(paletaColores(colorNuevo, function (hex) {
           colorNuevo = hex;
-          Array.prototype.forEach.call(avisoColor.querySelectorAll(".muestra"), function (b) {
+          Array.prototype.forEach.call(avisoColor.querySelectorAll(".paleta .muestra"), function (b) {
             b.setAttribute("aria-pressed", b.getAttribute("data-hex") === hex ? "true" : "false");
           });
         }));
+        avisoColor.appendChild(bloqueMedida(medidaNueva, unidadNueva, function (med, u) {
+          medidaNueva = med; unidadNueva = u; pintarResumen(); etiquetaUnidades();
+        }, pintarColorNuevo));
       }
       pintarColorNuevo();
       grupoMat.appendChild(avisoColor);
@@ -4586,6 +4672,7 @@
       cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "¿Cómo pagaste?" }), medios]));
       pintarResumen();
       cuerpo.appendChild(resumen);
+      etiquetaUnidades();
       if (error) cuerpo.appendChild(el("p", { class: "error-hoja", role: "alert", text: error }));
 
       var pie = el("div", { class: "pie-hoja" });
@@ -4596,7 +4683,7 @@
           error = "Faltan las bolsas, las unidades por bolsa o el precio."; h.repintar(); return;
         }
         var id = d.materialId;
-        if (!id) id = materialNuevo(nuevo.trim(), tipo, colorNuevo).id;
+        if (!id) id = materialNuevo(nuevo.trim(), tipo, colorNuevo, medidaNueva, unidadNueva).id;
         var datos = { fecha: d.fecha || hoy(), proveedor: d.proveedor || "", tipo: tipo, materialId: id,
           bolsas: parseNum(d.bolsas), unidadesBolsa: parseNum(d.unidadesBolsa), precioBolsa: parseNum(d.precioBolsa), medio: d.medio };
         var m = materialById(id);
@@ -4987,7 +5074,7 @@
       fb.unsubs.push(colRef(c.nombre).onSnapshot(function (snap) {
         /* el eco de lo que acabamos de subir no trae nada nuevo: repintar
            con él le quitaría el foco a quien está escribiendo */
-        if (snap.metadata && snap.metadata.hasPendingWrites) { setSaveState("Sincronizado"); return; }
+        if (snap.metadata && snap.metadata.hasPendingWrites) { if (!hayPendientes()) setSaveState("Sincronizado"); return; }
 
         /* Se actualiza cada objeto en su sitio en vez de reemplazarlo: si la
            pantalla aún no se repintó, sus botones apuntan a estos objetos, y
@@ -5023,7 +5110,7 @@
           migrados.forEach(save);
           toast(migrados.length + (migrados.length === 1 ? " producto pasó" : " productos pasaron") + " a precio fijo");
         }
-        setSaveState("Sincronizado");
+        if (!hayPendientes()) setSaveState("Sincronizado");
         renderSeguro();
       }, function () { setSaveState("Sin conexión"); }));
     });
@@ -5125,7 +5212,10 @@
   function subirCambios() {
     if (!fb.user) return Promise.resolve();
 
-    var ops = [], aLimpiar = { materiales: [], productos: [], pedidos: [] };
+    /* todas las colecciones: faltaban compras e historial, y su primer cambio
+       hacía caer la subida entera sin enviar nada */
+    var ops = [], aLimpiar = {};
+    COLECCIONES.forEach(function (c) { aLimpiar[c.nombre] = []; });
 
     COLECCIONES.forEach(function (c) {
       Object.keys(sucios[c.nombre]).forEach(function (id) {
@@ -5133,28 +5223,46 @@
         (state[c.campo] || []).forEach(function (x) { if (x.id === id) item = x; });
         /* si ya no está en la lista, se borró: lo resuelve la rama de borrados */
         if (!item) return;
-        ops.push({ ref: colRef(c.nombre).doc(id), datos: limpiar(item) });
+        ops.push({ ref: colRef(c.nombre).doc(id), datos: limpiar(item), col: c.nombre });
         aLimpiar[c.nombre].push(id);
       });
       Object.keys(borrados[c.nombre]).forEach(function (id) {
-        ops.push({ ref: colRef(c.nombre).doc(id), borrar: true });
+        ops.push({ ref: colRef(c.nombre).doc(id), borrar: true, col: c.nombre });
         aLimpiar[c.nombre].push(id);
       });
     });
 
     var subiaAjustes = sucioAjustes;
-    if (subiaAjustes) ops.push(opAjustes());
+    if (subiaAjustes) { var aj = opAjustes(); aj.col = "ajustes"; ops.push(aj); }
     if (!ops.length) return Promise.resolve();
 
-    return enviarOperaciones(ops).then(function () {
-      /* se limpia solo lo efectivamente enviado: lo editado entretanto sigue pendiente */
-      COLECCIONES.forEach(function (c) {
-        aLimpiar[c.nombre].forEach(function (id) {
-          delete sucios[c.nombre][id];
-          delete borrados[c.nombre][id];
+    /* un lote por colección: si una falla (p. ej. sin permiso), las demás se guardan igual */
+    var grupos = {}, orden = [];
+    ops.forEach(function (op) {
+      if (!grupos[op.col]) { grupos[op.col] = []; orden.push(op.col); }
+      grupos[op.col].push(op);
+    });
+    var fallas = [];
+    return orden.reduce(function (cadena, col) {
+      return cadena.then(function () {
+        return Promise.resolve().then(function () { return enviarOperaciones(grupos[col]); }).then(function () {
+          /* se limpia solo lo efectivamente enviado: lo editado entretanto sigue pendiente */
+          if (col === "ajustes") { if (subiaAjustes) sucioAjustes = false; return; }
+          aLimpiar[col].forEach(function (id) {
+            delete sucios[col][id];
+            delete borrados[col][id];
+          });
+        }, function (err) {
+          if (window.console) console.error("No se pudo guardar " + col, err);
+          fallas.push({ col: col, err: err });
         });
       });
-      if (subiaAjustes) sucioAjustes = false;
+    }, Promise.resolve()).then(function () {
+      if (fallas.length) {
+        var e = new Error("subida_parcial");
+        e.fallas = fallas;
+        throw e;
+      }
     });
   }
 
