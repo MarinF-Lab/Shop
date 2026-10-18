@@ -3,7 +3,7 @@
    Firestore ya trae su propia caché offline y la autenticación debe ir siempre
    a la red. Al cambiar los archivos de la app, sube VERSION. */
 
-var VERSION = "v4";
+var VERSION = "v6";
 var CACHE_APP = "planilla-app-" + VERSION;
 var CACHE_SDK = "planilla-sdk-" + VERSION;
 

@@ -2,447 +2,632 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Eternal Garden</title>
+<title>Eternal Garden · Tienda</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2F5D3A">
 <link rel="icon" href="favicon.ico" sizes="any">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,700;1,9..144,500&family=Nunito+Sans:wght@400;600;700;800&display=swap">
 <style>
   *, *::before, *::after { box-sizing: border-box; }
-
   :root {
-    --paper: #F6F3EE;
-    --surface: #FFFFFF;
-    --ink: #1E1A16;
-    --muted: #6B625A;
-    --line: #E2DAD0;
-    --line-soft: #EFE9E1;
-    --accent: #7A4A2B;
-    --accent-soft: #F2E7DD;
-    --ok: #3D6B4A;
-    --warn: #8A6512;
-    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-    --num: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --paper: #F4EFE6; --surface: #FFFFFF; --ink: #2B2A26; --soft-ink: #4A443A; --muted: #6A6153;
+    --line: #D9C9AB; --line-soft: #EFE7D8; --accent: #2F5D3A; --accent-dark: #24482D; --accent-soft: #EEF5E8;
+    --danger: #8E2F17; --danger-soft: #F7E2D9; --warn: #4F3500; --warn-soft: #FFF0CC;
+    --serif: "Fraunces", Georgia, serif; --sans: "Nunito Sans", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --shadow: 0 2px 0 #E3D7C0;
   }
+  body { margin: 0; font-family: var(--sans); color: var(--ink); background: var(--paper); line-height: 1.45; -webkit-text-size-adjust: 100%; }
+  button, input, textarea { font: inherit; color: inherit; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .solo-lector { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .pagina { max-width: 560px; margin: 0 auto; padding-bottom: calc(110px + env(safe-area-inset-bottom)); }
 
-  body {
-    margin: 0;
-    font-family: var(--sans);
-    color: var(--ink);
-    background: var(--paper);
-    line-height: 1.5;
-    -webkit-text-size-adjust: 100%;
-  }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .portada { background: var(--accent); color: #FFFFFF; padding: 30px 20px 26px; border-radius: 0 0 32px 32px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+  .logo { width: 72px; height: 72px; border-radius: 50%; background: #FFFFFF; overflow: hidden; display: grid; place-items: center; }
+  .logo img { width: 100%; height: 100%; object-fit: cover; }
+  .portada h1 { margin: 4px 0 0; font-family: var(--serif); font-style: italic; font-weight: 500; font-size: 30px; line-height: 1.15; }
+  .portada p { margin: 0; font-size: 15px; max-width: 320px; color: #E6F0E1; }
+  .redes { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap; justify-content: center; }
+  .redes a { min-height: 40px; padding: 0 14px; border-radius: 999px; background: rgba(255,255,255,.16); color: #FFFFFF; font-size: 14px; font-weight: 800; text-decoration: none; display: flex; align-items: center; }
+  .aviso-min { margin: 16px 16px 0; padding: 10px 14px; border-radius: 14px; background: var(--warn-soft); color: var(--warn); font-size: 13px; font-weight: 800; text-align: center; }
+  .aviso-min.cerrada { background: var(--danger-soft); color: var(--danger); }
+  .seccion { padding: 0 16px; margin-top: 18px; }
+  .seccion h2 { margin: 0 0 4px; font-family: var(--serif); font-size: 24px; font-weight: 700; }
+  .seccion .lead { margin: 0 0 12px; font-size: 14px; color: var(--soft-ink); }
+  .catalogo { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .tarjeta { display: flex; flex-direction: column; gap: 6px; background: var(--surface); border: 0; border-radius: 22px; padding: 10px 10px 12px; text-align: left; box-shadow: var(--shadow); min-width: 0; }
+  .tarjeta .imagen { height: 132px; border-radius: 16px; background: var(--accent-soft); display: grid; place-items: center; overflow: hidden; }
+  .tarjeta .imagen img { width: 100%; height: 100%; object-fit: cover; }
+  .tarjeta .nom { font-size: 16px; font-weight: 800; }
+  .tarjeta .desc { font-size: 12px; color: var(--soft-ink); line-height: 1.3; }
+  .tarjeta .pie { display: flex; justify-content: space-between; align-items: center; gap: 6px; margin-top: 2px; }
+  .tarjeta .precio { font-size: 15px; font-weight: 800; color: var(--accent-dark); }
+  .tarjeta .elegir { font-size: 13px; font-weight: 800; padding: 6px 12px; border-radius: 999px; background: var(--accent); color: #FFFFFF; }
+  .como { background: var(--surface); border-radius: 22px; padding: 14px 16px; box-shadow: var(--shadow); }
+  .como h2 { font-family: var(--sans); font-size: 15px; font-weight: 800; margin: 0 0 6px; }
+  .como ol { margin: 0; padding-left: 20px; font-size: 14px; color: var(--soft-ink); }
+  .msg { text-align: center; color: var(--muted); padding: 30px 10px; }
 
-  header.top {
-    padding: 34px 20px 26px;
-    text-align: center;
-    background: var(--surface);
-    border-bottom: 1px solid var(--line);
-  }
-  header.top h1 { margin: 0; font-size: 25px; font-weight: 600; letter-spacing: -0.4px; }
-  header.top p { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); }
+  .barra-ramo { position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: 536px; margin: 0 auto; min-height: 60px; border-radius: 20px; border: 0; background: var(--ink); color: #FFFFFF; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 15px; font-weight: 800; box-shadow: 0 6px 18px rgba(43,42,38,.25); z-index: 10; }
+  .barra-ramo[hidden] { display: none; }
+  .barra-ramo .ver { background: #FFFFFF; color: var(--ink); border-radius: 12px; padding: 8px 12px; }
 
-  main { max-width: 680px; margin: 0 auto; padding: 20px 16px 120px; }
-
-  h2 { font-size: 15px; font-weight: 600; margin: 26px 2px 10px; }
-
-  .item {
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 15px;
-    margin-bottom: 12px;
-  }
-  .item h3 { margin: 0; font-size: 16px; font-weight: 600; }
-  .item .desc { margin: 5px 0 0; font-size: 13.5px; color: var(--muted); }
-  .item .foot { display: flex; align-items: center; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
-  .price { font-family: var(--num); font-size: 17px; font-weight: 700; flex: 1; }
-  .tag { font-size: 11.5px; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
-  .tag.ok { background: #E4EFE7; color: var(--ok); }
-  .tag.slow { background: #F5EBD6; color: var(--warn); }
-
-  .stepper { display: flex; align-items: center; gap: 4px; }
-  .stepper button {
-    width: 38px; height: 38px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    border-radius: 8px;
-    font: inherit; font-size: 17px;
-    color: var(--ink);
-    cursor: pointer;
-  }
-  .stepper span { font-family: var(--num); min-width: 30px; text-align: center; font-size: 15px; }
-
-  .btn {
-    font: inherit; font-size: 15px;
-    border-radius: 10px;
-    border: 1px solid var(--line);
-    background: var(--surface);
-    color: var(--ink);
-    padding: 11px 16px;
-    cursor: pointer;
-  }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-  .btn.wide { width: 100%; }
-  .btn:disabled { opacity: .5; cursor: default; }
-
-  label.field { display: block; font-size: 12.5px; color: var(--muted); margin: 12px 0 4px; }
-  input, select, textarea {
-    font: inherit; font-size: 16px;
-    width: 100%;
-    border: 1px solid var(--line);
-    border-radius: 8px;
-    padding: 11px;
-    background: var(--surface);
-    color: var(--ink);
-  }
-  textarea { min-height: 76px; resize: vertical; }
-
-  .cart {
-    position: fixed; left: 0; right: 0; bottom: 0;
-    background: var(--surface);
-    border-top: 1px solid var(--line);
-    padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
-    box-shadow: 0 -3px 14px rgba(30,26,22,.09);
-  }
-  .cart-inner { max-width: 680px; margin: 0 auto; display: flex; align-items: center; gap: 12px; }
-  .cart-sum { flex: 1; font-size: 13px; color: var(--muted); }
-  .cart-sum b { display: block; font-family: var(--num); font-size: 17px; color: var(--ink); font-weight: 700; }
-  .cart[hidden] { display: none; }
-
-  dialog.sheet {
-    border: none; border-radius: 16px 16px 0 0;
-    padding: 20px 18px calc(20px + env(safe-area-inset-bottom));
-    width: 100%; max-width: 680px;
-    margin: auto auto 0;
-    background: var(--surface);
-    color: var(--ink);
-  }
-  dialog.sheet::backdrop { background: rgba(30,26,22,.5); }
-  dialog.sheet h3 { margin: 0 0 4px; font-size: 17px; }
-  .resumen { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin: 12px 0 4px; }
-  .resumen div { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; padding: 3px 0; }
-  .resumen div.total { border-top: 1px solid var(--line-soft); margin-top: 6px; padding-top: 8px; font-weight: 700; }
-  .resumen span.n { font-family: var(--num); }
-
-  .msg { text-align: center; color: var(--muted); font-size: 14px; padding: 40px 10px; }
-  .note { font-size: 12px; color: var(--muted); margin: 10px 2px 0; }
-  .error { color: #A32C22; }
-
-  .done { text-align: center; padding: 10px 0 4px; }
-  .done h3 { font-size: 18px; margin-bottom: 8px; }
-  .done p { font-size: 14px; color: var(--muted); margin: 0 0 16px; }
+  .fondo { position: fixed; inset: 0; background: rgba(43,42,38,.45); display: flex; flex-direction: column; justify-content: flex-end; align-items: center; z-index: 20; }
+  .hoja { width: 100%; max-width: 560px; background: var(--surface); border-radius: 24px 24px 0 0; max-height: 92vh; display: flex; flex-direction: column; }
+  .hoja .cab { padding: 18px 20px 6px; display: flex; flex-direction: column; gap: 12px; }
+  .hoja .cuerpo { flex: 1; overflow-y: auto; padding: 8px 20px 12px; display: flex; flex-direction: column; gap: 14px; }
+  .hoja .pie { padding: 10px 20px calc(18px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line-soft); display: flex; gap: 8px; }
+  .fila-titulo { display: flex; align-items: center; gap: 12px; }
+  .fila-titulo h2 { margin: 0; font-family: var(--serif); font-size: 22px; font-weight: 700; flex: 1; }
+  .cerrar { flex: none; width: 44px; height: 44px; border-radius: 50%; border: 0; background: #F0E6D4; display: grid; place-items: center; }
+  .miniatura { flex: none; width: 72px; height: 72px; border-radius: 18px; background: var(--accent-soft); display: grid; place-items: center; overflow: hidden; }
+  .miniatura img { width: 100%; height: 100%; object-fit: cover; }
+  .info-flor { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .info-flor h2 { margin: 0; font-family: var(--serif); font-size: 24px; font-weight: 700; }
+  .info-flor span { font-size: 13px; color: var(--soft-ink); }
+  .info-flor strong { font-size: 14px; color: var(--accent-dark); }
+  .fila-cant { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--paper); border-radius: 16px; padding: 8px 8px 8px 14px; }
+  .fila-cant label { font-size: 15px; font-weight: 800; }
+  .fila-cant .ctrl { display: flex; align-items: center; gap: 6px; }
+  .icono { width: 44px; height: 44px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--surface); font-size: 20px; font-weight: 800; }
+  .fila-cant input { width: 72px; min-height: 44px; border-radius: 12px; border: 1.5px solid var(--line); text-align: center; font-family: var(--serif); font-size: 22px; font-weight: 700; background: var(--surface); }
+  .etq { font-size: 13px; font-weight: 800; }
+  .slot { background: var(--paper); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .slot .fila { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .slot .fila strong { font-size: 14px; }
+  .slot .elegido { font-size: 13px; font-weight: 800; color: var(--accent-dark); }
+  .muestras { display: flex; gap: 6px; overflow-x: auto; padding: 4px 4px 6px; }
+  .muestra { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: 1.5px solid rgba(60,40,20,.25); padding: 0;
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 3px, rgba(0,0,0,0) 3px 7px); }
+  .muestra[aria-pressed="true"] { box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px var(--accent); }
+  .muestra[aria-disabled="true"] { opacity: .35; cursor: not-allowed; }
+  .aviso { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--warn-soft); color: var(--warn); font-size: 13px; font-weight: 800; }
+  .error { margin: 0; color: var(--danger); font-size: 14px; font-weight: 700; }
+  .btn { min-height: 52px; border-radius: 14px; border: 1.5px solid var(--accent); background: var(--surface); color: var(--accent-dark); font-size: 16px; font-weight: 800; padding: 0 14px; }
+  .btn.primario { background: var(--accent); color: #FFFFFF; border-color: var(--accent); }
+  .btn.ancho { width: 100%; }
+  .btn.grande { min-height: 56px; display: flex; align-items: center; justify-content: space-between; padding: 0 18px; font-size: 17px; }
+  .btn.punteado { min-height: 44px; border-style: dashed; background: transparent; font-size: 14px; }
+  .btn:disabled { opacity: .6; cursor: wait; }
+  .pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; background: var(--paper); border-radius: 14px; padding: 4px; }
+  .pasos button { min-height: 44px; border-radius: 11px; border: 0; background: transparent; color: var(--soft-ink); font-size: 13px; font-weight: 800; }
+  .pasos button[aria-pressed="true"] { background: var(--accent); color: #FFFFFF; }
+  .lineas { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .lineas li { display: flex; gap: 10px; align-items: center; background: var(--paper); border-radius: 16px; padding: 8px 6px 8px 12px; }
+  .punto { flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid rgba(60,40,20,.25); }
+  .lineas .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .lineas .txt strong { font-size: 15px; }
+  .lineas .txt span { font-size: 12px; color: var(--soft-ink); }
+  .chico { min-height: 40px; padding: 0 10px; border-radius: 10px; border: 1.5px solid var(--accent); background: var(--surface); color: var(--accent-dark); font-size: 13px; font-weight: 800; }
+  .quitar { width: 40px; height: 40px; border-radius: 10px; border: 0; background: transparent; color: var(--danger); font-size: 16px; font-weight: 800; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip { min-height: 44px; padding: 0 14px; border-radius: 999px; border: 1.5px solid var(--accent); background: var(--surface); font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .chip .punto { width: 28px; height: 28px; margin-left: -8px; }
+  .chip[aria-pressed="true"] { background: var(--accent); color: #FFFFFF; }
+  .metodos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .metodos button { min-height: 48px; border-radius: 12px; border: 1.5px solid var(--accent); background: var(--surface); font-size: 13px; font-weight: 800; line-height: 1.15; }
+  .metodos button[aria-pressed="true"] { background: var(--accent); color: #FFFFFF; }
+  .total { display: flex; justify-content: space-between; align-items: baseline; border-top: 1px solid #E3D7C0; padding-top: 10px; }
+  .total span { font-size: 15px; font-weight: 800; }
+  .total strong { font-family: var(--serif); font-size: 26px; font-weight: 700; }
+  .campo { display: flex; flex-direction: column; gap: 6px; }
+  .campo label { font-size: 13px; font-weight: 800; }
+  .campo input { min-height: 44px; border-radius: 12px; border: 1.5px solid var(--line); padding: 0 12px; font-size: 16px; background: var(--surface); width: 100%; }
+  .nota { font-size: 12px; color: var(--soft-ink); }
+  .ok { font-size: 13px; font-weight: 800; color: var(--accent-dark); }
+  .listo { position: fixed; inset: 0; background: var(--accent); color: #FFFFFF; z-index: 30; overflow-y: auto; padding: 48px 24px 28px; display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+  .listo h2 { margin: 0; font-family: var(--serif); font-size: 30px; font-weight: 700; }
+  .listo p { margin: 0; font-size: 15px; color: #E6F0E1; max-width: 360px; }
+  .listo .resumen { width: 100%; max-width: 420px; background: #FFFFFF; color: var(--ink); border-radius: 22px; padding: 14px 16px; text-align: left; display: flex; flex-direction: column; gap: 6px; }
+  .listo .resumen .t { display: flex; justify-content: space-between; border-top: 1px solid #E3D7C0; padding-top: 8px; font-weight: 800; }
+  .listo .btn { border: 0; }
 </style>
 </head>
 <body>
 
-<header class="top">
-  <h1 id="tiendaNombre">Tienda</h1>
-  <p id="tiendaSub">Cargando catálogo…</p>
-</header>
-
-<main>
-  <div id="catalogo"></div>
-</main>
-
-<div class="cart" id="cart" hidden>
-  <div class="cart-inner">
-    <div class="cart-sum">
-      <span id="cartCount">0 productos</span>
-      <b id="cartTotal"></b>
+<div class="pagina">
+  <header class="portada" id="portada">
+    <span class="logo" id="logo" aria-hidden="true"></span>
+    <h1 id="tiendaNombre">Eternal Garden</h1>
+    <p id="tiendaTexto"></p>
+    <div class="redes" id="redes"></div>
+  </header>
+  <p class="aviso-min" id="avisoMin" hidden></p>
+  <section class="seccion" aria-labelledby="t-cat">
+    <h2 id="t-cat">Elige tus flores</h2>
+    <p class="lead" id="lead">Cada flor la armas a tu gusto: tú eliges los colores.</p>
+    <div class="catalogo" id="catalogo"><p class="msg" style="grid-column:1/-1">Cargando…</p></div>
+  </section>
+  <section class="seccion">
+    <div class="como">
+      <h2>¿Cómo funciona?</h2>
+      <ol>
+        <li>Eliges las flores y sus colores.</li>
+        <li>Nos dices cuándo y cómo lo quieres recibir.</li>
+        <li>Te escribimos por WhatsApp para confirmar y coordinar el pago.</li>
+      </ol>
     </div>
-    <button class="btn primary" type="button" id="btnPedir">Hacer pedido</button>
-  </div>
+  </section>
 </div>
-
-<dialog class="sheet" id="sheet"></dialog>
+<button class="barra-ramo" id="barraRamo" type="button" hidden><span id="barraTxt"></span><span class="ver">Ver ramo</span></button>
+<div id="capa"></div>
 
 <script>
 (function () {
   "use strict";
 
-  /* =======================================================================
-     CONFIGURACIÓN
-     Pega aquí los mismos cuatro valores que pusiste en la planilla.
-     Mientras estén vacíos, la tienda usa CATALOGO_LOCAL y el pedido
-     se envía por WhatsApp.
-     ======================================================================= */
+  /* El proyecto de Firebase es el mismo de la planilla: los valores son
+     públicos; lo que protege los datos son las reglas de Firestore. */
   var FIREBASE = {
     apiKey: "AIzaSyAAE6l_UwOVE1KB1QiXBNXhunzhJs78tL8",
     authDomain: "tiendas-f9af9.firebaseapp.com",
     projectId: "tiendas-f9af9",
     appId: "1:39811090432:web:9e462dc5388f39265b30e5"
   };
-
-  /* Datos de respaldo mientras no conectas Firebase. */
-  var TIENDA_LOCAL = { nombre: "Eternal Garden", whatsapp: "", moneda: "CLP" };
-  var CATALOGO_LOCAL = [
-    /* Ejemplo. Reemplázalo o bórralo cuando conectes Firebase:
-    { id: "demo1", nombre: "Tulipán", descripcion: "Flor artesanal de limpiapipas",
-      precio: 2000, moneda: "CLP" }
-    */
-  ];
-
+  var SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
   var MONEDAS = { CLP: ["$", 0], USD: ["US$", 2], EUR: ["€", 2], ARS: ["AR$", 0], PEN: ["S/", 2],
     COP: ["COP$", 0], MXN: ["MX$", 2], BRL: ["R$", 2], UYU: ["$U", 2], GBP: ["£", 2] };
+  var DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+  var MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+  var NOMBRES_COLOR = ["Primario", "Secundario", "Tercero", "Cuarto"];
+  var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
+  var PASOS = ["Tu ramo", "Entrega", "Tus datos"];
 
-  var tienda = Object.assign({}, TIENDA_LOCAL);
-  var catalogo = [];
-  var carrito = {};
-  var fb = null;
+  var db = null, uid = "";
+  var tienda = { nombre: "Eternal Garden", texto: "", instagram: "", whatsapp: "", logo: "", moneda: "CLP", minDias: 3, abierta: false, colores: {}, envolturas: [] };
+  var catalogo = [], fotos = {};
+  var carrito = [];
+  var pedido = { paso: 1, envoltura: "", fecha: "", metodo: "Retiro", direccion: "", notas: "", nombre: "", whatsapp: "", instagram: "" };
 
-  /* La tienda pertenece a una cuenta de Google: su uid viaja en la
-     dirección (?tienda=UID). La planilla entrega ese enlace ya armado. */
-  function tiendaId() {
-    var m = /[?&]tienda=([^&]+)/.exec(location.search);
-    return m ? decodeURIComponent(m[1]) : "";
-  }
-
-  function conectado() {
-    return !!(FIREBASE.apiKey && FIREBASE.projectId && FIREBASE.authDomain && FIREBASE.appId && tiendaId());
-  }
-
-  function tiendaRef(db) { return db.collection("tiendas").doc(tiendaId()); }
-
-  function money(n) {
-    var m = MONEDAS[tienda.moneda] || MONEDAS.CLP;
-    return m[0] + " " + Number(n || 0).toLocaleString("es-CL",
-      { minimumFractionDigits: m[1], maximumFractionDigits: m[1] });
-  }
-
+  /* ---------------- utilidades ---------------- */
   function el(tag, attrs, kids) {
     var n = document.createElement(tag);
     if (attrs) Object.keys(attrs).forEach(function (k) {
-      if (k === "class") n.className = attrs[k];
-      else if (k === "text") n.textContent = attrs[k];
-      else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), attrs[k]);
-      else if (attrs[k] === true) n.setAttribute(k, "");
-      else if (attrs[k] != null && attrs[k] !== false) n.setAttribute(k, attrs[k]);
+      var v = attrs[k];
+      if (k === "class") n.className = v;
+      else if (k === "text") n.textContent = v;
+      else if (k === "html") n.innerHTML = v;
+      else if (k.slice(0, 2) === "on") n.addEventListener(k.slice(2), v);
+      else if (typeof v === "boolean" && k.slice(0, 5) === "aria-") n.setAttribute(k, v ? "true" : "false");
+      else if (v === true) n.setAttribute(k, "");
+      else if (v != null && v !== false) n.setAttribute(k, v);
     });
-    (kids || []).forEach(function (c) { if (c) n.appendChild(c); });
+    (kids || []).forEach(function (c) { if (c) n.appendChild(typeof c === "string" ? document.createTextNode(c) : c); });
     return n;
   }
+  function num(v) { var n = parseFloat(String(v == null ? "" : v).replace(",", ".")); return isFinite(n) ? n : 0; }
+  function fmt(n) { return (Math.round(n * 100) / 100).toLocaleString("es-CL"); }
+  function money(n) {
+    var m = MONEDAS[tienda.moneda] || MONEDAS.CLP;
+    return m[0] + Number(n || 0).toLocaleString("es-CL", { minimumFractionDigits: m[1], maximumFractionDigits: m[1] });
+  }
+  function hoy() { var d = new Date(); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function sumarDias(iso, n) { var d = new Date(iso + "T12:00:00"); d.setDate(d.getDate() + n); return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0"); }
+  function fechaLarga(iso) { if (!iso) return ""; var d = new Date(iso + "T12:00:00"); return DIAS[d.getDay()] + " " + d.getDate() + " de " + MESES[d.getMonth()]; }
+  function fechaMin() { return sumarDias(hoy(), Math.max(0, num(tienda.minDias))); }
+  function petalosSvg(a, b, tam) {
+    var s = '<svg viewBox="0 0 48 48" width="' + tam + '" height="' + tam + '" aria-hidden="true"><g transform="translate(24 24)">';
+    for (var i = 0; i < 6; i++) s += '<ellipse cx="0" cy="-10" rx="6.5" ry="10.5" fill="' + (i % 2 ? b : a) + '" stroke="#5B4A3A" stroke-opacity="0.35" transform="rotate(' + (i * 60) + ')"/>';
+    return s + '<circle r="4.5" fill="#E9B949"/></g></svg>';
+  }
+  function svgEl(html) { var t = document.createElement("span"); t.innerHTML = html; return t.firstChild; }
+  function cerrarIcono() { return svgEl('<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" fill="none" stroke="#2B2A26" stroke-width="2.5" stroke-linecap="round"><path d="M6 6 L18 18"/><path d="M18 6 L6 18"/></svg>'); }
+
+  function colorPorId(id) {
+    var todos = [];
+    Object.keys(tienda.colores || {}).forEach(function (t) { todos = todos.concat(tienda.colores[t]); });
+    return todos.filter(function (c) { return c.id === id; })[0] || null;
+  }
+  function flor(id) { return catalogo.filter(function (f) { return f.id === id; })[0]; }
+  function opciones(tipo) { return (tienda.colores && tienda.colores[tipo]) || []; }
+  /* el color habitual si hay stock; si no, el primero que tenga */
+  function colorInicial(tipo, habitual) {
+    var ops = opciones(tipo);
+    var h = ops.filter(function (c) { return c.id === habitual && c.disponible > 0; })[0];
+    if (h) return h.id;
+    var otro = ops.filter(function (c) { return c.disponible > 0; })[0];
+    return otro ? otro.id : habitual || "";
+  }
+  function lineaNueva(f) {
+    return { fid: f.id, qty: 1,
+      pet: f.petalos.map(function (g) { return g.colores.map(function (c) { return colorInicial(g.tipo, c.color); }); }),
+      comp: f.comps.map(function (k) { return colorInicial(k.tipo, k.color); }) };
+  }
+  function coloresDe(l) {
+    var planos = [];
+    (l.pet || []).forEach(function (g) { g.forEach(function (id) { planos.push(id); }); });
+    var c1 = colorPorId(planos[0]), c2 = colorPorId(planos[1]);
+    var p1 = c1 ? c1.hex : "#E6DCCB";
+    return { p1: p1, p2: c2 ? c2.hex : p1 };
+  }
+  function nombreColor(id) { var c = colorPorId(id); return c ? c.nombre.toLowerCase() : "sin elegir"; }
+  function coloresTxt(l) {
+    var f = flor(l.fid); if (!f) return "";
+    var partes = f.petalos.map(function (g, i) {
+      return g.nombre + " " + l.pet[i].filter(function (id, j) { return g.colores[j].lp > 0; }).map(nombreColor).join(" + ");
+    });
+    f.comps.forEach(function (k, i) { partes.push(k.nombre + " " + nombreColor(l.comp[i])); });
+    return partes.join(" · ");
+  }
+  function lineaTxt(l) { var f = flor(l.fid); var q = num(l.qty); return fmt(q) + " " + (f ? (q === 1 ? f.nombre.toLowerCase() : plural(f.nombre)) : ""); }
+  function plural(n) {
+    n = n.toLowerCase();
+    if (/[aeiouáéíóú]$/.test(n)) return n + "s";
+    var sinTilde = { "á": "a", "é": "e", "í": "i", "ó": "o", "ú": "u" };
+    return n.replace(/([áéíóú])([ns])$/, function (m, v, c) { return sinTilde[v] + c; }).replace(/z$/, "c") + "es";
+  }
+  /* lo que pide de cada color una línea (en limpiapipas o en la medida de su material) */
+  function usoLinea(l, acc) {
+    var f = flor(l.fid); if (!f) return acc; var q = num(l.qty);
+    f.petalos.forEach(function (g, i) { g.colores.forEach(function (c, j) { var id = l.pet[i][j]; if (id && c.lp > 0) acc[id] = (acc[id] || 0) + q * g.cant * c.lp; }); });
+    f.comps.forEach(function (k, i) { var id = l.comp[i]; if (id) acc[id] = (acc[id] || 0) + q * k.cant * k.uso; });
+    return acc;
+  }
+  function usoCarrito(excepto) { var acc = {}; carrito.forEach(function (l, i) { if (i !== excepto) usoLinea(l, acc); }); return acc; }
+  function totalCarrito() { return carrito.reduce(function (t, l) { var f = flor(l.fid); return t + (f ? f.precio * num(l.qty) : 0); }, 0); }
+  function unidadesCarrito() { return carrito.reduce(function (t, l) { return t + num(l.qty); }, 0); }
 
   /* ---------------- carga ---------------- */
+  function parametro(nombre) { var m = new RegExp("[?&]" + nombre + "=([^&]+)").exec(location.search); return m ? decodeURIComponent(m[1]) : ""; }
 
   function loadScript(src) {
-    return new Promise(function (res, rej) {
-      var s = document.createElement("script");
-      s.src = src; s.onload = res; s.onerror = function () { rej(new Error("script")); };
-      document.head.appendChild(s);
-    });
+    return new Promise(function (res, rej) { var s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = function () { rej(new Error("script")); }; document.head.appendChild(s); });
   }
 
-  var SDK = "https://www.gstatic.com/firebasejs/10.12.2/";
-
   function iniciar() {
-    if (!conectado()) {
-      catalogo = CATALOGO_LOCAL.slice();
-      pintar();
-      return;
-    }
+    var corto = parametro("t"), largo = parametro("tienda");
+    if (!corto && !largo) { pintarSinTienda(); return; }
     loadScript(SDK + "firebase-app-compat.js")
       .then(function () { return loadScript(SDK + "firebase-firestore-compat.js"); })
       .then(function () {
-        fb = window.firebase.initializeApp(FIREBASE);
-        var db = window.firebase.firestore();
-        var ref = tiendaRef(db);
-        return ref.collection("publico").doc("tienda").get().then(function (doc) {
-          if (doc.exists) tienda = Object.assign(tienda, doc.data());
-          return ref.collection("catalogo").get();
-        }).then(function (snap) {
-          catalogo = [];
-          snap.forEach(function (d) { catalogo.push(Object.assign({ id: d.id }, d.data())); });
-          window._db = db;
-          pintar();
+        window.firebase.initializeApp(FIREBASE);
+        db = window.firebase.firestore();
+        if (largo) return largo;
+        return db.collection("enlaces").doc(corto).get().then(function (d) {
+          if (!d.exists) throw new Error("sin_tienda");
+          return d.data().uid;
         });
       })
-      .catch(function () {
-        catalogo = CATALOGO_LOCAL.slice();
+      .then(function (u) {
+        uid = u;
+        var ref = db.collection("tiendas").doc(uid);
+        return Promise.all([ref.collection("publico").doc("tienda").get(), ref.collection("catalogo").get()]).then(function (r) {
+          if (r[0].exists) tienda = Object.assign(tienda, r[0].data());
+          catalogo = [];
+          r[1].forEach(function (d) { catalogo.push(Object.assign({ id: d.id, petalos: [], comps: [] }, d.data())); });
+          catalogo.sort(function (a, b) { return (a.orden || 0) - (b.orden || 0); });
+          pintar();
+          catalogo.forEach(function (f) {
+            if (!f.foto) return;
+            ref.collection("fotos").doc(f.id).get().then(function (d) {
+              if (d.exists && d.data().img) { fotos[f.id] = d.data().img; pintarCatalogo(); }
+            }).catch(function () {});
+          });
+        });
+      })
+      .catch(function (err) {
         pintar();
-        document.getElementById("tiendaSub").innerHTML =
-          '<span class="error">No pude cargar el catálogo en línea. Se muestra la versión guardada.</span>';
+        document.getElementById("catalogo").innerHTML = "";
+        document.getElementById("catalogo").appendChild(el("p", { class: "msg", style: "grid-column:1/-1",
+          text: err && err.message === "sin_tienda" ? "No encontramos esta tienda. Revisa el enlace." : "No pudimos cargar la tienda. Revisa tu conexión e intenta de nuevo." }));
       });
   }
 
-  /* ---------------- catálogo ---------------- */
+  /* ---------------- portada y catálogo ---------------- */
+  function pintarSinTienda() {
+    pintar();
+    var c = document.getElementById("catalogo");
+    c.innerHTML = "";
+    c.appendChild(el("p", { class: "msg", style: "grid-column:1/-1", text: "Abre el enlace que te compartió la tienda." }));
+  }
+
+  function enlaceWhatsapp(texto) {
+    var n = String(tienda.whatsapp || "").replace(/[^0-9]/g, "");
+    return n ? "https://wa.me/" + n + (texto ? "?text=" + encodeURIComponent(texto) : "") : "";
+  }
 
   function pintar() {
+    document.title = (tienda.nombre || "Eternal Garden") + " · Tienda";
     document.getElementById("tiendaNombre").textContent = tienda.nombre || "Eternal Garden";
-    var sub = document.getElementById("tiendaSub");
+    document.getElementById("tiendaTexto").textContent = tienda.texto || "Flores de limpiapipas hechas a mano, por encargo.";
+    var logo = document.getElementById("logo");
+    logo.innerHTML = "";
+    if (tienda.logo) logo.appendChild(el("img", { src: tienda.logo, alt: "" }));
+    else logo.appendChild(svgEl('<svg viewBox="0 0 40 40" width="72" height="72"><g transform="translate(20 20)" fill="#2F5D3A"><ellipse cx="0" cy="-7" rx="4.5" ry="7.5"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(72)"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(144)"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(216)"/><ellipse cx="0" cy="-7" rx="4.5" ry="7.5" transform="rotate(288)"/><circle r="3.2" fill="#E9B949"/></g></svg>'));
+    var redes = document.getElementById("redes");
+    redes.innerHTML = "";
+    if (tienda.instagram) {
+      var ig = String(tienda.instagram).replace(/^@/, "");
+      redes.appendChild(el("a", { href: "https://instagram.com/" + encodeURIComponent(ig), target: "_blank", rel: "noopener", text: "@" + ig }));
+    }
+    if (enlaceWhatsapp()) redes.appendChild(el("a", { href: enlaceWhatsapp(), target: "_blank", rel: "noopener", text: "WhatsApp" }));
+    var aviso = document.getElementById("avisoMin");
+    aviso.hidden = false;
+    aviso.className = "aviso-min" + (tienda.abierta ? "" : " cerrada");
+    aviso.textContent = tienda.abierta
+      ? "Encarga con " + num(tienda.minDias) + (num(tienda.minDias) === 1 ? " día" : " días") + " de anticipación · entregas desde el " + fechaLarga(fechaMin())
+      : "Por ahora no estamos recibiendo pedidos por aquí. Escríbenos por WhatsApp.";
+    pintarCatalogo();
+    pintarBarra();
+  }
+
+  function pintarCatalogo() {
     var root = document.getElementById("catalogo");
     root.innerHTML = "";
+    if (!catalogo.length) { root.appendChild(el("p", { class: "msg", style: "grid-column:1/-1", text: "Todavía no hay flores publicadas. Vuelve pronto." })); return; }
+    catalogo.forEach(function (f) {
+      var c = coloresDe(lineaNueva(f));
+      var imagen = el("span", { class: "imagen" }, [fotos[f.id] ? el("img", { src: fotos[f.id], alt: "" }) : svgEl(petalosSvg(c.p1, c.p2, 96))]);
+      root.appendChild(el("button", { type: "button", class: "tarjeta", "aria-label": "Elegir " + f.nombre + ", " + money(f.precio) + " cada una",
+        onclick: function () { abrirFlor(f, null); } }, [
+        imagen,
+        el("span", { class: "nom", text: f.nombre }),
+        f.descripcion ? el("span", { class: "desc", text: f.descripcion }) : null,
+        el("span", { class: "pie" }, [el("span", { class: "precio", text: money(f.precio) }), el("span", { class: "elegir", text: tienda.abierta ? "Elegir" : "Ver" })])
+      ]));
+    });
+  }
 
-    if (!catalogo.length) {
-      sub.textContent = "";
-      root.appendChild(el("p", { class: "msg", text: "Todavía no hay productos publicados. Vuelve pronto." }));
-      return;
+  function pintarBarra() {
+    var b = document.getElementById("barraRamo");
+    b.hidden = !carrito.length || !!document.querySelector("#capa .fondo, #capa .listo");
+    document.getElementById("barraTxt").textContent = "Tu ramo · " + fmt(unidadesCarrito()) + (unidadesCarrito() === 1 ? " flor" : " flores") + " · " + money(totalCarrito());
+  }
+  document.getElementById("barraRamo").addEventListener("click", function () { pedido.paso = 1; abrirPedido(); });
+
+  /* ---------------- hojas ---------------- */
+  var cerrarActual = null;
+  function abrirHoja(construir) {
+    var capa = document.getElementById("capa");
+    var volver = document.activeElement;
+    capa.innerHTML = "";
+    var fondo = el("div", { class: "fondo", onclick: function (e) { if (e.target === fondo) cerrar(); } });
+    var hoja = el("div", { class: "hoja", role: "dialog", "aria-modal": "true" });
+    fondo.appendChild(hoja);
+    capa.appendChild(fondo);
+    function cerrar() { capa.innerHTML = ""; cerrarActual = null; document.removeEventListener("keydown", tecla); pintarBarra(); if (volver && volver.focus) volver.focus(); }
+    function tecla(e) { if (e.key === "Escape") cerrar(); }
+    document.addEventListener("keydown", tecla);
+    cerrarActual = cerrar;
+    function repintar() {
+      var arriba = hoja.querySelector(".cuerpo") ? hoja.querySelector(".cuerpo").scrollTop : 0;
+      hoja.innerHTML = "";
+      construir(hoja, cerrar, repintar);
+      if (hoja.querySelector(".cuerpo")) hoja.querySelector(".cuerpo").scrollTop = arriba;
     }
+    repintar();
+    pintarBarra();
+    var primero = hoja.querySelector("button, input");
+    if (primero) primero.focus({ preventScroll: true });
+    return repintar;
+  }
 
-    sub.textContent = "Elige lo que quieras y envía tu pedido.";
-
-    catalogo.forEach(function (p) {
-      var card = el("div", { class: "item" }, [
-        el("h3", { text: p.nombre }),
-        p.descripcion ? el("p", { class: "desc", text: p.descripcion }) : null
-      ]);
-
-      /* todo se prepara después de recibir el pedido: no hay stock que mostrar,
-         y un número guardado de la última publicación solo podría mentir */
-      var etiqueta = el("span", { class: "tag", text: "Por encargo" });
-
-      var stepper = el("div", { class: "stepper" });
-      var out = el("span", { text: String(carrito[p.id] || 0) });
-      stepper.appendChild(el("button", { type: "button", text: "−", "aria-label": "Quitar uno",
-        onclick: function () { cambiar(p, -1, out); } }));
-      stepper.appendChild(out);
-      stepper.appendChild(el("button", { type: "button", text: "+", "aria-label": "Agregar uno",
-        onclick: function () { cambiar(p, 1, out); } }));
-
-      card.appendChild(el("div", { class: "foot" }, [
-        el("span", { class: "price", text: money(p.precio) }), etiqueta, stepper
+  /* elegir una flor nueva (idx null) o cambiar una del ramo */
+  function abrirFlor(f, idx) {
+    var L = idx == null ? lineaNueva(f) : JSON.parse(JSON.stringify(carrito[idx]));
+    var error = "";
+    abrirHoja(function (hoja, cerrar, repintar) {
+      var otros = usoCarrito(idx == null ? -1 : idx);
+      var q = num(L.qty);
+      var uso = usoLinea(L, {});
+      var c = coloresDe(L);
+      var cab = el("div", { class: "cuerpo" });
+      cab.appendChild(el("div", { class: "fila-titulo" }, [
+        el("span", { class: "miniatura" }, [fotos[f.id] ? el("img", { src: fotos[f.id], alt: "" }) : svgEl(petalosSvg(c.p1, c.p2, 60))]),
+        el("div", { class: "info-flor" }, [el("h2", { id: "fl-titulo", text: f.nombre }),
+          f.descripcion ? el("span", { text: f.descripcion }) : null, el("strong", { text: money(f.precio) + " c/u" })]),
+        el("button", { class: "cerrar", type: "button", "aria-label": "Cerrar", onclick: cerrar }, [cerrarIcono()])
       ]));
-      root.appendChild(card);
-    });
-
-    refrescarCarrito();
-  }
-
-  function cambiar(p, delta, out) {
-    var n = (carrito[p.id] || 0) + delta;
-    if (n < 0) n = 0;
-    if (n === 0) delete carrito[p.id]; else carrito[p.id] = n;
-    out.textContent = String(n);
-    refrescarCarrito();
-  }
-
-  function itemsCarrito() {
-    return Object.keys(carrito).map(function (id) {
-      var p = catalogo.filter(function (x) { return x.id === id; })[0];
-      return p ? { productId: id, nombre: p.nombre, qty: carrito[id], price: p.precio } : null;
-    }).filter(Boolean);
-  }
-
-  function refrescarCarrito() {
-    var items = itemsCarrito();
-    var unidades = items.reduce(function (a, i) { return a + i.qty; }, 0);
-    var total = items.reduce(function (a, i) { return a + i.qty * i.price; }, 0);
-    document.getElementById("cart").hidden = unidades === 0;
-    document.getElementById("cartCount").textContent = unidades + (unidades === 1 ? " producto" : " productos");
-    document.getElementById("cartTotal").textContent = money(total);
-  }
-
-  /* ---------------- pedido ---------------- */
-
-  document.getElementById("btnPedir").addEventListener("click", abrirFormulario);
-
-  function abrirFormulario() {
-    var items = itemsCarrito();
-    if (!items.length) return;
-    var total = items.reduce(function (a, i) { return a + i.qty * i.price; }, 0);
-    var sheet = document.getElementById("sheet");
-    sheet.innerHTML = "";
-
-    var resumen = el("div", { class: "resumen" });
-    items.forEach(function (i) {
-      resumen.appendChild(el("div", {}, [
-        el("span", { text: i.qty + " × " + i.nombre }),
-        el("span", { class: "n", text: money(i.qty * i.price) })
-      ]));
-    });
-    resumen.appendChild(el("div", { class: "total" }, [
-      el("span", { text: "Total" }), el("span", { class: "n", text: money(total) })
-    ]));
-
-    var nombre = el("input", { type: "text", placeholder: "Tu nombre", autocomplete: "name" });
-    var wsp = el("input", { type: "tel", placeholder: "+56 9 1234 5678", autocomplete: "tel" });
-    var metodo = el("select", {});
-    ["Retiro", "Punto de encuentro", "Envío"].forEach(function (m) {
-      metodo.appendChild(el("option", { value: m, text: m }));
-    });
-    var comuna = el("input", { type: "text", placeholder: "Comuna o ciudad" });
-    var fecha = el("input", { type: "date" });
-    var notas = el("textarea", { placeholder: "Colores, dedicatoria, cualquier detalle" });
-    var aviso = el("p", { class: "note" });
-
-    var enviar = el("button", { class: "btn primary wide", type: "button", text: "Enviar pedido",
-      style: "margin-top:16px", onclick: function () {
-        if (!nombre.value.trim()) { aviso.className = "note error"; aviso.textContent = "Falta tu nombre."; return; }
-        if (!wsp.value.trim()) { aviso.className = "note error"; aviso.textContent = "Falta tu WhatsApp."; return; }
-        enviar.disabled = true;
-        aviso.className = "note";
-        aviso.textContent = "Enviando…";
-        mandarPedido({
-          cliente: nombre.value.trim(), whatsapp: wsp.value.trim(),
-          metodo: metodo.value, comuna: comuna.value.trim(),
-          fecha: fecha.value, notas: notas.value.trim(),
-          items: items.map(function (i) { return { productId: i.productId, nombre: i.nombre, qty: i.qty, price: i.price }; }),
-          total: total, estado: "pendiente", origen: "tienda", creado: new Date().toISOString()
-        }, total).catch(function () {
-          enviar.disabled = false;
-          aviso.className = "note error";
-          aviso.textContent = "No pude enviarlo. Intenta de nuevo o escríbenos por WhatsApp.";
+      hoja.setAttribute("aria-labelledby", "fl-titulo");
+      var cant = el("input", { id: "fl-qty", type: "number", inputmode: "numeric", min: "1", value: String(L.qty),
+        onchange: function (e) { L.qty = Math.max(1, Math.round(num(e.target.value)) || 1); error = ""; repintar(); } });
+      cab.appendChild(el("div", { class: "fila-cant" }, [el("label", { for: "fl-qty", text: "¿Cuántas?" }),
+        el("div", { class: "ctrl" }, [
+          el("button", { class: "icono", type: "button", "aria-label": "Una menos", text: "−", onclick: function () { L.qty = Math.max(1, num(L.qty) - 1); error = ""; repintar(); } }),
+          cant,
+          el("button", { class: "icono", type: "button", "aria-label": "Una más", text: "+", onclick: function () { L.qty = num(L.qty) + 1; error = ""; repintar(); } })
+        ])]));
+      cab.appendChild(el("span", { class: "etq", text: "Elige los colores" }));
+      function slot(titulo, tipo, actual, alElegir) {
+        var ops = opciones(tipo), elegido = colorPorId(actual);
+        var fila = el("div", { class: "muestras", role: "group", "aria-label": titulo });
+        ops.forEach(function (o) {
+          var queda = o.disponible - (otros[o.id] || 0);
+          var hay = queda > 0;
+          fila.appendChild(el("button", { type: "button", class: "muestra", "aria-pressed": o.id === actual, "aria-disabled": !hay,
+            "aria-label": o.nombre + (hay ? "" : ", agotado"), title: o.nombre, style: "background-color:" + o.hex,
+            onclick: function () { if (!hay) return; alElegir(o.id); error = ""; repintar(); } }));
         });
-      } });
-
-    sheet.appendChild(el("h3", { text: "Tu pedido" }));
-    sheet.appendChild(resumen);
-    sheet.appendChild(el("label", { class: "field", text: "Nombre" })); sheet.appendChild(nombre);
-    sheet.appendChild(el("label", { class: "field", text: "WhatsApp" })); sheet.appendChild(wsp);
-    sheet.appendChild(el("label", { class: "field", text: "Cómo lo recibes" })); sheet.appendChild(metodo);
-    sheet.appendChild(el("label", { class: "field", text: "Comuna o ciudad" })); sheet.appendChild(comuna);
-    sheet.appendChild(el("label", { class: "field", text: "Fecha que te acomoda" })); sheet.appendChild(fecha);
-    sheet.appendChild(el("label", { class: "field", text: "Notas" })); sheet.appendChild(notas);
-    sheet.appendChild(el("p", { class: "note", text: "La dirección exacta la coordinamos después por WhatsApp." }));
-    sheet.appendChild(aviso);
-    sheet.appendChild(enviar);
-    sheet.appendChild(el("button", { class: "btn wide", type: "button", text: "Volver", style: "margin-top:8px",
-      onclick: function () { sheet.close(); } }));
-
-    sheet.showModal();
-  }
-
-  function mandarPedido(pedido, total) {
-    if (conectado() && window._db) {
-      /* el pedido entra directo a la agenda de esa cuenta */
-      return tiendaRef(window._db).collection("pedidos").add(pedido)
-        .then(function () { listo(pedido, total); });
-    }
-    /* sin Firebase el pedido sale por WhatsApp */
-    return new Promise(function (res) {
-      var txt = "Hola! Quiero hacer un pedido:\n\n" +
-        pedido.items.map(function (i) { return "• " + i.qty + " × " + i.nombre; }).join("\n") +
-        "\n\nTotal: " + money(total) +
-        "\nNombre: " + pedido.cliente +
-        "\nWhatsApp: " + pedido.whatsapp +
-        "\nEntrega: " + pedido.metodo + (pedido.comuna ? " · " + pedido.comuna : "") +
-        (pedido.fecha ? "\nFecha: " + pedido.fecha : "") +
-        (pedido.notas ? "\nNotas: " + pedido.notas : "");
-      var num = String(tienda.whatsapp || "").replace(/[^0-9]/g, "");
-      window.open("https://wa.me/" + num + "?text=" + encodeURIComponent(txt), "_blank");
-      listo(pedido, total);
-      res();
+        return el("section", { class: "slot" }, [
+          el("div", { class: "fila" }, [el("strong", { text: titulo }), el("span", { class: "elegido", text: elegido ? elegido.nombre : "Elige un color" })]),
+          ops.length ? fila : el("span", { class: "nota", text: "Sin colores disponibles por ahora." })
+        ]);
+      }
+      f.petalos.forEach(function (g, i) {
+        g.colores.forEach(function (col, j) {
+          if (col.lp <= 0) return;
+          cab.appendChild(slot(g.nombre + (g.colores.length > 1 ? " · " + NOMBRES_COLOR[j] : ""), g.tipo, L.pet[i][j], function (id) { L.pet[i][j] = id; }));
+        });
+      });
+      f.comps.forEach(function (k, i) { cab.appendChild(slot(k.nombre, k.tipo, L.comp[i], function (id) { L.comp[i] = id; })); });
+      var faltan = Object.keys(uso).filter(function (id) { var o = colorPorId(id); return !o || uso[id] > o.disponible - (otros[id] || 0) + 1e-9; });
+      if (faltan.length) cab.appendChild(el("p", { class: "aviso", role: "status", text: "Para " + fmt(q) + (q === 1 ? " flor" : " flores") + " no nos alcanza " +
+        faltan.map(nombreColor).join(", ") + ". Prueba otro color o menos flores." }));
+      if (error) cab.appendChild(el("p", { class: "error", role: "alert", text: error }));
+      hoja.appendChild(cab);
+      var pie = el("div", { class: "pie" });
+      if (!tienda.abierta) {
+        pie.appendChild(el("p", { class: "nota", style: "margin:0", text: "Por ahora no recibimos pedidos por aquí. Escríbenos por WhatsApp." }));
+      } else {
+        pie.appendChild(el("button", { class: "btn primario grande ancho", type: "button", onclick: function () {
+          if (faltan.length) { error = "No nos alcanza para esa cantidad con esos colores."; repintar(); return; }
+          if (idx == null) carrito.push(L); else carrito[idx] = L;
+          cerrar();
+          if (idx != null) { pedido.paso = 1; abrirPedido(); }
+        } }, [el("span", { text: idx == null ? "Agregar al ramo" : "Guardar cambios" }), el("span", { text: money(f.precio * q) })]));
+      }
+      hoja.appendChild(pie);
     });
   }
 
-  function listo(pedido, total) {
-    var sheet = document.getElementById("sheet");
-    sheet.innerHTML = "";
-    sheet.appendChild(el("div", { class: "done" }, [
-      el("h3", { text: "¡Pedido enviado!" }),
-      el("p", { text: "Gracias " + pedido.cliente + ". Te escribimos por WhatsApp para confirmar la entrega y coordinar el pago." }),
-      el("button", { class: "btn primary wide", type: "button", text: "Cerrar", onclick: function () {
-        sheet.close();
-        carrito = {};
-        pintar();
+  function validarEntrega() {
+    if (!pedido.fecha) return "Elige la fecha de entrega.";
+    if (pedido.fecha < fechaMin()) return "Necesitamos " + num(tienda.minDias) + " días para hacer tu ramo: la fecha más cercana es el " + fechaLarga(fechaMin()) + ".";
+    if (pedido.metodo !== "Retiro" && !pedido.direccion.trim()) return pedido.metodo === "Envío" ? "Escribe la dirección de envío." : "Escribe el punto de encuentro.";
+    return "";
+  }
+  function validarDatos() {
+    if (!pedido.nombre.trim()) return "Escribe tu nombre.";
+    if (pedido.whatsapp.replace(/[^0-9]/g, "").length < 8) return "Escribe tu WhatsApp para coordinar (al menos 8 números).";
+    return "";
+  }
+
+  function abrirPedido() {
+    var error = "", enviando = false;
+    abrirHoja(function (hoja, cerrar, repintar) {
+      if (!carrito.length) { cerrar(); return; }
+      function ir(n) {
+        if (n > 2) { var e = validarEntrega(); if (e) { pedido.paso = 2; error = e; repintar(); return; } }
+        pedido.paso = n; error = ""; repintar();
+      }
+      var cab = el("div", { class: "cab" }, [
+        el("div", { class: "fila-titulo" }, [el("h2", { id: "pd-titulo", text: "Tu pedido" }),
+          el("button", { class: "cerrar", type: "button", "aria-label": "Cerrar", onclick: cerrar }, [cerrarIcono()])])
+      ]);
+      hoja.setAttribute("aria-labelledby", "pd-titulo");
+      var pasos = el("div", { class: "pasos", role: "group", "aria-label": "Pasos del pedido" });
+      PASOS.forEach(function (n, i) { pasos.appendChild(el("button", { type: "button", text: n, "aria-pressed": pedido.paso === i + 1, onclick: function () { ir(i + 1); } })); });
+      cab.appendChild(pasos);
+      hoja.appendChild(cab);
+      var cuerpo = el("div", { class: "cuerpo" });
+      var total = totalCarrito(), unidades = unidadesCarrito();
+      var totalTxt = el("div", { class: "total" }, [el("span", { text: "Total · " + fmt(unidades) + (unidades === 1 ? " flor" : " flores") }), el("strong", { text: money(total) })]);
+
+      if (pedido.paso === 1) {
+        var ul = el("ul", { class: "lineas" });
+        carrito.forEach(function (l, i) {
+          var f = flor(l.fid), c = coloresDe(l);
+          if (!f) return;
+          ul.appendChild(el("li", {}, [
+            el("span", { class: "punto", "aria-hidden": "true", style: "background:linear-gradient(90deg," + c.p1 + " 50%," + c.p2 + " 50%)" }),
+            el("span", { class: "txt" }, [el("strong", { text: lineaTxt(l) + " · " + money(f.precio * num(l.qty)) }), el("span", { text: coloresTxt(l) })]),
+            el("button", { class: "chico", type: "button", text: "Cambiar", "aria-label": "Cambiar " + lineaTxt(l), onclick: function () { abrirFlor(f, i); } }),
+            el("button", { class: "quitar", type: "button", text: "✕", "aria-label": "Quitar " + lineaTxt(l), onclick: function () { carrito.splice(i, 1); repintar(); pintarBarra(); } })
+          ]));
+        });
+        cuerpo.appendChild(ul);
+        cuerpo.appendChild(el("button", { class: "btn punteado", type: "button", text: "+ Agregar otra flor", onclick: cerrar }));
+        var envs = (tienda.envolturas || []).filter(function (e) { return e.disponible > 0; });
+        if (pedido.envoltura && !envs.some(function (e) { return e.id === pedido.envoltura; })) pedido.envoltura = "";
+        if (envs.length) {
+          var chips = el("div", { class: "chips", role: "group", "aria-label": "Envoltura del ramo" });
+          [{ id: "", nombre: "Sin envoltura", hex: "#FFFFFF" }].concat(envs).forEach(function (e) {
+            chips.appendChild(el("button", { type: "button", class: "chip", "aria-pressed": pedido.envoltura === e.id,
+              onclick: function () { pedido.envoltura = e.id; repintar(); } }, [el("span", { class: "punto", "aria-hidden": "true", style: "background:" + e.hex }), e.nombre]));
+          });
+          cuerpo.appendChild(el("div", { class: "campo" }, [el("span", { class: "etq", text: "Envoltura del ramo (incluida)" }), chips]));
+        }
+        cuerpo.appendChild(totalTxt);
+        cuerpo.appendChild(el("span", { class: "nota", style: "margin-top:-8px", text: "El pago se coordina por WhatsApp." }));
+      } else if (pedido.paso === 2) {
+        var min = fechaMin();
+        cuerpo.appendChild(el("div", { class: "campo" }, [
+          el("label", { for: "pd-fecha", text: "¿Para qué fecha lo necesitas?" }),
+          el("input", { id: "pd-fecha", type: "date", min: min, value: pedido.fecha, onchange: function (e) { pedido.fecha = e.target.value; error = ""; repintar(); } }),
+          el("span", { class: "nota", text: "Necesitamos " + num(tienda.minDias) + (num(tienda.minDias) === 1 ? " día" : " días") + " para hacer tu ramo. Desde el " + fechaLarga(min) + "." }),
+          pedido.fecha && pedido.fecha >= min ? el("span", { class: "ok", text: "Lo tendremos listo para el " + fechaLarga(pedido.fecha) + "." }) : null
+        ]));
+        var mets = el("div", { class: "metodos", role: "group", "aria-label": "Forma de entrega" });
+        METODOS.forEach(function (m) { mets.appendChild(el("button", { type: "button", text: m, "aria-pressed": pedido.metodo === m, onclick: function () { pedido.metodo = m; error = ""; repintar(); } })); });
+        cuerpo.appendChild(el("div", { class: "campo" }, [el("span", { class: "etq", text: "¿Cómo lo recibes?" }), mets,
+          pedido.metodo === "Retiro" ? el("span", { class: "nota", text: "Te enviamos la dirección de retiro por WhatsApp." }) : null]));
+        if (pedido.metodo !== "Retiro") {
+          cuerpo.appendChild(el("div", { class: "campo" }, [
+            el("label", { for: "pd-dir", text: pedido.metodo === "Envío" ? "Dirección de envío" : "¿Dónde nos juntamos?" }),
+            el("input", { id: "pd-dir", type: "text", value: pedido.direccion, placeholder: pedido.metodo === "Envío" ? "Calle, número y comuna" : "Ej: Metro Baquedano",
+              oninput: function (e) { pedido.direccion = e.target.value; } })
+          ]));
+        }
+        cuerpo.appendChild(el("div", { class: "campo" }, [
+          el("label", { for: "pd-notas", text: "Dedicatoria o detalles (opcional)" }),
+          el("input", { id: "pd-notas", type: "text", value: pedido.notas, placeholder: "Ej: tarjeta que diga Feliz cumpleaños", maxlength: "300",
+            oninput: function (e) { pedido.notas = e.target.value; } })
+        ]));
+      } else {
+        cuerpo.appendChild(el("div", { class: "campo" }, [el("label", { for: "pd-nombre", text: "Tu nombre" }),
+          el("input", { id: "pd-nombre", type: "text", autocomplete: "name", value: pedido.nombre, maxlength: "120", oninput: function (e) { pedido.nombre = e.target.value; } })]));
+        cuerpo.appendChild(el("div", { class: "campo" }, [el("label", { for: "pd-wsp", text: "WhatsApp" }),
+          el("input", { id: "pd-wsp", type: "tel", autocomplete: "tel", placeholder: "+56 9 …", value: pedido.whatsapp, maxlength: "40", oninput: function (e) { pedido.whatsapp = e.target.value; } }),
+          el("span", { class: "nota", text: "Por aquí te confirmamos el pedido y el pago." })]));
+        cuerpo.appendChild(el("div", { class: "campo" }, [el("label", { for: "pd-ig", text: "Instagram (opcional)" }),
+          el("input", { id: "pd-ig", type: "text", placeholder: "@usuario", value: pedido.instagram, maxlength: "60", oninput: function (e) { pedido.instagram = e.target.value; } })]));
+        cuerpo.appendChild(totalTxt);
+      }
+      if (error) cuerpo.appendChild(el("p", { class: "error", role: "alert", text: error }));
+      hoja.appendChild(cuerpo);
+      var pie = el("div", { class: "pie" });
+      if (pedido.paso > 1) pie.appendChild(el("button", { class: "btn", type: "button", text: "Atrás", style: "flex:1", onclick: function () { pedido.paso--; error = ""; repintar(); } }));
+      if (pedido.paso < 3) pie.appendChild(el("button", { class: "btn primario", type: "button", text: "Siguiente", style: "flex:2", onclick: function () { ir(pedido.paso + 1); } }));
+      else pie.appendChild(el("button", { class: "btn primario", type: "button", text: enviando ? "Enviando…" : "Enviar pedido", disabled: enviando, style: "flex:2", onclick: function () {
+        var e = validarEntrega(); if (e) { pedido.paso = 2; error = e; repintar(); return; }
+        e = validarDatos(); if (e) { error = e; repintar(); return; }
+        enviando = true; error = ""; repintar();
+        enviar().then(function (numero) { cerrar(); mostrarListo(numero); })
+          .catch(function () { enviando = false; error = "No pudimos enviar tu pedido. Intenta de nuevo o escríbenos por WhatsApp."; repintar(); });
+      } }));
+      hoja.appendChild(pie);
+    });
+  }
+
+  function datosPedido() {
+    return {
+      cliente: pedido.nombre.trim().slice(0, 120), whatsapp: pedido.whatsapp.trim().slice(0, 40), instagram: pedido.instagram.trim().slice(0, 60),
+      items: carrito.map(function (l) { var f = flor(l.fid); return { productId: l.fid, nombre: f ? f.nombre : "", qty: num(l.qty), price: f ? f.precio : 0, pet: l.pet, comp: l.comp }; }),
+      envoltura: pedido.envoltura ? { materialId: pedido.envoltura, cant: 1 } : null,
+      metodo: pedido.metodo, comuna: pedido.metodo === "Retiro" ? "" : pedido.direccion.trim().slice(0, 200),
+      fecha: pedido.fecha, notas: pedido.notas.trim().slice(0, 300), total: totalCarrito(),
+      estado: "pendiente", origen: "tienda", nuevo: true, creado: hoy()
+    };
+  }
+
+  function enviar() {
+    var datos = datosPedido();
+    /* Firestore no acepta listas dentro de listas: cada pétalo va como { c: [colores] }, igual que en la agenda */
+    datos.items.forEach(function (it) { it.pet = it.pet.map(function (g) { return { c: g.slice() }; }); });
+    if (!db || !uid) return Promise.reject(new Error("sin_conexion"));
+    var ref = db.collection("tiendas").doc(uid).collection("pedidos").doc();
+    return ref.set(datos).then(function () { return ref.id.slice(0, 6).toUpperCase(); });
+  }
+
+  function mostrarListo(numero) {
+    var datos = { lineas: carrito.map(function (l) { return lineaTxt(l) + " · " + coloresTxt(l); }), total: totalCarrito() };
+    var capa = document.getElementById("capa");
+    capa.innerHTML = "";
+    var resumen = el("div", { class: "resumen" });
+    datos.lineas.forEach(function (t) { resumen.appendChild(el("span", { style: "font-size:14px", text: t })); });
+    resumen.appendChild(el("span", { class: "nota", text: fechaLarga(pedido.fecha) + " · " + pedido.metodo + (pedido.metodo !== "Retiro" && pedido.direccion ? " · " + pedido.direccion : "") }));
+    resumen.appendChild(el("div", { class: "t" }, [el("span", { text: "Total" }), el("span", { text: money(datos.total) })]));
+    var wsp = enlaceWhatsapp("Hola! Acabo de hacer el pedido " + numero + " en la tienda.");
+    capa.appendChild(el("div", { class: "listo", role: "dialog", "aria-modal": "true", "aria-labelledby": "ok-t" }, [
+      svgEl('<svg viewBox="0 0 48 48" width="84" height="84" aria-hidden="true"><circle cx="24" cy="24" r="24" fill="#FFFFFF"/><path d="M14 25 L21 32 L35 17" fill="none" stroke="#2F5D3A" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>'),
+      el("h2", { id: "ok-t", text: "¡Pedido enviado!" }),
+      el("p", { text: "Pedido " + numero + ". Te escribiremos por WhatsApp para confirmar y coordinar el pago." }),
+      resumen,
+      wsp ? el("a", { class: "btn", href: wsp, target: "_blank", rel: "noopener", style: "display:flex;align-items:center;text-decoration:none", text: "Escribir por WhatsApp" }) : null,
+      el("button", { class: "btn", type: "button", text: "Volver a la tienda", onclick: function () {
+        carrito = []; pedido.paso = 1; pedido.fecha = ""; pedido.direccion = ""; pedido.notas = "";
+        capa.innerHTML = ""; pintarBarra(); window.scrollTo(0, 0);
       } })
     ]));
+    pintarBarra();
   }
 
   iniciar();
 })();
 </script>
-
 </body>
 </html>
