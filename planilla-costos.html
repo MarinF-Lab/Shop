@@ -1043,6 +1043,39 @@
   .fila-medida .chips-filtro { flex: 1; min-width: 200px; margin: 0; }
   .fila-medida .chip-filtro { min-height: 40px; min-width: 44px; }
   .otra-unidad { width: 100%; margin-top: 8px; font: inherit; font-size: 15px; padding: 0 12px; box-sizing: border-box; }
+
+  /* ---------- tienda: perfil, fotos, colores y avisos ---------- */
+  .bar .btn-tienda { flex: none; width: 44px; height: 44px; padding: 0; border-radius: 50%; background: var(--surface); border: 1.5px solid var(--line); color: var(--ink); display: grid; place-items: center; cursor: pointer; }
+  .bar .btn-tienda[hidden] { display: none; }
+  .banner-nuevos { width: 100%; display: flex; align-items: center; gap: 10px; background: #FFF0CC; border: 2px solid #E9B949; border-radius: 18px; padding: 10px 12px; margin: 0 0 12px; text-align: left; font: inherit; color: #4F3500; cursor: pointer; }
+  .banner-nuevos .signo { flex: none; width: 36px; height: 36px; border-radius: 50%; background: #E9B949; color: #FFFFFF; display: grid; place-items: center; font-weight: 800; }
+  .banner-nuevos .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .banner-nuevos .txt strong { font-size: 15px; }
+  .banner-nuevos .txt span { font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .banner-nuevos .ir { font-size: 13px; font-weight: 800; }
+  .nuevo-tienda { background: #FFF0CC; color: #4F3500; border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+  .nuevo-tienda strong { font-size: 14px; }
+  .nuevo-tienda .acciones { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .nuevo-tienda .btn { min-height: 48px; background: var(--surface); }
+  .nuevo-tienda .btn.primary { background: var(--accent); }
+  .fila-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .logo-tienda { flex: none; width: 64px; height: 64px; border-radius: 50%; background: var(--accent); color: #FFFFFF; display: grid; place-items: center; overflow: hidden; font-family: var(--serif); font-size: 26px; font-style: italic; }
+  .logo-tienda img { width: 100%; height: 100%; object-fit: cover; }
+  .fila-logo label.btn { display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; cursor: pointer; }
+  .fila-crear .prefijo { align-self: center; font-size: 12px; color: var(--soft-ink); white-space: nowrap; }
+  .enlace-tienda { margin: 8px 0; padding: 10px 12px; border-radius: 12px; background: var(--paper); font-size: 13px; overflow-wrap: anywhere; }
+  .foto-receta { display: flex; align-items: center; gap: 12px; background: var(--paper); border-radius: 16px; padding: 10px; }
+  .foto-receta .marco { flex: none; width: 80px; height: 80px; border-radius: 14px; background: var(--surface); display: grid; place-items: center; overflow: hidden; font-size: 12px; color: var(--muted); }
+  .foto-receta .marco img { width: 100%; height: 100%; object-fit: cover; }
+  .foto-receta .acciones { flex: 1; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+  .foto-receta label.btn { display: flex; align-items: center; justify-content: center; cursor: pointer; }
+  .foto-receta .note { font-size: 11px; margin: 0; }
+  .foto-flor { flex: none; width: 44px; height: 44px; border-radius: 12px; object-fit: cover; }
+  .paleta .muestra.mio { border: 2px dashed var(--accent); }
+  .otro-color { display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .otro-color label { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 800; min-height: 44px; }
+  .otro-color input[type="color"] { width: 52px; height: 44px; border: 1.5px solid var(--line); border-radius: 12px; padding: 2px; background: var(--surface); cursor: pointer; }
+  .otro-color input[type="text"] { width: 120px; font: inherit; font-size: 15px; padding: 0 10px; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1079,6 +1112,7 @@
       <span class="hoy" id="resumenDia"></span>
       <span class="estado"><span id="atrasadosDia"></span><span id="saveState" role="status" aria-live="polite">Cargando…</span></span>
     </div>
+    <button class="btn-tienda" type="button" id="btnTienda" aria-label="Perfil de la tienda" hidden><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10 L5.5 4 H18.5 L20 10"/><path d="M4 10 Q6 13 8 10 Q10 13 12 10 Q14 13 16 10 Q18 13 20 10"/><path d="M5.5 12 V20 H18.5 V12"/><path d="M10 20 V15 H14 V20"/></svg></button>
     <div class="cuenta" id="cuenta"></div>
     <button class="nuevo" type="button" id="btnNuevo" aria-label="Anotar pedido nuevo"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round"><path d="M12 5 V19"/><path d="M5 12 H19"/></svg></button>
   </header>
@@ -1422,7 +1456,9 @@
     var k = 0;
     var pet = r.petalos.map(function (g, i) {
       return g.colores.map(function (c, j) {
-        var id = it.pet && it.pet[i] && it.pet[i][j];
+        /* Firestore no acepta listas dentro de listas: cada pétalo se guarda como { c: [colores] } */
+        var g0 = it.pet && it.pet[i];
+        var id = g0 && (Array.isArray(g0) ? g0[j] : g0.c && g0.c[j]);
         if (!id && viejo) id = k === 0 ? it.primario : (it.modo === "dos" ? it.secundario || it.primario : it.primario);
         k++;
         return id || c.color || "";
@@ -2014,18 +2050,7 @@
     return { ok: true, plan: plan };
   }
 
-  function publicCatalog() {
-    return state.products.filter(function (p) { return p.publicado; }).map(function (p) {
-      var r = calc(p);
-      return {
-        id: p.id,
-        nombre: p.name || "Sin nombre",
-        descripcion: p.descripcionPublica || "",
-        precio: Math.round(r.final),
-        moneda: state.settings.currency
-      };
-    });
-  }
+
 
   /* ---------------- persistencia ---------------- */
 
@@ -2097,6 +2122,7 @@
     if (fb && fb.aplicando) return;
     marcarSucio(que);
     pedirSubida();
+    pedirPublicacion();
   }
 
   /* para cambios masivos (importar, vaciar) donde no hay un objeto que señalar */
@@ -2175,6 +2201,8 @@
     clearTimeout(saveTimer);
     pendiente = false;
     limpiarPendientes();   /* lo de la cuenta anterior no se sube a la nueva */
+    clearTimeout(pubTimer);
+    publicado = { catalogo: {}, publico: "" }; catalogoLeido = false; nuevosVistos = null;
     state = estadoInicial();
     ui.open = {};
     ui.confirming = null;
@@ -2728,9 +2756,10 @@
     var r = calc(p);
     /* cabecera: la flor en su color habitual, cuánto cuesta y cuánto queda */
     var c = coloresLinea({ productId: p.id }) || { p1: "#E6DCCB", p2: "#E6DCCB" };
+    var foto = fotoDe(p, function () { if (ui.tab === "productos") renderSeguro(); });
     var head = el("button", { type: "button", class: "card-head flor-head", "aria-label": "Receta de " + (p.name || "flor sin nombre"),
       onclick: function () { abrirReceta(p); } }, [
-      svgEl(petalosSvg(c.p1, c.p2, 40)),
+      foto ? el("img", { class: "foto-flor", src: foto, alt: "" }) : svgEl(petalosSvg(c.p1, c.p2, 40)),
       el("span", { class: "flor-nombre" }, [
         el("h3", { text: p.name || "Sin nombre" }),
         el("span", { class: "flor-resumen", text: "Cuesta " + money(r.total) + " · vendes a " + money(r.final) })
@@ -2834,6 +2863,19 @@
             return "Con impuesto (" + pct(parseNum(state.settings.taxRate)) + "): " + money(calc(p).final) + ". Se cambia en Ajustes.";
           }));
         }
+        var fotoUrl = fotoDe(p, function () { h.repintar(); });
+        var fileFoto = el("input", { type: "file", accept: "image/*", class: "solo-lector", id: "rec-foto",
+          onchange: function (e) { toast("Achicando la foto…"); achicarImagen(e.target.files[0], 800, function (url) { guardarFoto(p, url).then(function () { h.repintar(); }); }); } });
+        cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Foto para la tienda" }),
+          el("div", { class: "foto-receta" }, [
+            el("span", { class: "marco" }, [fotoUrl ? el("img", { src: fotoUrl, alt: "Foto de " + (p.name || "la flor") })
+              : el("span", { text: p.foto ? "Cargando…" : "Sin foto" })]),
+            el("span", { class: "acciones" }, [
+              el("label", { class: "btn", for: "rec-foto", text: p.foto ? "Cambiar foto" : "Elegir foto" }), fileFoto,
+              p.foto ? el("button", { class: "btn small peligro", type: "button", text: "Quitar foto", onclick: function () { quitarFoto(p); h.repintar(); } }) : null,
+              el("span", { class: "note", text: "Se achica sola para que la tienda cargue rápido." })
+            ])
+          ])]));
         if (moduloActivo("tienda")) {
           var pub = el("input", { type: "checkbox" });
           pub.checked = !!p.publicado;
@@ -3219,7 +3261,7 @@
     function disponible(m) { return parseNum(m.stock) - (otros[m.id] || 0); }
     function fijar(fn) {
       var c = coloresItem(p, it);
-      it.pet = c.pet; it.comp = c.comp;
+      it.pet = c.pet.map(function (g) { return { c: g.slice() }; }); it.comp = c.comp;
       delete it.modo; delete it.primario; delete it.secundario; delete it.hojasColor;
       fn();
       alCambiar();
@@ -3236,7 +3278,7 @@
             el("span", { class: "elegido", text: m ? m.name : "sin elegir" })
           ]),
           el("span", { class: "det", text: fmtQty(c.lp) + " por pétalo · " + (g.tipo === "Limpiapipas" ? fmtQty(q * g.cant * c.lp) + " limpiapipas" : textoMedidaUso(q * g.cant * c.lp, unidadMedidaDe(m) || "u")) + " en total" }),
-          muestras(g.tipo, col.pet[i][j], function (id) { fijar(function () { it.pet[i][j] = id; }); },
+          muestras(g.tipo, col.pet[i][j], function (id) { fijar(function () { it.pet[i].c[j] = id; }); },
             (g.nombre || "Pétalo") + " " + (g.colores.length > 1 ? NOMBRES_COLOR[j].toLowerCase() : ""), disponible)
         ]));
       });
@@ -3538,6 +3580,7 @@
 
     var porHacer = state.orders.filter(estaAbierto).sort(ordenEntrega);
     var foco = porHacer.filter(function (o) { return o.id === ui.foco; })[0] || porHacer[0] || null;
+    agregar(root, bannerNuevos());
 
     if (porHacer.length > 1) root.appendChild(franjaPorHacer(porHacer, foco));
     if (foco) {
@@ -3611,6 +3654,7 @@
     var plan = planEntrega(o);
     if (!plan.ok) card.appendChild(el("p", { class: "ramo-aviso", text: textoFaltantes(plan) }));
 
+    agregar(card, bloqueNuevo(o));
     var etapas = el("div", { class: "seg ramo-etapas", role: "group", "aria-label": "Avance del pedido" });
     ETAPAS.forEach(function (e2) {
       etapas.appendChild(el("button", { type: "button", text: e2[1], "aria-pressed": o.estado === e2[0],
@@ -4380,13 +4424,29 @@
     }, function () { render(); });
   }
 
+  /* paleta fija + "Mis colores" + rueda de color; alElegir(hex, esNuevo) */
   function paletaColores(actual, alElegir) {
+    var caja = el("div", { class: "paleta-caja" });
     var grid = el("div", { class: "paleta", role: "group", "aria-label": "Color" });
-    PALETA.forEach(function (hex, i) {
-      grid.appendChild(el("button", { type: "button", class: "muestra", "aria-pressed": String(actual || "").toUpperCase() === hex,
-        "aria-label": "Color " + (i + 1), "data-hex": hex, style: "background-color:" + hex, onclick: function () { alElegir(hex); } }));
+    var act = String(actual || "").toUpperCase();
+    PALETA.concat(misColores()).forEach(function (hex, i) {
+      var mio = i >= PALETA.length;
+      grid.appendChild(el("button", { type: "button", class: "muestra" + (mio ? " mio" : ""), "aria-pressed": act === hex,
+        "aria-label": (mio ? "Mi color " : "Color ") + hex, "data-hex": hex, style: "background-color:" + hex, onclick: function () { alElegir(hex, false); } }));
     });
-    return grid;
+    caja.appendChild(grid);
+    function usar(v) {
+      var hex = normalizarHex(v);
+      if (!hex) { toast("Escribe un color como #C8A2C8"); return; }
+      alElegir(hex, guardarColor(hex));
+    }
+    var rueda = el("input", { type: "color", value: /^#[0-9A-F]{6}$/.test(act) ? act.toLowerCase() : "#c8a2c8", "aria-label": "Elegir otro color",
+      onchange: function (e) { usar(e.target.value); } });
+    var codigo = el("input", { type: "text", placeholder: "#C8A2C8", "aria-label": "Código del color", value: "",
+      onchange: function (e) { usar(e.target.value); } });
+    caja.appendChild(el("div", { class: "otro-color" }, [el("label", {}, [el("span", { text: "Otro color" }), rueda]), codigo]));
+    caja.appendChild(el("p", { class: "note", style: "margin:2px 0 0", text: "Los colores que agregas quedan en tu paleta, con borde punteado." }));
+    return caja;
   }
 
   /* medida de cada unidad: número y unidad (chips o escrita) */
@@ -4637,8 +4697,9 @@
         avisoColor.innerHTML = "";
         if (!nuevo.trim()) return;
         avisoColor.appendChild(el("span", { class: "sub-etiqueta", text: "Color del material nuevo" }));
-        avisoColor.appendChild(paletaColores(colorNuevo, function (hex) {
+        avisoColor.appendChild(paletaColores(colorNuevo, function (hex, esNuevo) {
           colorNuevo = hex;
+          if (esNuevo) { pintarColorNuevo(); return; }
           Array.prototype.forEach.call(avisoColor.querySelectorAll(".paleta .muestra"), function (b) {
             b.setAttribute("aria-pressed", b.getAttribute("data-hex") === hex ? "true" : "false");
           });
@@ -5111,6 +5172,8 @@
           toast(migrados.length + (migrados.length === 1 ? " producto pasó" : " productos pasaron") + " a precio fijo");
         }
         if (!hayPendientes()) setSaveState("Sincronizado");
+        if (c.campo === "orders") avisarNuevos();
+        pedirPublicacion();
         renderSeguro();
       }, function () { setSaveState("Sin conexión"); }));
     });
@@ -5297,31 +5360,323 @@
 
   /* ---------------- publicación de la tienda ---------------- */
 
-  function publicarCatalogo() {
+  /* ---------------- tienda pública: perfil, fotos y publicación ----------------
+     Lo que ven los clientes se publica solo, unos segundos después de cada
+     cambio: el perfil y los colores disponibles en publico/tienda, cada flor
+     en catalogo/ y su foto en fotos/. Las fotos y el logo se achican en el
+     teléfono y van en Firestore: no hace falta Firebase Storage. */
+
+  function tiendaCfg() {
+    var t = state.settings.tienda || (state.settings.tienda = {});
+    if (t.minDias == null) t.minDias = 3;
+    if (t.abierta == null) t.abierta = false;
+    return t;
+  }
+
+  function sumarDiasIso(iso, n) {
+    var d = new Date(iso + "T12:00:00");
+    d.setDate(d.getDate() + n);
+    return fechaLocal(d);
+  }
+
+  /* achica una imagen elegida en el teléfono: lado mayor `max` px, en jpg */
+  function achicarImagen(file, max, alListo) {
+    if (!file) return;
+    var lector = new FileReader();
+    lector.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var k = Math.min(1, max / Math.max(img.width, img.height));
+        var cv = document.createElement("canvas");
+        cv.width = Math.max(1, Math.round(img.width * k));
+        cv.height = Math.max(1, Math.round(img.height * k));
+        var cx = cv.getContext("2d");
+        cx.fillStyle = "#FFFFFF";
+        cx.fillRect(0, 0, cv.width, cv.height);
+        cx.drawImage(img, 0, 0, cv.width, cv.height);
+        var calidad = 0.82, url = cv.toDataURL("image/jpeg", calidad);
+        /* Firestore acepta hasta 1 MB por documento: se baja la calidad si hace falta */
+        while (url.length > 700000 && calidad > 0.4) { calidad -= 0.12; url = cv.toDataURL("image/jpeg", calidad); }
+        alListo(url);
+      };
+      img.onerror = function () { toast("No pude leer esa imagen"); };
+      img.src = lector.result;
+    };
+    lector.readAsDataURL(file);
+  }
+
+  /* ---- fotos de las flores: se piden al mostrarlas, no se sincronizan ---- */
+  var fotosCache = {}, fotosPedidas = {};
+
+  function fotoDe(p, alCargar) {
+    if (!p || !p.foto) return "";
+    var clave = p.id + ":" + (p.fotoVer || 0);
+    if (fotosCache[clave]) return fotosCache[clave];
+    if (!fotosPedidas[clave] && fb.user) {
+      fotosPedidas[clave] = true;
+      colRef("fotos").doc(p.id).get().then(function (doc) {
+        if (doc.exists && doc.data().img) { fotosCache[clave] = doc.data().img; if (alCargar) alCargar(); }
+      }).catch(function () { delete fotosPedidas[clave]; });
+    }
+    return "";
+  }
+
+  function guardarFoto(p, url) {
+    if (!fb.user) { toast("Inicia sesión para subir fotos"); return Promise.resolve(); }
+    var ver = Date.now();
+    return colRef("fotos").doc(p.id).set({ img: url, actualizado: new Date().toISOString() }).then(function () {
+      fotosCache[p.id + ":" + ver] = url;
+      p.foto = true; p.fotoVer = ver;
+      save(p);
+    }).catch(function () { toast("No pude guardar la foto. Revisa la conexión o las reglas de Firebase."); });
+  }
+
+  function quitarFoto(p) {
+    p.foto = false; p.fotoVer = Date.now();
+    save(p);
+    if (fb.user) colRef("fotos").doc(p.id).delete().catch(function () {});
+  }
+
+  /* ---- colores propios: los que se eligen con la rueda quedan en la paleta ---- */
+  function misColores() {
+    if (!Array.isArray(state.settings.misColores)) state.settings.misColores = [];
+    return state.settings.misColores;
+  }
+
+  function normalizarHex(v) {
+    var h = String(v || "").trim();
+    if (/^[0-9a-f]{6}$/i.test(h)) h = "#" + h;
+    return /^#[0-9a-f]{6}$/i.test(h) ? h.toUpperCase() : "";
+  }
+
+  /* devuelve true si el color es nuevo en la paleta */
+  function guardarColor(hex) {
+    if (PALETA.indexOf(hex) > -1 || misColores().indexOf(hex) > -1) return false;
+    misColores().push(hex);
+    save();
+    return true;
+  }
+
+  /* ---- avisos: pedidos nuevos que llegan de la tienda ---- */
+  function pedidosNuevos() {
+    return state.orders.filter(function (o) { return o.nuevo && estaAbierto(o); });
+  }
+
+  var nuevosVistos = null;
+  function avisarNuevos() {
+    var ids = pedidosNuevos().map(function (o) { return o.id; });
+    if (nuevosVistos === null) { nuevosVistos = {}; ids.forEach(function (id) { nuevosVistos[id] = true; }); return; }
+    var llegados = pedidosNuevos().filter(function (o) { return !nuevosVistos[o.id]; });
+    ids.forEach(function (id) { nuevosVistos[id] = true; });
+    if (llegados.length) {
+      toast(llegados.length === 1 ? "Nuevo pedido de la tienda: " + (llegados[0].cliente || "sin nombre")
+        : llegados.length + " pedidos nuevos de la tienda");
+    }
+  }
+
+  function bannerNuevos() {
+    var nuevos = pedidosNuevos();
+    if (!nuevos.length) return null;
+    return el("button", { type: "button", class: "banner-nuevos", onclick: function () { ui.foco = nuevos[0].id; render(); window.scrollTo(0, 0); } }, [
+      el("span", { class: "signo", "aria-hidden": "true", text: "!" }),
+      el("span", { class: "txt" }, [
+        el("strong", { text: nuevos.length === 1 ? "1 pedido nuevo de la tienda" : nuevos.length + " pedidos nuevos de la tienda" }),
+        el("span", { text: nuevos.map(function (o) { return (o.cliente || "Sin nombre") + " · " + resumenFlores(o); }).join(" / ") })
+      ]),
+      el("span", { class: "ir", text: "Revisar" })
+    ]);
+  }
+
+  function bloqueNuevo(o) {
+    if (!o.nuevo) return null;
+    return el("div", { class: "nuevo-tienda" }, [
+      el("strong", { text: "Nuevo · llegó desde la tienda" }),
+      el("span", { text: "Revisa los colores, la fecha y el stock. Al confirmar, escríbele por WhatsApp para coordinar el pago." }),
+      el("div", { class: "acciones" }, [
+        el("button", { class: "btn peligro", type: "button", text: "Rechazar", onclick: function () {
+          if (!window.confirm("¿Rechazar el pedido de " + (o.cliente || "este cliente") + "? Quedará como cancelado.")) return;
+          o.nuevo = false; o.estado = "cancelado"; sincronizarEstado(o); save(o);
+          if (ui.foco === o.id) ui.foco = null;
+          render(); toast("Pedido rechazado");
+        } }),
+        el("button", { class: "btn primary", type: "button", text: "Confirmar", onclick: function () {
+          o.nuevo = false; save(o); render(); toast("Pedido confirmado");
+        } })
+      ])
+    ]);
+  }
+
+  /* ---- dirección corta: enlaces/{nombre} → uid ---- */
+  function limpiarEnlace(v) {
+    return norm(v).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40);
+  }
+
+  function reservarEnlace(nombre) {
+    var t = tiendaCfg();
     if (!fb.user) return Promise.reject(new Error("Inicia sesión primero."));
-    var cat = publicCatalog();
-    var batch = fb.db.batch();
-    cat.forEach(function (item) {
-      batch.set(colRef("catalogo").doc(item.id), item);
+    if (!nombre || nombre.length < 3) return Promise.reject(new Error("Usa al menos 3 letras o números."));
+    if (nombre === t.enlace) return Promise.resolve();
+    var ref = fb.db.collection("enlaces").doc(nombre);
+    return ref.get().then(function (doc) {
+      if (doc.exists && doc.data().uid !== fb.user.uid) throw new Error("Esa dirección ya la usa otra tienda.");
+      return ref.set({ uid: fb.user.uid });
+    }).then(function () {
+      var vieja = t.enlace;
+      t.enlace = nombre;
+      save();
+      if (vieja) fb.db.collection("enlaces").doc(vieja).delete().catch(function () {});
     });
-    return colRef("catalogo").get().then(function (snap) {
-      var vivos = {};
-      cat.forEach(function (i) { vivos[i.id] = true; });
-      snap.forEach(function (doc) { if (!vivos[doc.id]) batch.delete(doc.ref); });
-      batch.set(publicoRef(), {
-        nombre: state.settings.tienda.nombre || "",
-        whatsapp: state.settings.tienda.whatsapp || "",
-        moneda: state.settings.currency,
-        actualizado: new Date().toISOString()
-      });
-      return batch.commit();
-    }).then(function () { return cat.length; });
   }
 
   function urlTienda() {
     if (!fb.user) return "";
-    return location.href.replace(/[^/]*$/, "") + "tienda.html?tienda=" + fb.user.uid;
+    var base = location.href.replace(/[?#].*$/, "").replace(/[^/]*$/, "") + "tienda.html";
+    var t = tiendaCfg();
+    return t.enlace ? base + "?t=" + encodeURIComponent(t.enlace) : base + "?tienda=" + fb.user.uid;
   }
+
+  /* ---- hoja del perfil de la tienda ---- */
+  function abrirPerfilTienda() {
+    var enlace = tiendaCfg().enlace || limpiarEnlace(tiendaCfg().nombre || state.settings.tienda.nombre || ""), errorEnlace = "";
+    abrirHoja("Perfil de la tienda", function (cuerpo, cerrar, h) {
+      var t = tiendaCfg();
+      var estado = el("div", { class: "seg", role: "group", "aria-label": "Tienda abierta o cerrada" });
+      [[true, "Abierta"], [false, "Cerrada"]].forEach(function (o) {
+        estado.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": !!t.abierta === o[0],
+          onclick: function () { t.abierta = o[0]; save(); h.repintar(); } }));
+      });
+      cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Tienda" }), estado,
+        el("p", { class: "note", style: "margin:6px 0 0", text: t.abierta ? "Tus clientes pueden hacer pedidos. Solo se muestran las flores marcadas en su receta." : "La tienda muestra tus flores, pero no recibe pedidos." })]));
+
+      var logo = el("span", { class: "logo-tienda" });
+      if (t.logo) logo.appendChild(el("img", { src: t.logo, alt: "Logo" }));
+      else logo.appendChild(el("span", { text: (t.nombre || "E").charAt(0).toUpperCase() }));
+      var fileLogo = el("input", { type: "file", accept: "image/*", class: "solo-lector", id: "pf-logo",
+        onchange: function (e) { achicarImagen(e.target.files[0], 256, function (url) { t.logo = url; save(); h.repintar(); }); } });
+      cuerpo.appendChild(el("div", { class: "fila-logo" }, [logo,
+        el("label", { class: "btn", for: "pf-logo", text: t.logo ? "Cambiar logo" : "Subir logo" }), fileLogo,
+        t.logo ? el("button", { class: "btn peligro small", type: "button", text: "Quitar", onclick: function () { t.logo = ""; save(); h.repintar(); } }) : null]));
+
+      cuerpo.appendChild(campoHoja("pf-nombre", "Nombre", t.nombre, { placeholder: "Eternal Garden", oninput: function (e) { t.nombre = e.target.value; save(); } }));
+      cuerpo.appendChild(campoHoja("pf-texto", "Texto de bienvenida", t.texto, { placeholder: "Flores de limpiapipas hechas a mano, por encargo.", oninput: function (e) { t.texto = e.target.value; save(); } }));
+      cuerpo.appendChild(el("div", { class: "hoja-fila" }, [
+        campoHoja("pf-ig", "Instagram", t.instagram, { placeholder: "@usuario", oninput: function (e) { t.instagram = e.target.value; save(); } }),
+        campoHoja("pf-wsp", "WhatsApp", t.whatsapp, { tipo: "tel", placeholder: "+56 9 …", oninput: function (e) { t.whatsapp = e.target.value; save(); } })
+      ]));
+      var notaMin = el("p", { class: "note", style: "margin:4px 0 0" });
+      function pintarMin() { notaMin.textContent = "Hoy los clientes pueden pedir para el " + fechaCorta(sumarDiasIso(hoy(), parseNum(t.minDias))) + " o después."; }
+      cuerpo.appendChild(el("div", { class: "fila-cantidad" }, [
+        el("label", { for: "pf-min", text: "Días mínimos para entregar" }),
+        el("input", { id: "pf-min", type: "text", inputmode: "numeric", class: "num", value: String(t.minDias),
+          oninput: function (e) { t.minDias = Math.max(0, Math.round(parseNum(e.target.value))); save(); pintarMin(); } })
+      ]));
+      pintarMin();
+      cuerpo.appendChild(notaMin);
+
+      cuerpo.appendChild(el("fieldset", { class: "hoja-grupo", style: "margin-top:12px" }, [el("legend", { text: "Dirección de tu tienda" }),
+        el("div", { class: "fila-crear" }, [
+          el("span", { class: "prefijo", text: "…/tienda.html?t=" }),
+          el("input", { type: "text", value: enlace, "aria-label": "Nombre de la dirección", placeholder: "eternal-garden",
+            oninput: function (e) { enlace = e.target.value; } }),
+          el("button", { class: "btn", type: "button", text: "Guardar", onclick: function () {
+            var limpio = limpiarEnlace(enlace);
+            enlace = limpio; errorEnlace = "";
+            reservarEnlace(limpio).then(function () { toast("Dirección guardada"); h.repintar(); })
+              .catch(function (err) { errorEnlace = err.message || "No pude guardar la dirección"; h.repintar(); });
+          } })
+        ]),
+        errorEnlace ? el("p", { class: "error-hoja", role: "alert", text: errorEnlace }) : null,
+        el("p", { class: "enlace-tienda", text: urlTienda() }),
+        el("div", { class: "hoja-fila" }, [
+          el("button", { class: "btn", type: "button", text: "Copiar enlace", onclick: function () {
+            if (navigator.clipboard) navigator.clipboard.writeText(urlTienda()).then(function () { toast("Enlace copiado"); }, function () { toast(urlTienda()); });
+            else toast(urlTienda());
+          } }),
+          el("button", { class: "btn", type: "button", text: "Ver tienda", onclick: function () { pedirPublicacion(0); window.open(urlTienda(), "_blank"); } })
+        ])
+      ]));
+      cuerpo.appendChild(el("p", { class: "note", text: state.products.filter(function (p) { return p.publicado; }).length +
+        " flor(es) en la tienda. Se elige en el paso 1 de cada receta." }));
+      cuerpo.appendChild(el("div", { class: "pie-hoja" }, [el("button", { class: "btn primary", type: "button", text: "Listo", onclick: cerrar })]));
+    }, function () { render(); });
+  }
+
+  /* ---- publicación: solo se escribe lo que cambió ---- */
+  var pubTimer = null, publicado = { catalogo: {}, publico: "" }, catalogoLeido = false;
+
+  function pedirPublicacion(ms) {
+    if (!fb.user || !moduloActivo("tienda")) return;
+    clearTimeout(pubTimer);
+    pubTimer = setTimeout(function () { publicarTienda().catch(function (e) { if (window.console) console.error("Publicar tienda", e); }); }, ms == null ? 3000 : ms);
+  }
+
+  function datosPublicos() {
+    var t = tiendaCfg(), uso = usoPendiente(null), tipos = {};
+    state.products.forEach(function (p) {
+      if (!p.publicado) return;
+      var r = recetaDe(p);
+      r.petalos.forEach(function (g) { tipos[g.tipo] = true; });
+      r.comps.forEach(function (k) { tipos[k.tipo] = true; });
+    });
+    function info(m) {
+      return { id: m.id, nombre: m.name || "Sin nombre", hex: colorDe(m.id, true),
+        disponible: Math.max(0, Math.round((parseNum(m.stock) - (uso[m.id] || 0)) * 100) / 100) };
+    }
+    var colores = {};
+    Object.keys(tipos).forEach(function (tipo) {
+      colores[tipo] = state.materials.filter(function (m) { return tipoDe(m) === tipo; })
+        .sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); }).map(info);
+    });
+    return {
+      nombre: t.nombre || "", texto: t.texto || "", instagram: t.instagram || "", whatsapp: t.whatsapp || "",
+      logo: t.logo || "", moneda: state.settings.currency, minDias: parseNum(t.minDias), abierta: !!t.abierta,
+      colores: colores,
+      envolturas: state.materials.filter(function (m) { return tipoDe(m) === "Envoltura"; }).map(info)
+    };
+  }
+
+  function catalogoPublico() {
+    var out = {};
+    state.products.forEach(function (p, i) {
+      if (!p.publicado) return;
+      var r = recetaDe(p);
+      out[p.id] = {
+        nombre: p.name || "Sin nombre", descripcion: p.descripcionPublica || "", precio: Math.round(calc(p).final),
+        moneda: state.settings.currency, orden: i, foto: !!p.foto, fotoVer: p.fotoVer || 0,
+        petalos: r.petalos.filter(function (g) { return g.cant > 0; }).map(function (g) {
+          return { nombre: g.nombre, cant: g.cant, tipo: g.tipo, colores: g.colores.map(function (c) { return { lp: c.lp, color: c.color || "" }; }) };
+        }),
+        comps: r.comps.filter(function (k) { return k.cant > 0 && k.uso > 0; }).map(function (k) {
+          return { nombre: k.nombre, cant: k.cant, uso: k.uso, tipo: k.tipo, color: k.color || "" };
+        })
+      };
+    });
+    return out;
+  }
+
+  function publicarTienda() {
+    if (!fb.user || !moduloActivo("tienda")) return Promise.resolve();
+    var antes = catalogoLeido ? Promise.resolve() : colRef("catalogo").get().then(function (snap) {
+      snap.forEach(function (d) { if (!(d.id in publicado.catalogo)) publicado.catalogo[d.id] = "?"; });
+      catalogoLeido = true;
+    });
+    return antes.then(function () {
+      var cat = catalogoPublico(), pub = datosPublicos(), ops = [], nuevos = {};
+      Object.keys(cat).forEach(function (id) {
+        var txt = JSON.stringify(cat[id]);
+        nuevos[id] = txt;
+        if (publicado.catalogo[id] !== txt) ops.push({ ref: colRef("catalogo").doc(id), datos: cat[id] });
+      });
+      Object.keys(publicado.catalogo).forEach(function (id) { if (!(id in cat)) ops.push({ ref: colRef("catalogo").doc(id), borrar: true }); });
+      var txtPub = JSON.stringify(pub);
+      if (txtPub !== publicado.publico) ops.push({ ref: publicoRef(), datos: Object.assign({ actualizado: new Date().toISOString() }, pub) });
+      if (!ops.length) return;
+      return enviarOperaciones(ops).then(function () { publicado.catalogo = nuevos; publicado.publico = txtPub; });
+    });
+  }
+
+
+
 
   /* los estados de pedido viajan con el resto del estado */
   function sincronizarEstado(o) {
@@ -5378,7 +5733,7 @@
   /* Lo que conecta con clientes (tienda pública, catálogo, enlace) queda
      escondido mientras la app sea solo la agenda del taller. El código sigue
      ahí: para volver a abrirlo basta con poner esto en true. */
-  var CONEXION_EXTERNA = false;
+  var CONEXION_EXTERNA = true;
 
   function moduloActivo(nombre) {
     if (nombre === "tienda" && !CONEXION_EXTERNA) return false;
@@ -5574,7 +5929,8 @@
     var abiertos = pendingOrders();
     var nAtrasados = abiertos.filter(atrasado).length;
     var avisos = {
-      pedidos: nAtrasados ? (nAtrasados === 1 ? "1 pedido atrasado" : nAtrasados + " pedidos atrasados") : "",
+      pedidos: pedidosNuevos().length ? "hay pedidos nuevos de la tienda"
+        : nAtrasados ? (nAtrasados === 1 ? "1 pedido atrasado" : nAtrasados + " pedidos atrasados") : "",
       productos: productosErosionados().length ? "hay precios por revisar" : "",
       inventario: llevaMateriales() && hayFaltantes() ? "falta material" : ""
     };
@@ -5802,15 +6158,11 @@
     }
     root.appendChild(negocioCard);
 
-    /* tienda pública y cuenta */
+    /* tienda pública */
     var tiendaCard = el("div", { class: "setting" }, [
       el("h4", { text: "Tienda pública" }),
-      el("p", { text: "Estos datos aparecen en la página que ven tus clientes." }),
-      el("label", { class: "field", text: "WhatsApp de contacto" }),
-      el("input", { type: "text", value: state.settings.tienda.whatsapp, placeholder: "+56 9 1234 5678",
-        oninput: function (e) { state.settings.tienda.whatsapp = e.target.value; save(); } }),
-      el("p", { class: "note", text: state.products.filter(function (p) { return p.publicado; }).length +
-        " producto(s) marcado(s) para publicar. El interruptor está dentro de cada producto." })
+      el("p", { text: "Tu página para que los clientes encarguen. Se actualiza sola con tus flores, colores y stock." }),
+      el("button", { class: "btn primary wide", type: "button", text: "Perfil de la tienda", onclick: abrirPerfilTienda })
     ]);
     if (moduloActivo("tienda")) root.appendChild(tiendaCard);
 
@@ -5823,25 +6175,6 @@
       el("p", { class: "note", style: "margin-top:8px",
         text: rubro().insumos + ", inventario, productos y pedidos se guardan solos en tu cuenta y aparecen igual en cualquier dispositivo donde entres con este mismo Google." })
     ]);
-
-    if (moduloActivo("tienda")) {
-    fbCard.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Publicar catálogo en la tienda",
-      style: "margin-top:12px", onclick: function () {
-        toast("Publicando…");
-        publicarCatalogo().then(function (n) { toast(n + " producto(s) publicado(s)"); })
-          .catch(function (err) { toast(err.message || "No pude publicar"); });
-      } }));
-
-    var link = el("input", { type: "text", value: urlTienda(), readonly: true, "aria-label": "Dirección de tu tienda" });
-    fbCard.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Dirección de tu tienda" }));
-    fbCard.appendChild(link);
-    fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Copiar dirección", style: "margin-top:8px",
-      onclick: function () {
-        link.select();
-        if (navigator.clipboard) navigator.clipboard.writeText(link.value).then(function () { toast("Copiada"); });
-        else toast("Copia la dirección desde el campo");
-      } }));
-    }
 
     fbCard.appendChild(el("button", { class: "btn wide", type: "button", text: "Forzar subida de todo",
       style: "margin-top:14px", onclick: function () {
@@ -6305,10 +6638,14 @@
     var cuenta = document.getElementById("btnCuenta");
     if (cuenta) cuenta.setAttribute("aria-pressed", ui.tab === "ajustes" ? "true" : "false");
     pintarContadores();
+    var bt = document.getElementById("btnTienda");
+    if (bt) bt.hidden = !moduloActivo("tienda");
     if (hojaActiva) hojaActiva.repintar();
   }
 
   /* ---------------- arranque ---------------- */
+
+  document.getElementById("btnTienda").addEventListener("click", abrirPerfilTienda);
 
   document.getElementById("btnNuevo").addEventListener("click", function () {
     ui.tab = "pedidos";

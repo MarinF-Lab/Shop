@@ -57,10 +57,31 @@ tiene uno, de su nombre ("Rosa", "Verde claro", "Celeste"…).
 - **Pagos**: efectivo o transferencia, con abonos; un pago mixto son dos pagos.
   Cada pedido indica si está pagado, abonado o por cobrar.
 
-Por ahora la app no conecta con clientes: la tienda pública, la publicación
-del catálogo y su enlace están ocultos. El código sigue en `tienda.html` y en
-la planilla; para volver a mostrarlos, basta con poner `CONEXION_EXTERNA = true`
-en `planilla-costos.html`.
+## Tienda pública
+
+`tienda.html` es la página donde los clientes encargan. Se comparte con una
+dirección corta, `tienda.html?t=eternal-garden`, que se elige en el **Perfil
+de la tienda** (botón con la tiendita, en la cabecera de la app). Ahí también
+se abre o cierra la tienda y se cambian el logo, el nombre, el texto de
+bienvenida, el Instagram, el WhatsApp y los **días mínimos para entregar**.
+
+- Se muestran las flores marcadas con *Mostrar en la tienda pública* en el
+  paso 1 de su receta, con su foto (que se sube ahí mismo) o su dibujo.
+- El cliente elige la cantidad y el color de cada pétalo y complemento; solo
+  ve los colores con stock, descontando lo que piden los pedidos por hacer, y
+  la tienda no deja pedir más de lo que hay.
+- Elige la envoltura, la fecha (no antes del mínimo de días), si retira, se
+  juntan o es envío, y deja su nombre, WhatsApp e Instagram.
+- El pedido entra a Ramo como **Nuevo · tienda**, con un aviso arriba y un
+  punto en la pestaña. Se **confirma** o se **rechaza** (queda cancelado).
+- La app publica sola lo que ve el cliente unos segundos después de cada
+  cambio: el perfil y los colores disponibles en `publico/tienda`, cada flor
+  en `catalogo/` y su foto en `fotos/`. Las fotos y el logo se achican en el
+  teléfono y se guardan en Firestore, sin Firebase Storage.
+
+Los colores de los materiales se eligen de la paleta, de *Mis colores* o con
+**Otro color** (rueda de color o código como `#C8A2C8`); los que se agregan
+quedan guardados en la paleta.
 
 ## Instalar en el teléfono
 
@@ -240,5 +261,12 @@ Las reglas de `firestore.rules` garantizan que:
 - Solo el dueño lee y escribe sus materiales, productos, pedidos, historial
   de costos y ajustes.
 - El catálogo publicado y los datos de contacto son de lectura pública.
-- Cualquiera puede **crear** un pedido desde la tienda, con campos validados,
-  pero nadie puede leer, editar ni borrar los pedidos de otra persona.
+- Cualquiera puede **crear** un pedido desde la tienda, solo con los campos
+  permitidos y tamaños acotados, siempre como `pendiente` y `nuevo`; nadie
+  puede leer, editar ni borrar los pedidos de otra persona.
+- Las fotos de las flores son de lectura pública; solo la dueña las sube.
+- La dirección corta (`enlaces/{nombre}`) es pública; solo su dueña la crea,
+  cambia o borra.
+
+Cada vez que cambian estas reglas hay que publicarlas en la consola de
+Firebase (Firestore Database → Reglas → pegar `firestore.rules` → Publicar).
