@@ -913,6 +913,130 @@
   .celda-btn.falta { border-style: dashed; border-color: var(--danger); color: var(--danger); }
   .acciones-compras { display: flex; gap: 8px; margin-top: 10px; }
   .acciones-compras .btn { flex: 1; }
+
+  /* ---------- receta de la flor ---------- */
+  .paso-receta { margin: -6px 0 6px; font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .barras-pasos { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px; }
+  .barras-pasos button { height: 28px; border: 0; background: transparent; padding: 10px 0; cursor: pointer; }
+  .barras-pasos button span { display: block; height: 6px; border-radius: 999px; background: var(--line); }
+  .barras-pasos button.on span { background: var(--accent); }
+  .receta-bloque { background: var(--paper); border-radius: 18px; padding: 12px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 10px; }
+  .fila-nombre { display: flex; gap: 8px; align-items: center; }
+  .fila-nombre input { flex: 1; min-width: 0; font: inherit; font-size: 16px; font-weight: 800; padding: 0 12px; }
+  .quitar { flex: none; width: 44px; height: 44px; border: 0; border-radius: 12px; background: transparent; color: var(--danger); font-size: 16px; font-weight: 800; cursor: pointer; }
+  .campo-num { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 800; min-width: 0; }
+  .campo-num input, .lp input, .fila-cantidad input, .cant-usada, .stock-grande { font: inherit; font-size: 16px; padding: 0 10px; min-width: 0; }
+  .sub-etiqueta { display: block; font-size: 12px; font-weight: 800; color: var(--ink); margin-top: 2px; }
+  .color-receta { background: var(--surface); border-radius: 14px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+  .color-receta .fila { display: flex; align-items: center; gap: 8px; }
+  .color-receta .nom { flex: 1; min-width: 0; font-size: 14px; font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lp { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: var(--soft-ink); }
+  .lp input { width: 64px; min-height: 40px; }
+  .acciones-color { display: flex; gap: 6px; flex-wrap: wrap; }
+  .punteado { border-style: dashed !important; background: transparent; color: var(--accent-dark); }
+  .resumen-parte { margin: 0; font-size: 13px; font-weight: 800; color: var(--gain); }
+  .resumen-parte.mal { color: var(--danger); }
+  .tipos-receta .chip-filtro { min-height: 36px; font-size: 13px; }
+  .otros-receta { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .otros-receta li { display: flex; align-items: center; gap: 8px; background: var(--paper); border-radius: 14px; padding: 8px 6px 8px 12px; }
+  .otros-receta .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .otros-receta .txt strong { font-size: 14px; }
+  .otros-receta .txt span { font-size: 12px; color: var(--soft-ink); }
+  .nota-suave { margin: 8px 0 0; font-size: 13px; color: var(--soft-ink); background: var(--paper); border-radius: 12px; padding: 8px 12px; }
+  .resumen-receta li span { color: var(--ink); }
+  .resumen-pago strong.neg { color: var(--danger); }
+  .resumen-pago strong.pos { color: var(--gain); }
+  .margen-receta { margin: 10px 0 0; font-size: 14px; font-weight: 800; padding: 8px 12px; border-radius: 12px; background: var(--gain-soft); color: var(--gain); }
+  .margen-receta.c { background: var(--cost-soft); color: var(--cost); }
+  .margen-receta.neg { background: var(--danger-soft); color: var(--danger); }
+  .pie-receta { position: sticky; bottom: calc(-22px - env(safe-area-inset-bottom)); margin: 14px -20px calc(-22px - env(safe-area-inset-bottom)); padding: 10px 20px calc(16px + env(safe-area-inset-bottom)); background: var(--surface); border-top: 1px solid var(--line-soft); }
+  .pie-receta .pie-hoja { margin-top: 8px; }
+  .costo-vivo { font-size: 13px; color: var(--soft-ink); font-weight: 700; }
+  .card-head.flor-head { width: 100%; border: 0; background: transparent; font: inherit; color: var(--ink); text-align: left; cursor: pointer; display: flex; align-items: center; }
+
+  /* ---------- muestras de color ---------- */
+  .muestras { display: flex; gap: 6px; overflow-x: auto; padding: 4px 4px 6px; }
+  .muestra { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 50%; border: 1.5px solid rgba(60,40,20,.25); padding: 0; cursor: pointer;
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 3px, rgba(0,0,0,0) 3px 7px); }
+  .muestra[aria-pressed="true"] { box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px var(--accent); }
+  .muestra.agotado { opacity: .45; }
+  .slot-color { background: var(--surface); border-radius: 16px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+  .slot-color .fila { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .slot-color .fila strong { font-size: 14px; }
+  .slot-color .elegido { font-size: 13px; font-weight: 800; color: var(--gain); }
+  .slot-color .det { font-size: 12px; color: var(--soft-ink); }
+  .fila-cantidad { display: flex; align-items: center; justify-content: space-between; gap: 10px; background: var(--paper); border-radius: 16px; padding: 8px 8px 8px 14px; margin-bottom: 12px; }
+  .fila-cantidad label { font-size: 15px; font-weight: 800; }
+  .fila-cantidad input { width: 92px; text-align: center; font-family: var(--serif); font-size: 22px; font-weight: 700; }
+  .cant-usada { width: 64px; text-align: center; font-weight: 800; }
+
+  /* ---------- Taller nuevo ---------- */
+  .taller-cabecera { display: flex; align-items: center; gap: 10px; margin: 4px 0 10px; }
+  .taller-cabecera h2 { flex: 1; margin: 0; font-size: 24px; font-weight: 700; }
+  .taller-cabecera .btn { min-height: 48px; padding: 0 16px; border-radius: 16px; }
+  .falta-pedidos { background: var(--surface); border: 2px solid #E9C4B4; border-radius: 20px; padding: 12px 14px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .falta-pedidos .fila { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .falta-pedidos h3 { margin: 0; font-size: 15px; font-weight: 800; color: var(--danger); }
+  .falta-pedidos .fila span { font-size: 13px; font-weight: 800; }
+  .chips-falta { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip-falta { min-height: 40px; display: flex; align-items: center; gap: 6px; padding: 0 10px 0 6px; border-radius: 999px; border: 0; background: var(--danger-soft); font: inherit; font-size: 13px; font-weight: 800; color: var(--ink); cursor: pointer; }
+  .chip-falta .punto-color { width: 22px; height: 22px; }
+  .filtros-taller { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; margin-bottom: 12px; }
+  .filtros-taller > * { flex: 0 0 auto; }
+  .muestrario { background: var(--surface); border-radius: 22px; padding: 12px 14px 14px; margin-bottom: 12px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px; }
+  .muestrario .fila { display: flex; align-items: center; gap: 8px; }
+  .muestrario h3 { flex: 1; margin: 0; font-size: 16px; font-weight: 800; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+  .chip.ppp { font-size: 12px; font-weight: 800; padding: 3px 9px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-dark); white-space: nowrap; }
+  .muestrario-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+  .mat-muestra { display: flex; flex-direction: column; align-items: center; gap: 3px; background: transparent; border: 0; padding: 2px 0; font: inherit; color: var(--ink); cursor: pointer; min-width: 0; }
+  .madeja-grande { position: relative; width: 56px; height: 56px; border-radius: 50%; border: 1.5px solid rgba(60,40,20,.25); display: flex; align-items: center; justify-content: center;
+    background-image: repeating-linear-gradient(135deg, rgba(255,255,255,.3) 0 3px, rgba(0,0,0,0) 3px 7px); flex: none; }
+  .madeja-grande span { min-width: 28px; padding: 1px 6px; border-radius: 999px; background: #FFFFFF; font-size: 13px; font-weight: 800; text-align: center; }
+  .madeja-grande.chica { width: 48px; height: 48px; }
+  .mat-muestra.corto .madeja-grande { box-shadow: 0 0 0 3px var(--paper), 0 0 0 5px #C0392B; }
+  .mat-muestra .nom { font-size: 12px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mat-muestra .estado { font-size: 11px; font-weight: 800; color: var(--gain); }
+  .mat-muestra.corto .estado { color: var(--danger); }
+  .historial-compras { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .historial-compras li { display: flex; align-items: center; gap: 4px; background: var(--surface); border-radius: 16px; padding: 4px 4px 4px 8px; box-shadow: var(--shadow); }
+  .historial-compras .abrir { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; background: transparent; border: 0; padding: 6px 4px; font: inherit; color: var(--ink); text-align: left; cursor: pointer; }
+  .historial-compras .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .historial-compras .txt strong { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .historial-compras .txt span { font-size: 12px; color: var(--soft-ink); }
+  .historial-compras .total { font-size: 14px; white-space: nowrap; }
+  .cabeza-material { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .cabeza-material .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; color: var(--soft-ink); }
+  .fila-stock { display: flex; align-items: center; gap: 8px; background: var(--paper); border-radius: 16px; padding: 10px 10px 10px 14px; }
+  .fila-stock .txt { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 12px; color: var(--soft-ink); }
+  .fila-stock .txt strong { font-size: 13px; color: var(--ink); }
+  .fila-stock .icon-btn { background: var(--surface); font-size: 20px; font-weight: 800; }
+  .stock-grande { width: 76px; text-align: center; font-family: var(--serif); font-size: 22px; font-weight: 700; }
+  .fila-dato { display: flex; justify-content: space-between; font-size: 14px; padding: 10px 4px 0; }
+  .estado-material { margin: 10px 0 0; font-size: 14px; font-weight: 800; padding: 8px 12px; border-radius: 12px; background: var(--gain-soft); color: var(--gain); }
+  .estado-material.corto { background: var(--danger-soft); color: var(--danger); }
+  .paleta { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; justify-items: center; padding: 4px; }
+  .paleta .muestra { width: 40px; height: 40px; background-image: none; }
+  .mas-opciones { margin: 4px 0 8px; border-top: 1px solid var(--line-soft); padding-top: 8px; }
+  .mas-opciones summary { min-height: 44px; display: flex; align-items: center; font-weight: 800; color: var(--accent-dark); cursor: pointer; }
+  .fila-crear { display: flex; gap: 8px; margin-top: 8px; }
+  .fila-crear input { flex: 1; min-width: 0; font: inherit; font-size: 15px; padding: 0 12px; }
+  .compra-mats { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+  .compra-mat { display: flex; flex-direction: column; align-items: center; gap: 3px; background: transparent; border: 0; padding: 2px 0; font: inherit; color: var(--ink); cursor: pointer; min-width: 0; }
+  .compra-mat .muestra { width: 40px; height: 40px; pointer-events: none; }
+  .compra-mat[aria-pressed="true"] .muestra { box-shadow: 0 0 0 2px #FFFFFF, 0 0 0 4px var(--accent); }
+  .compra-mat .nom { font-size: 11px; font-weight: 700; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .resumen-compra { background: var(--accent-soft); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; font-size: 14px; margin-top: 4px; }
+  .resumen-compra div { display: flex; justify-content: space-between; gap: 8px; }
+  .resumen-compra div:last-child { color: var(--accent-dark); }
+
+  /* ---------- Caja y banco ---------- */
+  .caja-tile.medio { background: var(--surface); color: var(--soft-ink); box-shadow: var(--shadow); }
+  .caja-tile.medio strong { color: var(--gain); }
+  .caja-tile.medio strong.neg { color: var(--danger); }
+  .caja-porcobrar { display: flex; align-items: center; gap: 10px; background: var(--cost-soft); color: var(--cost); border-radius: 20px; padding: 12px 14px; margin-bottom: 10px; }
+  .caja-porcobrar .txt { flex: 1; display: flex; flex-direction: column; font-size: 12px; }
+  .caja-porcobrar .et { font-weight: 800; }
+  .caja-porcobrar strong { font-family: var(--serif); font-size: 24px; font-weight: 700; }
 </style>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1055,7 +1179,7 @@
   var METODOS = ["Retiro", "Punto de encuentro", "Envío"];
 
   var ui = { tab: "pedidos", vista: "materiales", open: {}, ready: false, confirming: null, filtros: {},
-    verCategoria: {}, cambiando: {}, editando: {}, hechosAntiguos: false, foco: null, buscarPedidos: "",
+    editando: {}, hechosAntiguos: false, foco: null, buscarPedidos: "",
     filtroCompras: "", todasCompras: false, ultimoTipo: "" };
 
   /* ---------------- utilidades ---------------- */
@@ -1187,11 +1311,30 @@
     return null;
   }
 
-  /* ---------------- la flor: pétalos y hojas de color elegible ----------------
-     Una flor de limpiapipas lleva pétalos y hojas cuyo color pide el cliente,
-     más materiales fijos (barra, cinta) que van siempre igual. La receta dice
-     cuántos pétalos usa en un color y en bicolor; el pedido dice cuáles. */
+  /* ---------------- la flor: receta por pétalos y complementos ----------------
+     Una flor se arma con pétalos (cuántos tiene, cuántos limpiapipas lleva
+     cada uno y cuántos de ellos van de cada color) y complementos (relleno,
+     centro, hojas…). El color de cada parte se elige en el pedido; la receta
+     guarda el habitual. Barra, cinta y lo demás van en Otros materiales, en la
+     medida del inventario. Las recetas de antes (pétalos en un color o
+     bicolor, más hojas) se leen tal cual, sin tocarlas. */
 
+  var NOMBRES_COLOR = ["Primario", "Secundario", "Tercero", "Cuarto"];
+
+  /* cuánto mide una unidad de stock: una varilla de 30 cm mide 30 */
+  function medidaDe(m) {
+    if (!m || isArea(m.unit)) return 1;
+    var n = parseNum(m.medida);
+    return n > 0 ? n : 1;
+  }
+
+  function unidadMedidaDe(m) {
+    if (!m) return "";
+    if (m.unidadMedida) return m.unidadMedida;
+    return parseNum(m.medida) > 1 ? "" : (m.unit === "unidad" || !m.unit ? "u" : m.unit);
+  }
+
+  /* receta vieja: pétalos en un color o bicolor y hojas, por categoría */
   function florDe(p) {
     var f = p.flor || {};
     return {
@@ -1206,80 +1349,158 @@
     };
   }
 
-  function admiteBicolor(p) {
-    var f = florDe(p);
-    return f.petalosPrim > 0 && f.petalosSec > 0;
+  /* tipo de los materiales de una categoría vieja */
+  function tipoDeCategoria(cat, colorRef) {
+    var m = materialById(colorRef);
+    if (m) return tipoDe(m);
+    var otro = state.materials.filter(function (x) { return (x.categoria || "").trim() === cat; })[0];
+    return otro ? tipoDe(otro) : "Limpiapipas";
   }
 
-  /* la elección de una línea de pedido, completada con los valores de la receta */
-  function eleccionDe(p, it) {
-    var f = florDe(p);
-    it = it || {};
-    var modo = it.modo === "dos" && admiteBicolor(p) ? "dos" : "uno";
-    return {
-      modo: modo,
-      primario: it.primario || f.colorDefecto,
-      secundario: it.secundario || "",
-      hojas: it.hojasColor || f.colorHojas
-    };
-  }
-
-  /* materiales de color que consume UNA flor con esa elección */
-  function lineasFlor(p, it) {
-    var f = florDe(p), e = eleccionDe(p, it), out = [];
-    function sumar(id, cant) {
-      if (!id || cant <= 0) return;
-      var previo = out.filter(function (x) { return x.materialId === id; })[0];
-      if (previo) previo.use += cant; else out.push({ materialId: id, use: cant });
+  /* la receta de una flor, nueva o convertida desde la de antes */
+  function recetaDe(p) {
+    if (p && p.receta && Array.isArray(p.receta.petalos)) {
+      return {
+        petalos: p.receta.petalos.map(function (g) {
+          var colores = (g.colores || []).length ? g.colores : [{ lp: g.lpp, color: "" }];
+          return { nombre: g.nombre || "Pétalo", cant: parseNum(g.cant), lpp: parseNum(g.lpp), tipo: g.tipo || "Limpiapipas",
+            colores: colores.map(function (c) { return { lp: parseNum(c.lp), color: c.color || "" }; }) };
+        }),
+        comps: (p.receta.comps || []).map(function (k) {
+          return { nombre: k.nombre || "Complemento", cant: parseNum(k.cant), uso: parseNum(k.uso), tipo: k.tipo || "Limpiapipas", color: k.color || "" };
+        })
+      };
     }
-    if (e.modo === "dos") {
-      sumar(e.primario, f.petalosPrim);
-      sumar(e.secundario || e.primario, f.petalosSec);
-    } else {
-      sumar(e.primario, f.petalosUno);
+    var f = florDe(p || {}), out = { petalos: [], comps: [] };
+    var tipoP = tipoDeCategoria(f.catPetalos, f.colorDefecto);
+    if (f.petalosPrim > 0 && f.petalosSec > 0) {
+      out.petalos.push({ nombre: "Pétalos · primario", cant: f.petalosPrim, lpp: 1, tipo: tipoP, colores: [{ lp: 1, color: f.colorDefecto }] });
+      out.petalos.push({ nombre: "Pétalos · secundario", cant: f.petalosSec, lpp: 1, tipo: tipoP, colores: [{ lp: 1, color: f.colorDefecto }] });
+    } else if (f.petalosUno > 0) {
+      out.petalos.push({ nombre: "Pétalos", cant: f.petalosUno, lpp: 1, tipo: tipoP, colores: [{ lp: 1, color: f.colorDefecto }] });
     }
-    sumar(e.hojas, f.hojas);
+    if (f.hojas > 0) out.comps.push({ nombre: "Hojas", cant: f.hojas, uso: 1, tipo: tipoDeCategoria(f.catHojas, f.colorHojas), color: f.colorHojas });
     return out;
   }
 
-  /* ¿le falta a la línea elegir algún color que la receta exige? */
+  /* los colores de una línea de pedido: lo elegido, lo de antes o el habitual */
+  function coloresItem(p, it) {
+    var r = recetaDe(p);
+    it = it || {};
+    var viejo = !it.pet && (it.primario || it.secundario || it.hojasColor || it.modo);
+    var k = 0;
+    var pet = r.petalos.map(function (g, i) {
+      return g.colores.map(function (c, j) {
+        var id = it.pet && it.pet[i] && it.pet[i][j];
+        if (!id && viejo) id = k === 0 ? it.primario : (it.modo === "dos" ? it.secundario || it.primario : it.primario);
+        k++;
+        return id || c.color || "";
+      });
+    });
+    var hojaUsada = false;
+    var comp = r.comps.map(function (c, i) {
+      var id = it.comp && it.comp[i];
+      if (!id && viejo && !hojaUsada && /hoja/i.test(c.nombre)) { id = it.hojasColor; hojaUsada = true; }
+      return id || c.color || "";
+    });
+    return { pet: pet, comp: comp };
+  }
+
+  /* lo que usa una línea (o la receta, sin línea) en unidades de stock por material.
+     Sin color elegido, la cantidad queda en "sinColor" para costearla por su tipo. */
+  function usoItem(p, it, qty) {
+    var r = recetaDe(p), col = coloresItem(p, it), q = qty == null ? 1 : parseNum(qty);
+    var uso = {}, sinColor = [];
+    function sumar(id, cant, tipo) {
+      if (cant <= 0) return;
+      var m = materialById(id);
+      if (!m) { sinColor.push({ tipo: tipo, cant: cant }); return; }
+      uso[m.id] = (uso[m.id] || 0) + cant / medidaDe(m);
+    }
+    r.petalos.forEach(function (g, i) {
+      g.colores.forEach(function (c, j) { sumar(col.pet[i][j], q * g.cant * c.lp, g.tipo); });
+    });
+    r.comps.forEach(function (c, i) { sumar(col.comp[i], q * c.cant * c.uso, c.tipo); });
+    (p.materials || []).forEach(function (line) {
+      var m = materialById(line.materialId);
+      if (!m) return;
+      var n = lineStockUse(line) * q;
+      if (n > 0) uso[m.id] = (uso[m.id] || 0) + n;
+    });
+    return { uso: uso, sinColor: sinColor };
+  }
+
+  /* ¿qué partes de la línea no tienen un color válido? */
   function coloresPendientes(p, it) {
-    var f = florDe(p), e = eleccionDe(p, it), faltan = [];
-    var petalos = e.modo === "dos" ? f.petalosPrim + f.petalosSec : f.petalosUno;
-    if (petalos > 0 && !materialById(e.primario)) faltan.push("color primario");
-    if (e.modo === "dos" && f.petalosSec > 0 && !materialById(e.secundario)) faltan.push("color secundario");
-    if (f.hojas > 0 && !materialById(e.hojas)) faltan.push("color de hojas");
+    var r = recetaDe(p), col = coloresItem(p, it), faltan = [];
+    r.petalos.forEach(function (g, i) {
+      if (g.cant <= 0) return;
+      g.colores.forEach(function (c, j) {
+        if (c.lp > 0 && !materialById(col.pet[i][j])) faltan.push("color de " + (g.nombre || "pétalo").toLowerCase() +
+          (g.colores.length > 1 ? " (" + NOMBRES_COLOR[j].toLowerCase() + ")" : ""));
+      });
+    });
+    r.comps.forEach(function (c, i) {
+      if (c.cant > 0 && c.uso > 0 && !materialById(col.comp[i])) faltan.push("color de " + (c.nombre || "complemento").toLowerCase());
+    });
     return faltan;
   }
 
   function describirColores(p, it) {
-    var f = florDe(p), e = eleccionDe(p, it), partes = [];
-    var nombre = function (id) { var m = materialById(id); return m ? m.name : "sin elegir"; };
-    var petalos = e.modo === "dos" ? f.petalosPrim + f.petalosSec : f.petalosUno;
-    if (petalos > 0) {
-      partes.push(e.modo === "dos"
-        ? "pétalos " + nombre(e.primario) + " + " + nombre(e.secundario)
-        : "pétalos " + nombre(e.primario));
-    }
-    if (f.hojas > 0) partes.push("hojas " + nombre(e.hojas));
+    var r = recetaDe(p), col = coloresItem(p, it), partes = [];
+    var nombre = function (id) { var m = materialById(id); return m ? (m.name || "sin nombre").toLowerCase() : "sin elegir"; };
+    r.petalos.forEach(function (g, i) {
+      if (g.cant <= 0) return;
+      partes.push((g.nombre || "Pétalos") + " " + col.pet[i].filter(function (id, j) { return g.colores[j].lp > 0; }).map(nombre).join(" + "));
+    });
+    r.comps.forEach(function (c, i) { if (c.cant > 0) partes.push((c.nombre || "Complemento") + " " + nombre(col.comp[i])); });
     return partes.join(" · ");
   }
 
+  /* costo de una cantidad de stock de un material, o de un tipo sin color elegido */
+  function costoStock(id, cant) {
+    var m = materialById(id);
+    return m ? cant * stockUnitValue(m) : 0;
+  }
+
+  function pppDeTipo(tipo) {
+    var d = datosPPP().tipos[tipo];
+    return d && d.ppp > 0 ? d.ppp : 0;
+  }
+
+  /* lo que cuesta una flor con sus colores habituales (sin mano de obra) */
+  function costoReceta(p) {
+    var u = usoItem(p, null, 1), total = 0;
+    Object.keys(u.uso).forEach(function (id) {
+      var m = materialById(id);
+      /* las líneas de Otros materiales con área se cobran como siempre */
+      if (m && isArea(m.unit)) return;
+      total += costoStock(id, u.uso[id]);
+    });
+    (p.materials || []).forEach(function (line) {
+      var m = materialById(line.materialId);
+      if (m && isArea(m.unit)) total += lineCost(line).cost;
+    });
+    u.sinColor.forEach(function (s) { total += s.cant * pppDeTipo(s.tipo); });
+    return total;
+  }
+
+  /* envoltura de un pedido: no se cobra, pero cuesta y se descuenta */
+  function envolturaDe(o) {
+    var e = o && o.envoltura;
+    var m = e && materialById(e.materialId);
+    if (!m) return null;
+    var cant = parseNum(e.cant);
+    if (cant <= 0) return null;
+    var uso = cant / medidaDe(m);
+    return { material: m, cant: cant, uso: uso, costo: uso * stockUnitValue(m) };
+  }
+
   function calc(p) {
-    var mats = 0;
-    p.materials.forEach(function (line) {
-      mats += lineCost(line).cost;
-    });
-    lineasFlor(p, null).forEach(function (l) {
-      var m = materialById(l.materialId);
-      if (m) mats += materialCost(m) * l.use;
-    });
+    /* la mano de obra no se cobra: los costos extra de antes se guardan pero no suman */
+    var mats = costoReceta(p);
     var fijos = 0, variables = 0;
-    p.costs.forEach(function (c) {
-      var v = parseNum(c.amount);
-      if (c.kind === "fijo") fijos += v; else variables += v;
-    });
-    var total = mats + fijos + variables;
+    var total = mats;
 
     var neto = 0;
     neto = parseNum(p.manualPrice);
@@ -1312,7 +1533,7 @@
 
   function stockUnitValue(m) {
     if (!m) return 0;
-    return hasSheet(m) ? sheetArea(m) * materialCost(m) : materialCost(m);
+    return hasSheet(m) ? sheetArea(m) * materialCost(m) : materialCost(m) * medidaDe(m);
   }
 
   /* cuánto stock consume una línea del producto, en unidades de stock */
@@ -1326,7 +1547,7 @@
       return area > 0 ? r.area / area : 0;
     }
     if (isArea(m.unit)) return r.area;
-    return parseNum(line.qty);
+    return parseNum(line.qty) / medidaDe(m);
   }
 
   /* cuánto trae un paquete de compra y cuánto cuesta, en unidades de stock */
@@ -1507,8 +1728,8 @@
       if (r.ganancia >= 0 && r.margen >= 15) return;   /* todavía deja margen razonable */
 
       /* solo interesa si algún insumo suyo subió: los fijos o los pétalos y hojas de la receta */
-      var subio = (p.materials || []).concat(lineasFlor(p, null)).some(function (line) {
-        var m = materialById(line.materialId);
+      var subio = Object.keys(usoItem(p, null, 1).uso).some(function (id) {
+        var m = materialById(id);
         var v = m && variacionCosto(m);
         return v && v.pct > 0;
       });
@@ -1550,10 +1771,11 @@
     }
 
     var faltantes = [], usos = [];
-    p.materials.forEach(function (line) {
-      var m = materialById(line.materialId);
+    var receta = usoItem(p, null, n).uso;   /* con los colores habituales de la receta */
+    Object.keys(receta).forEach(function (id) {
+      var m = materialById(id);
       if (!m) return;
-      var need = lineStockUse(line) * n;
+      var need = receta[id];
       if (need <= 0) return;
       usos.push({ material: m, use: need });
       if (need > parseNum(m.stock) + 1e-9) {
@@ -1589,15 +1811,8 @@
       disponible[p.id] = (disponible[p.id] || 0) - deHechos;
       var qty = pedidas - deHechos;
       if (qty <= 0) return;
-      p.materials.forEach(function (line) {
-        var m = materialById(line.materialId);
-        if (!m) return;
-        use[m.id] = (use[m.id] || 0) + lineStockUse(line) * qty;
-      });
-      lineasFlor(p, it).forEach(function (l) {
-        if (!materialById(l.materialId)) return;
-        use[l.materialId] = (use[l.materialId] || 0) + l.use * qty;
-      });
+      var u = usoItem(p, it, qty).uso;
+      Object.keys(u).forEach(function (id) { use[id] = (use[id] || 0) + u[id]; });
     });
     return use;
   }
@@ -1629,6 +1844,8 @@
       costo += r.total * q;
       unidades += q;
     });
+    var env = envolturaDe(o);
+    if (env) costo += env.costo;
     return { ingreso: ingreso, costo: costo, ganancia: ingreso - costo, unidades: unidades };
   }
 
@@ -1684,29 +1901,29 @@
         if (!llevaMateriales()) {
           res.faltantes.push({ nombre: p.name || "Sin nombre", falta: aFabricar, unidad: "unidad" });
         } else {
-          p.materials.forEach(function (line) {
-            var m = materialById(line.materialId);
-            if (!m) return;
-            var use = lineStockUse(line) * aFabricar;
-            if (use <= 0) return;
-            simStock[m.id] -= use;
-            consumos.push({ material: m, use: use });
-          });
-          /* pétalos y hojas en los colores que pidió el cliente */
+          /* pétalos y complementos en los colores que pidió el cliente, y lo demás */
           coloresPendientes(p, it).forEach(function (q) {
             res.faltantes.push({ nombre: (p.name || "Flor") + ": falta elegir " + q, falta: 0, unidad: "", sinCantidad: true });
           });
-          lineasFlor(p, it).forEach(function (l) {
-            var m = materialById(l.materialId);
-            if (!m) return;
-            var use = l.use * aFabricar;
-            simStock[m.id] -= use;
-            consumos.push({ material: m, use: use });
+          var u = usoItem(p, it, aFabricar).uso;
+          Object.keys(u).forEach(function (id) {
+            var m = materialById(id);
+            if (!m || u[id] <= 0) return;
+            simStock[m.id] -= u[id];
+            consumos.push({ material: m, use: u[id] });
           });
         }
       }
       res.lineas.push({ producto: p, qty: n, deHechos: deHechos, aFabricar: aFabricar, consumos: consumos });
     });
+
+    /* la envoltura del ramo se descuenta aparte: va una vez por pedido */
+    var env = llevaMateriales() ? envolturaDe(o) : null;
+    if (env) {
+      simStock[env.material.id] -= env.uso;
+      res.lineas.push({ producto: null, envoltura: true, qty: 0, deHechos: 0, aFabricar: 0,
+        consumos: [{ material: env.material, use: env.uso }] });
+    }
 
     state.materials.forEach(function (m) {
       if (simStock[m.id] < -1e-9) {
@@ -1727,7 +1944,7 @@
 
     var usos = {}, orden = [];
     plan.lineas.forEach(function (l) {
-      if (l.deHechos > 0) {
+      if (l.deHechos > 0 && l.producto) {
         l.producto.stock = hechos(l.producto) - l.deHechos;
         marcarSucio(l.producto);
       }
@@ -1754,7 +1971,7 @@
        si el material se renombra o se borra, el registro sigue siendo cierto */
     o.consumo = orden.filter(function (k) { return usos[k].use > 0; }).map(function (k) {
       var m = usos[k].material;
-      return { materialId: k, nombre: m.name || "Sin nombre", categoria: (m.categoria || "").trim(),
+      return { materialId: k, nombre: m.name || "Sin nombre", categoria: (m.categoria || "").trim(), tipo: tipoDe(m),
         cantidad: usos[k].use, unidad: stockUnit(m) };
     });
     o.colores = (o.items || []).map(function (it) {
@@ -1982,79 +2199,9 @@
     });
     var pos = state.products.indexOf(p);
     state.products.splice(pos + 1, 0, copia);
-    ui.open[copia.id] = true;
-    ui.open[p.id] = false;
     save(copia); render();
     toast("Duplicado como “" + copia.name + "”");
-    enfocarTarjeta(copia.id);
-  }
-
-  function duplicarMaterial(m) {
-    /* duplicar un color para crear otro es el caso normal: la categoría viaja */
-    var copia = Object.assign({}, m, { id: uid(), name: copiaNombre(m.name), stock: "" });
-    ui.open[copia.id] = true;
-    var pos = state.materials.indexOf(m);
-    state.materials.splice(pos + 1, 0, copia);
-    save(copia); render();
-    toast("Duplicado como “" + copia.name + "”");
-  }
-
-  /* deja el nombre listo para escribir encima */
-  function enfocarTarjeta(id) {
-    setTimeout(function () {
-      var card = document.querySelector('[data-card="' + id + '"]');
-      var input = card && card.querySelector("input[type=text]");
-      if (input) { input.focus(); input.select(); }
-    }, 60);
-  }
-
-  /* crea el material, lo deja asignado a este producto y pide su nombre */
-  function crearMaterialDesdeProducto(p) {
-    abrirVentana("Nuevo " + rubro().insumo.toLowerCase(), function (cuerpo, sheet, cerrar) {
-      var nombre = el("input", { type: "text", placeholder: "Ej: Papel couché 300g", "aria-label": "Nombre" });
-      var unitSel = el("select", { "aria-label": "Unidad" });
-      UNITS.forEach(function (u) { unitSel.appendChild(el("option", { value: u, text: u })); });
-      unitSel.value = "unidad";
-      var costo = el("input", { class: "num", type: "text", inputmode: "decimal", placeholder: "0",
-        "aria-label": "Costo por unidad" });
-
-      cuerpo.appendChild(el("label", { class: "field", text: "Nombre" }));
-      cuerpo.appendChild(nombre);
-      cuerpo.appendChild(el("label", { class: "field", style: "margin-top:10px", text: "Unidad de uso" }));
-      cuerpo.appendChild(unitSel);
-      cuerpo.appendChild(el("label", { class: "field", style: "margin-top:10px", text: "Costo por unidad" }));
-      cuerpo.appendChild(costo);
-      cuerpo.appendChild(el("p", { class: "note", text: "El resto (existencias, compra por paquete) lo ajustas en Inventario." }));
-      setTimeout(function () { nombre.focus(); }, 40);
-
-      function guardar() {
-        if (!nombre.value.trim()) { toast("Ponle un nombre"); nombre.focus(); return; }
-        var m = { id: uid(), name: nombre.value.trim(), unit: unitSel.value, mode: "directo",
-          cost: costo.value, buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1",
-          areaMode: "area", stock: "", stockMin: "", categoria: "" };
-        state.materials.push(m);
-        p.materials.push({ materialId: m.id, qty: 1, h: "", w: "", pieces: 1 });
-        save(m); save(p); render(); cerrar();
-        toast(m.name + " agregado al producto");
-        enfocarUltimaLinea(p.id);
-      }
-
-      nombre.addEventListener("keydown", function (e) { if (e.key === "Enter") guardar(); });
-      sheet.appendChild(el("div", { class: "actions" }, [
-        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
-        el("button", { class: "btn primary", type: "button", text: "Agregar", onclick: guardar })
-      ]));
-    });
-  }
-
-  /* tras agregar una línea, el cursor va a la cantidad: es lo que toca escribir */
-  function enfocarUltimaLinea(productId) {
-    setTimeout(function () {
-      var card = document.querySelector('[data-card="' + productId + '"]');
-      if (!card) return;
-      var qtys = card.querySelectorAll(".sec .qty input, .sec .amt input");
-      if (qtys.length) { qtys[qtys.length - 1].focus(); qtys[qtys.length - 1].select(); }
-    }, 60);
+    abrirReceta(copia);
   }
 
   /* ---------------- buscar, filtrar y ordenar ----------------
@@ -2216,18 +2363,28 @@
     }).sort(ordenEntrega);
     var porCobrar = deudas.reduce(function (t, o) { return t + estadoPago(o).saldo; }, 0);
 
+    /* lo que salió en compras este mes, por medio; el stock inicial no fue un gasto */
+    var gastado = { efectivo: 0, transferencia: 0 };
+    (state.compras || []).forEach(function (c) {
+      if (c.inicial || String(c.fecha || "").slice(0, 7) !== mesActual()) return;
+      gastado[medioDe(c)] += gastoCompra(c);
+    });
+    function tile(titulo, medio) {
+      var total = porMetodo[medio] - gastado[medio];
+      return el("div", { class: "caja-tile medio" }, [
+        el("span", { class: "et", text: titulo }),
+        el("strong", { class: total < 0 ? "neg" : "", text: money(total) }),
+        el("span", { text: "Cobrado " + money(porMetodo[medio]) + " · Compras −" + money(gastado[medio]) })
+      ]);
+    }
     root.appendChild(el("div", { class: "caja-resumen" }, [
-      el("div", { class: "caja-tile cobrado" }, [
-        el("span", { class: "et", text: "Cobrado este mes" }),
-        el("strong", { text: money(porMetodo.efectivo + porMetodo.transferencia) }),
-        el("span", { text: "Efectivo " + money(porMetodo.efectivo) }),
-        el("span", { text: "Transferencia " + money(porMetodo.transferencia) })
-      ]),
-      el("div", { class: "caja-tile porcobrar" }, [
-        el("span", { class: "et", text: "Falta cobrar" }),
-        el("strong", { text: money(porCobrar) }),
-        el("span", { text: deudas.length + (deudas.length === 1 ? " pedido con saldo" : " pedidos con saldo") })
-      ])
+      tile("Total caja · efectivo", "efectivo"),
+      tile("Total banco · transferencias", "transferencia")
+    ]));
+    root.appendChild(el("div", { class: "caja-porcobrar" }, [
+      el("span", { class: "txt" }, [el("span", { class: "et", text: "Falta cobrar" }),
+        el("span", { text: deudas.length + (deudas.length === 1 ? " pedido con saldo" : " pedidos con saldo") })]),
+      el("strong", { text: money(porCobrar) })
     ]));
 
     /* --- ganancia de lo entregado --- */
@@ -2281,17 +2438,16 @@
     }
 
     /* --- colores más usados en 30 días, de lo que se entregó --- */
-    var catPetalos = {};
-    state.products.forEach(function (p) {
-      var f = florDe(p);
-      if (f.catPetalos) catPetalos[f.catPetalos] = true;
-    });
+    function esLimpiapipa(c) {
+      var m = materialById(c.materialId);
+      return (m ? tipoDe(m) : c.tipo || "") === "Limpiapipas";
+    }
     var desde = new Date(); desde.setDate(desde.getDate() - 30);
     var desdeIso = fechaLocal(desde), usados = {};
     state.orders.forEach(function (o) {
       if (o.estado !== "entregado" || String(o.entregado || "") < desdeIso) return;
       (o.consumo || []).forEach(function (c) {
-        if (!catPetalos[String(c.categoria || "").trim()]) return;
+        if (!esLimpiapipa(c)) return;
         var k = c.materialId;
         if (!usados[k]) usados[k] = { id: k, nombre: c.nombre, cantidad: 0, unidad: c.unidad };
         usados[k].cantidad += parseNum(c.cantidad);
@@ -2335,11 +2491,7 @@
     ]);
     erosionados.slice(0, 5).forEach(function (x) {
       caja.appendChild(el("button", { type: "button", class: "fila-aviso", onclick: function () {
-        ui.open[x.producto.id] = true; render();
-        setTimeout(function () {
-          var c = document.querySelector('[data-card="' + x.producto.id + '"]');
-          if (c) c.scrollIntoView({ block: "start" });
-        }, 60);
+        abrirReceta(x.producto);
       } }, [
         el("span", { class: "nom", text: x.producto.name || "Sin nombre" }),
         el("span", { class: "txt", text: x.ganancia < 0 ? "pierdes " + money(-x.ganancia) + " por unidad" : "solo te queda " + pct(x.margen) }),
@@ -2398,18 +2550,23 @@
   function datosPPP() {
     if (pppCache) return pppCache;
     var tipos = {}, deMaterial = {}, fechaMaterial = {};
+    /* el material queda en el tipo de su compra más reciente, si no tiene uno propio */
     (state.compras || []).forEach(function (c) {
-      /* una fila a medio llenar no mueve el promedio */
-      if (!c.tipo || unidadesCompra(c) <= 0 || gastoCompra(c) <= 0) return;
-      var t = tipos[c.tipo] || (tipos[c.tipo] = { unidades: 0, gasto: 0, compras: 0 });
-      t.unidades += unidadesCompra(c);
-      t.gasto += gastoCompra(c);
-      t.compras++;
-      /* el material queda en el tipo de su compra más reciente */
-      if (c.materialId && String(c.fecha || "") >= (fechaMaterial[c.materialId] || "")) {
+      if (c.tipo && c.materialId && String(c.fecha || "") >= (fechaMaterial[c.materialId] || "")) {
         deMaterial[c.materialId] = c.tipo;
         fechaMaterial[c.materialId] = String(c.fecha || "");
       }
+    });
+    (state.compras || []).forEach(function (c) {
+      /* una fila a medio llenar no mueve el promedio */
+      if (unidadesCompra(c) <= 0 || gastoCompra(c) <= 0) return;
+      var m = materialById(c.materialId);
+      var tipo = m ? tipoBase(m, deMaterial) : c.tipo;
+      if (!tipo) return;
+      var t = tipos[tipo] || (tipos[tipo] = { unidades: 0, gasto: 0, compras: 0 });
+      t.unidades += unidadesCompra(c);
+      t.gasto += gastoCompra(c);
+      t.compras++;
     });
     Object.keys(tipos).forEach(function (k) {
       tipos[k].ppp = tipos[k].unidades > 0 ? tipos[k].gasto / tipos[k].unidades : 0;
@@ -2418,16 +2575,37 @@
     return pppCache;
   }
 
-  function tipoDeMaterial(m) { return m ? datosPPP().deMaterial[m.id] || "" : ""; }
+  /* el tipo de un material: el suyo, el de su última compra, el probable por su
+     nombre o su categoría de antes */
+  function tipoBase(m, deMaterial) {
+    return String(m.tipo || "").trim() || deMaterial[m.id] || tipoSugerido(m) || String(m.categoria || "").trim() || "Otros";
+  }
+
+  function tipoDe(m) {
+    if (!m) return "";
+    var d = datosPPP();
+    if (!d.tipoMat) d.tipoMat = {};
+    if (!(m.id in d.tipoMat)) d.tipoMat[m.id] = tipoBase(m, d.deMaterial);
+    return d.tipoMat[m.id];
+  }
+
+  /* todos los tipos: los guardados y los que tienen los materiales */
+  function tiposTodos() {
+    var lista = tiposCompra().slice();
+    state.materials.forEach(function (m) { var t = tipoDe(m); if (t && lista.indexOf(t) < 0) lista.push(t); });
+    return lista;
+  }
 
   /* costo por unidad de stock según las compras, o null si no se compró por aquí */
   function costoPPP(m) {
-    var t = tipoDeMaterial(m);
+    var t = tipoDe(m);
     if (!t) return null;
     var d = datosPPP().tipos[t];
     if (!d || d.ppp <= 0) return null;
     /* un material por pliego se compra por pliegos, pero su costo va por cm² o m² */
-    return hasSheet(m) && sheetArea(m) > 0 ? d.ppp / sheetArea(m) : d.ppp;
+    if (hasSheet(m) && sheetArea(m) > 0) return d.ppp / sheetArea(m);
+    /* el PPP es por unidad comprada; la receta usa la medida (cm de una varilla) */
+    return d.ppp / medidaDe(m);
   }
 
   /* cambia las compras y anota en el historial los costos que se movieron.
@@ -2479,16 +2657,6 @@
     return cfg().symbol + " " + (isFinite(n) ? n : 0).toLocaleString("es-CL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function nuevaCompra() {
-    var ultima = (state.compras || []).slice().sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); })[0];
-    var c = { id: uid(), fecha: hoy(), proveedor: ultima ? ultima.proveedor || "" : "",
-      tipo: "", materialId: "", unidadesBolsa: "", bolsas: 1, precioBolsa: "" };
-    state.compras.push(c);
-    save(c);
-    render();
-    elegirMaterialCompra(c);
-  }
-
   /* lo que ya había en stock entra como una compra inicial a su costo de hoy */
   function cargarStockActual() {
     var creadas = 0, sinCosto = 0;
@@ -2510,308 +2678,15 @@
       (sinCosto ? " · " + sinCosto + " sin costo quedaron fuera" : "") : "No hay materiales con stock y costo para cargar");
   }
 
-  function seccionCompras() {
-    if (!state.compras) state.compras = [];
-    var caja = el("div", { class: "compras-ppp" }, [el("h3", { class: "etiqueta", text: "Compras · PPP" })]);
-    var d = datosPPP();
-
-    /* fichas: un PPP por tipo */
-    var conDatos = tiposCompra().filter(function (t) { return d.tipos[t] && d.tipos[t].compras; });
-    Object.keys(d.tipos).forEach(function (t) { if (conDatos.indexOf(t) < 0) conDatos.push(t); });
-    if (conDatos.length) {
-      var fichas = el("ul", { class: "fichas-ppp" });
-      conDatos.forEach(function (t) {
-        var x = d.tipos[t];
-        fichas.appendChild(el("li", {}, [
-          el("span", { class: "tipo", text: t }),
-          el("strong", { text: moneyPPP(x.ppp) }),
-          el("span", { class: "det", text: fmtQty(x.unidades) + " u · " + money(x.gasto) })
-        ]));
-      });
-      caja.appendChild(fichas);
-    }
-
-    if (!state.compras.length) {
-      caja.appendChild(el("div", { class: "empty" }, [
-        el("p", { text: "Anota cada bolsa que compras: el costo de cada tipo se calcula solo con el precio promedio ponderado (gasto total ÷ unidades)." }),
-        el("button", { class: "btn primary", type: "button", text: "+ Compra", onclick: nuevaCompra }),
-        el("button", { class: "btn", type: "button", text: "Cargar stock actual", style: "margin-left:8px", onclick: cargarStockActual })
-      ]));
-      return caja;
-    }
-
-    /* filtro por tipo y alta */
-    var filtro = ui.filtroCompras || "";
-    var barra = el("div", { class: "chips-filtro barra-compras", role: "group", "aria-label": "Filtrar por tipo" });
-    barra.appendChild(botonChip("Todas", !filtro, function () { ui.filtroCompras = ""; render(); }));
-    tiposCompra().forEach(function (t) {
-      if (!d.tipos[t]) return;
-      barra.appendChild(botonChip(t, filtro === t, function () { ui.filtroCompras = filtro === t ? "" : t; render(); }));
-    });
-    caja.appendChild(barra);
-
-    var filas = state.compras.filter(function (c) { return !filtro || c.tipo === filtro; })
-      .sort(function (a, b) { return String(b.fecha || "").localeCompare(String(a.fecha || "")); });
-    var limite = ui.todasCompras ? filas.length : 30;
-
-    var proveedores = {};
-    state.compras.forEach(function (c) { if (c.proveedor) proveedores[c.proveedor] = true; });
-    caja.appendChild(el("datalist", { id: "lista-proveedores" }, Object.keys(proveedores).map(function (p) {
-      return el("option", { value: p });
-    })));
-
-    var tabla = el("table", { class: "planilla" }, [
-      el("caption", { class: "solo-lector", text: "Compras registradas; cada celda se puede editar" }),
-      el("thead", {}, [el("tr", {}, ["Fecha", "Proveedor", "Tipo", "Material", "Unid./bolsa", "Bolsas", "Precio bolsa",
-        "Total u.", "Total $", "$ / u", ""].map(function (h, i) {
-        return el("th", { scope: "col", class: i >= 4 && i <= 9 ? "n" : "", text: h });
-      }))])
-    ]);
-    var cuerpo = el("tbody");
-    filas.slice(0, limite).forEach(function (c) { cuerpo.appendChild(filaCompra(c)); });
-    tabla.appendChild(cuerpo);
-    caja.appendChild(el("div", { class: "planilla-caja", tabindex: "0", role: "region", "aria-label": "Planilla de compras" }, [tabla]));
-
-    if (filas.length > limite) {
-      caja.appendChild(el("button", { class: "btn wide ver-anteriores", type: "button", text: "Ver todas (" + filas.length + ")",
-        onclick: function () { ui.todasCompras = true; render(); } }));
-    }
-    caja.appendChild(el("div", { class: "acciones-compras" }, [
-      el("button", { class: "btn primary", type: "button", text: "+ Compra", onclick: nuevaCompra })
-    ]));
-    return caja;
-  }
-
-  function filaCompra(c) {
-    var m = materialById(c.materialId);
-    /* un número se aplica al salir de la celda: así el stock se corrige una sola vez */
-    function celdaNum(campo, etiqueta, dec) {
-      return el("td", { class: "n" }, [el("input", { type: "text", inputmode: dec ? "decimal" : "numeric", class: "num",
-        value: c[campo] === "" || c[campo] == null ? "" : String(c[campo]), "aria-label": etiqueta, placeholder: "0",
-        onchange: function (e) {
-          var v = e.target.value;
-          conCostos(function () { aplicarStock(c, -1); c[campo] = v === "" ? "" : parseNum(v); aplicarStock(c, 1); });
-          save(c); renderPronto();
-        } })]);
-    }
-    return el("tr", { class: c.inicial ? "inicial" : "" }, [
-      el("td", { class: "fecha" }, [el("input", { type: "date", value: c.fecha || "", "aria-label": "Fecha",
-        onchange: function (e) { conCostos(function () { c.fecha = e.target.value; }); save(c); renderPronto(); } })]),
-      el("td", {}, [el("input", { type: "text", value: c.proveedor || "", list: "lista-proveedores", "aria-label": "Proveedor",
-        placeholder: c.inicial ? "Stock inicial" : "Proveedor",
-        onchange: function (e) { c.proveedor = e.target.value; save(c); } })]),
-      el("td", {}, [el("button", { type: "button", class: "celda-btn" + (c.tipo ? "" : " falta"), text: c.tipo || "Elegir",
-        "aria-label": "Tipo: " + (c.tipo || "sin elegir"), onclick: function () { elegirTipoCompra(c); } })]),
-      el("td", {}, [el("button", { type: "button", class: "celda-btn" + (m ? "" : " falta"), text: m ? m.name || "Sin nombre" : "Elegir",
-        "aria-label": "Material: " + (m ? m.name : "sin elegir"), onclick: function () { elegirMaterialCompra(c); } })]),
-      celdaNum("unidadesBolsa", "Unidades por bolsa", true),
-      celdaNum("bolsas", "Cantidad de bolsas", false),
-      celdaNum("precioBolsa", "Precio por bolsa", true),
-      el("td", { class: "n calc", text: fmtQty(unidadesCompra(c)) }),
-      el("td", { class: "n calc", text: money(gastoCompra(c)) }),
-      el("td", { class: "n calc", text: moneyPPP(unitarioCompra(c)) }),
-      el("td", {}, [deleteButton("Quitar compra", function () {
-        conCostos(function () {
-          aplicarStock(c, -1);
-          state.compras = state.compras.filter(function (x) { return x !== c; });
-        });
-        marcarBorrado("compras", c.id);
-        render();
-      })])
-    ]);
-  }
-
-  function elegirTipoCompra(c) {
-    var nuevo = "";
-    abrirHoja("Tipo de compra", function (cuerpo, cerrar, h) {
-      cuerpo.appendChild(el("p", { class: "lead", text: "Cada tipo tiene su propio PPP. Todos los colores de limpiapipas comparten uno." }));
-      var chips = el("div", { class: "chips-filtro", role: "group", "aria-label": "Tipos" });
-      tiposCompra().forEach(function (t) {
-        chips.appendChild(botonChip(t, c.tipo === t, function () {
-          conCostos(function () { c.tipo = t; });
-          ui.ultimoTipo = t;
-          save(c); cerrar(); render();
-        }));
-      });
-      cuerpo.appendChild(chips);
-      cuerpo.appendChild(el("div", { class: "hoja-fila", style: "margin-top:16px;align-items:end" }, [
-        campoHoja("tipo-nuevo", "Nuevo tipo", nuevo, { placeholder: "Ej: Ojos móviles", oninput: function (e) { nuevo = e.target.value; } }),
-        el("button", { class: "btn", type: "button", text: "Agregar", style: "margin-bottom:12px", onclick: function () {
-          var t = nuevo.trim();
-          if (!t) return;
-          if (tiposCompra().indexOf(t) < 0) { tiposCompra().push(t); save(); }
-          conCostos(function () { c.tipo = t; });
-          ui.ultimoTipo = t;
-          save(c); cerrar(); render();
-        } })
-      ]));
-    });
-  }
-
-  function elegirMaterialCompra(c) {
-    var nombre = "", categoria = "";
-    abrirHoja("¿Qué compraste?", function (cuerpo, cerrar, h) {
-      function usar(id) {
-        conCostos(function () {
-          aplicarStock(c, -1);
-          c.materialId = id;
-          /* el tipo sale del material: el que ya tiene, o el probable */
-          if (!c.tipo) {
-            var m = materialById(id);
-            c.tipo = tipoDeMaterial(m) || tipoSugerido(m) || ui.ultimoTipo || "";
-          }
-          aplicarStock(c, 1);
-        });
-        save(c); cerrar(); render();
-      }
-      var grupos = {}, orden = [];
-      state.materials.forEach(function (m) {
-        var cat = (m.categoria || "").trim() || "Sin categoría";
-        if (!grupos[cat]) { grupos[cat] = []; orden.push(cat); }
-        grupos[cat].push(m);
-      });
-      orden.sort(function (a, b) { return a.localeCompare(b); }).forEach(function (cat) {
-        cuerpo.appendChild(el("h4", { class: "cat-fichas", text: cat }));
-        var chips = el("div", { class: "chips-filtro", role: "group", "aria-label": cat });
-        grupos[cat].sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); }).forEach(function (m) {
-          chips.appendChild(el("button", { type: "button", class: "chip-filtro chip-mat", "aria-pressed": c.materialId === m.id,
-            onclick: function () { usar(m.id); } }, [
-            el("span", { class: "punto-color", style: "width:14px;height:14px;background:" + colorDe(m.id, true) }),
-            el("span", { class: "nom", text: m.name || "Sin nombre" }),
-            el("small", { text: fmtQty(parseNum(m.stock)) })
-          ]));
-        });
-        cuerpo.appendChild(chips);
-      });
-
-      /* un color o material que aún no está en el inventario */
-      var cats = orden.filter(function (x) { return x !== "Sin categoría"; });
-      cuerpo.appendChild(el("h4", { class: "cat-fichas", style: "margin-top:20px", text: "Otro material" }));
-      cuerpo.appendChild(campoHoja("mat-nuevo", "Nombre", nombre, { placeholder: "Ej: Dorado", oninput: function (e) { nombre = e.target.value; } }));
-      if (cats.length) {
-        var chipsCat = el("div", { class: "chips-filtro", role: "group", "aria-label": "Categoría del material nuevo" });
-        cats.forEach(function (cat) {
-          chipsCat.appendChild(botonChip(cat, categoria === cat, function () { categoria = categoria === cat ? "" : cat; h.repintar(); }));
-        });
-        cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Categoría" }), chipsCat]));
-      }
-      cuerpo.appendChild(el("button", { class: "btn primary wide", type: "button", text: "Crear y usar", onclick: function () {
-        var n = nombre.trim();
-        if (!n) { toast("Escribe el nombre del material"); return; }
-        var m = { id: uid(), name: n, unit: "unidad", mode: "directo", cost: "", buyPrice: "", buyQty: "",
-          sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area", stock: 0, stockMin: "", categoria: categoria };
-        state.materials.push(m);
-        marcarSucio(m);
-        usar(m.id);
-      } }));
-    });
-  }
-
-  /* ---------------- Taller: lo que tienes frente a lo que piden ---------------- */
-
-  function fichasTaller() {
-    var uso = aggregateUse(pendingItems());
-    var ids = Object.keys(uso).filter(function (k) { return uso[k] > 1e-9 && materialById(k); });
-    if (!ids.length) return null;
-    var grupos = {}, orden = [];
-    ids.forEach(function (k) {
-      var m = materialById(k), cat = (m.categoria || "").trim() || "Sin categoría";
-      if (!grupos[cat]) { grupos[cat] = []; orden.push(cat); }
-      grupos[cat].push(m);
-    });
-    var caja = el("div", { class: "fichas-taller" }, [el("h3", { class: "etiqueta", text: "Para los pedidos por hacer" })]);
-    orden.forEach(function (cat) {
-      caja.appendChild(el("h4", { class: "cat-fichas", text: cat }));
-      var ul = el("ul", { class: "fichas" });
-      grupos[cat].sort(function (a, b) {
-        return (parseNum(a.stock) - uso[a.id] < 0 ? 0 : 1) - (parseNum(b.stock) - uso[b.id] < 0 ? 0 : 1);
-      }).forEach(function (m) {
-        var need = uso[m.id], stock = parseNum(m.stock), corto = need - stock > 1e-9;
-        var pc = need > 0 ? Math.min(100, Math.round(stock / need * 100)) : 100;
-        ul.appendChild(el("li", { class: corto ? "corto" : "" }, [
-          el("span", { class: "madeja", "aria-hidden": "true" }, [el("span", { style: "height:" + pc + "%;background-color:" + colorDe(m.id, true) })]),
-          el("span", { class: "txt" }, [
-            el("strong", { text: m.name || "Sin nombre" }),
-            el("span", { text: "Tienes " + fmtQty(stock) + " · usarán " + fmtQty(need) }),
-            el("span", { class: "estado", text: corto ? "Faltan " + fmtQty(need - stock) : "Sobran " + fmtQty(stock - need) })
-          ])
-        ]));
-      });
-      caja.appendChild(ul);
-    });
-    return caja;
-  }
-
-  /* lo que hay que comprar: lo que falta para los pedidos y lo bajo el mínimo */
-  function tarjetaCompras(abiertos) {
-    var card = el("div", { class: "mat-card" });
-    card.appendChild(el("div", { class: "row" }, [
-      el("div", { class: "grow" }, [el("h3", { class: "titulo-tarjeta", text: "Qué falta comprar" })])
-    ]));
-
-    var porPedidos = abiertos.length ? shoppingFor(pendingItems()) : { lines: [], total: 0, ok: true };
-    var faltanPedidos = porPedidos.lines.filter(function (l) { return l.falta > 1e-9; });
-
-    var bajos = state.materials.filter(function (m) { return falta(m) > 0; });
-    var yaListados = {};
-    faltanPedidos.forEach(function (l) { yaListados[l.material.id] = true; });
-
-    if (!faltanPedidos.length && !bajos.length) {
-      card.appendChild(el("div", { class: "unit-cost", style: "margin-top:8px" }, [
-        el("span", { text: "No falta nada por ahora" }),
-        el("b", { text: money(0) })
-      ]));
-      return card;
-    }
-
-    var total = 0;
-    var plan = el("div", { class: "plan" });
-
-    faltanPedidos.forEach(function (l) {
-      total += l.cost;
-      plan.appendChild(el("div", { class: "plan-row short" }, [
-        el("span", { class: "plan-name", text: l.material.name || "Sin nombre" }),
-        el("span", { class: "plan-use", text: "faltan " + conUnidad(l.falta, stockUnit(l.material)) + " para los pedidos" }),
-        el("span", { class: "plan-cost", text: l.packs
-          ? l.packs + (l.packs === 1 ? " paquete " : " paquetes ") + money(l.cost) : money(l.cost) })
-      ]));
-    });
-
-    bajos.forEach(function (m) {
-      if (yaListados[m.id]) return;
-      var rc = restockCost(m, falta(m));
-      total += rc.cost;
-      plan.appendChild(el("div", { class: "plan-row" }, [
-        el("span", { class: "plan-name", text: m.name || "Sin nombre" }),
-        el("span", { class: "plan-use", text: "bajo el mínimo · faltan " + conUnidad(falta(m), stockUnit(m)) }),
-        el("span", { class: "plan-cost", text: rc.packs
-          ? rc.packs + (rc.packs === 1 ? " paquete " : " paquetes ") + money(rc.cost) : money(rc.cost) })
-      ]));
-    });
-
-    card.appendChild(plan);
-    card.appendChild(el("div", { class: "unit-cost" + (faltanPedidos.length ? " low" : "") }, [
-      el("span", { text: faltanPedidos.length ? "Comprar para los pedidos" : "Para volver al nivel inicial" }),
-      el("b", { text: money(total) })
-    ]));
-    return card;
-  }
-
   /* ---------------- render: productos ---------------- */
 
   function productCard(p) {
     var r = calc(p);
-    var open = !!ui.open[p.id];
-
     /* cabecera: la flor en su color habitual, cuánto cuesta y cuánto queda */
-    var f = florDe(p);
-    var c1 = f.colorDefecto ? colorDe(f.colorDefecto) : "#E6DCCB";
-    var head = el("div", { class: "card-head flor-head" + (open ? " open" : ""), role: "button", tabindex: "0",
-      "aria-expanded": open, onclick: function () {
-      ui.open[p.id] = !ui.open[p.id];
-      render();
-    } }, [
-      svgEl(petalosSvg(c1, c1, 40)),
+    var c = coloresLinea({ productId: p.id }) || { p1: "#E6DCCB", p2: "#E6DCCB" };
+    var head = el("button", { type: "button", class: "card-head flor-head", "aria-label": "Receta de " + (p.name || "flor sin nombre"),
+      onclick: function () { abrirReceta(p); } }, [
+      svgEl(petalosSvg(c.p1, c.p2, 40)),
       el("span", { class: "flor-nombre" }, [
         el("h3", { text: p.name || "Sin nombre" }),
         el("span", { class: "flor-resumen", text: "Cuesta " + money(r.total) + " · vendes a " + money(r.final) })
@@ -2819,197 +2694,317 @@
       el("span", { class: "chip " + claseMargen(r), text: r.final <= 0 ? "sin precio"
         : r.ganancia < 0 ? "pierdes " + money(-r.ganancia) : "te queda " + pct(r.margen) })
     ]);
-    head.addEventListener("keydown", function (e) {
-      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); head.click(); }
-    });
     var pc = r.final > 0 ? Math.max(0, Math.min(100, Math.round(r.total / r.final * 100))) : 100;
-    var chips = el("div", { class: "barra-costo", "aria-hidden": "true" }, [
+    var barra = el("div", { class: "barra-costo", "aria-hidden": "true" }, [
       el("span", { class: "costo", style: "width:" + pc + "%" }),
       el("span", { class: "gana", style: "width:" + (100 - pc) + "%" })
     ]);
+    return el("div", { class: "card producto", "data-card": p.id }, [head, barra]);
+  }
 
-    var card = el("div", { class: "card " + (p.type === "servicio" ? "servicio" : "producto"),
-      "data-card": p.id }, [head, chips]);
-    if (!open) return card;
+  /* ---------------- receta de la flor, en cinco pasos ---------------- */
 
-    var body = el("div", { class: "card-body" });
+  var PASOS_RECETA = ["Nombre y precio", "Pétalos", "Complementos", "Otros materiales", "Resumen"];
 
-    /* nombre + tipo */
-    body.appendChild(el("div", { class: "sec" }, [
-      el("label", { class: "field", text: "Nombre" }),
-      el("input", { type: "text", value: p.name, placeholder: "Ej: Tulipán",
-        oninput: function (e) { p.name = e.target.value; head.querySelector("h3").textContent = p.name || "Sin nombre"; save(p); } })
-    ]));
-
-
-    body.appendChild(seccionFlor(p));
-
-    /* materiales fijos: barra, cinta, etc. */
-    var matSec = el("div", { class: "sec" });
-    matSec.appendChild(el("header", {}, [
-      el("h4", { text: "Otros materiales" }),
-      el("span", { class: "sub", text: money(r.mats) })
-    ]));
-
-    if (!state.materials.length) {
-      matSec.appendChild(el("p", { class: "note", text: "Agrega " + rubro().insumoPlural + " en la pestaña " + rubro().insumos + " para poder asignarlos aquí." }));
+  /* muestras de color de un tipo; muestra lo que queda y atenúa lo agotado */
+  function muestras(tipo, actual, alElegir, etiqueta, disponible) {
+    var opciones = state.materials.filter(function (m) { return tipoDe(m) === tipo; })
+      .sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); });
+    if (!opciones.length) {
+      return el("p", { class: "note", style: "margin:0", text: "No hay materiales de tipo " + (tipo || "—") + ". Agrégalos en el Taller." });
     }
+    var fila = el("div", { class: "muestras", role: "group", "aria-label": etiqueta || "Color" });
+    opciones.forEach(function (m) {
+      var queda = disponible ? disponible(m) : parseNum(m.stock);
+      fila.appendChild(el("button", { type: "button", class: "muestra" + (queda <= 0 ? " agotado" : ""),
+        "aria-pressed": actual === m.id, "aria-label": (m.name || "Sin nombre") + ", quedan " + fmtQty(queda),
+        title: m.name || "", style: "background-color:" + colorDe(m.id),
+        onclick: function () { alElegir(m.id); } }));
+    });
+    return fila;
+  }
 
-    p.materials.forEach(function (line, idx) {
-      var m = materialById(line.materialId);
-      var area = m && isArea(m.unit);
-      var lineBox = el("div", { class: "mat-line" });
+  function chipsTipo(actual, alElegir) {
+    var fila = el("div", { class: "chips-filtro tipos-receta", role: "group", "aria-label": "Tipo de material" });
+    tiposTodos().filter(function (t) { return t !== "Envoltura"; }).forEach(function (t) {
+      fila.appendChild(botonChip(t, actual === t, function () { alElegir(t); }));
+    });
+    return fila;
+  }
 
-      var lineTotal = el("span", { class: "line-total", text: m ? money(lineCost(line).cost) : "—" });
+  /* un número escrito; se guarda al vuelo y refresca los textos vivos */
+  function campoNum(etiqueta, valor, alCambiar, opts) {
+    opts = opts || {};
+    var input = el("input", { type: "text", inputmode: "decimal", class: "num", value: valor == null ? "" : String(valor),
+      placeholder: opts.placeholder || "0", "aria-label": opts.aria || etiqueta,
+      oninput: function (e) { alCambiar(e.target.value); } });
+    if (opts.solo) return input;
+    return el("label", { class: "campo-num" }, [el("span", { text: etiqueta }), input]);
+  }
 
-      lineBox.appendChild(selectorMaterial(p, line, function () { save(p); render(); }));
+  function costoParte(id, cantMedida, tipo) {
+    var m = materialById(id);
+    if (m) return cantMedida / medidaDe(m) * stockUnitValue(m);
+    return cantMedida * pppDeTipo(tipo);
+  }
 
-      lineBox.appendChild(el("div", { class: "row", style: "margin-top:6px" }, [
-        area ? null : el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Cantidad" })]),
-        area ? null : el("div", { class: "qty" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
-          value: line.qty, "aria-label": "Cantidad",
-          oninput: function (e) { line.qty = e.target.value; save(p); refreshOutputs(); } })]),
-        area ? null : lineTotal,
-        deleteButton("Quitar material", function () { p.materials.splice(idx, 1); save(p); render(); })
-      ]));
+  function abrirReceta(p, nueva) {
+    var paso = 1;
+    var R = recetaDe(p);
+    if (!p.receta) p.receta = R;   /* la receta vieja se guarda convertida al primer cambio */
+    else R = p.receta;
+    var vivos = [];
+    function guardarR() { p.receta = R; save(p); refrescar(); }
+    function refrescar() { vivos.forEach(function (f) { f(); }); }
+    function vivo(tag, attrs, fn) {
+      var n = el(tag, attrs || {});
+      var f = function () { var v = fn(); if (typeof v === "string") n.textContent = v; else { n.textContent = v.text; if (v.cls != null) n.className = v.cls; } };
+      vivos.push(f); f();
+      return n;
+    }
+    function copia() { return JSON.parse(JSON.stringify(R)); }
 
-      if (area) {
-        var side = sideUnit(m.unit);
-        var detail = el("p", { class: "area-note" });
+    abrirHoja("Receta", function (cuerpo, cerrar, h) {
+      vivos = [];
+      if (state.products.indexOf(p) < 0) { cerrar(); return; }
+      if (!R.petalos) R.petalos = [];
+      if (!R.comps) R.comps = [];
+      function repintar() { h.repintar(); }
+      function ir(n) { paso = Math.max(1, Math.min(5, n)); h.repintar(); h.sheet.scrollTop = 0; }
 
-        function refreshLine() {
-          var r2 = lineCost(line);
-          var parts = [];
-          if (r2.area > 0) parts.push(r2.area.toLocaleString("es-CL", { maximumFractionDigits: 2 }) + " " + m.unit + " = " + money(r2.costArea));
-          if (r2.perSheet > 0) parts.push("entran " + r2.perSheet + " por pliego · usas " + r2.sheets + " = " + money(r2.costSheets));
-          detail.textContent = parts.length ? parts.join(" · ") : "Ingresa alto, ancho y piezas.";
-          detail.className = "area-note" + (m.areaMode === "pliego" && r2.costSheets != null ? " sheet" : "");
-          lineTotal.textContent = money(r2.cost);
+      cuerpo.appendChild(el("p", { class: "paso-receta", text: "Paso " + paso + " de 5 · " + PASOS_RECETA[paso - 1] }));
+      var barras = el("div", { class: "barras-pasos", role: "group", "aria-label": "Pasos de la receta" });
+      PASOS_RECETA.forEach(function (t, i) {
+        barras.appendChild(el("button", { type: "button", class: i < paso ? "on" : "", "aria-label": "Paso " + (i + 1) + ": " + t,
+          "aria-current": i + 1 === paso ? "step" : null, onclick: function () { ir(i + 1); } }, [el("span")]));
+      });
+      cuerpo.appendChild(barras);
+
+      if (paso === 1) {
+        cuerpo.appendChild(campoHoja("rec-nombre", "Nombre de la flor", p.name, { placeholder: "Ej: Tulipán",
+          oninput: function (e) { p.name = e.target.value; save(p); refrescar(); } }));
+        cuerpo.appendChild(campoHoja("rec-precio", "Precio de venta (" + cfg().symbol + ")", p.manualPrice, { inputmode: "decimal", placeholder: "2000",
+          oninput: function (e) { p.manualPrice = e.target.value; save(p); refrescar(); } }));
+        if (state.settings.taxEnabled) {
+          cuerpo.appendChild(vivo("p", { class: "note" }, function () {
+            return "Con impuesto (" + pct(parseNum(state.settings.taxRate)) + "): " + money(calc(p).final) + ". Se cambia en Ajustes.";
+          }));
         }
-
-        function measure(label, key) {
-          return el("div", { class: "grow" }, [
-            el("label", { class: "field", text: label }),
-            el("input", { class: "num", type: "text", inputmode: "decimal", value: line[key], placeholder: "0",
-              oninput: function (e) { line[key] = e.target.value; save(p); refreshLine(); refreshOutputs(); } })
-          ]);
+        if (moduloActivo("tienda")) {
+          var pub = el("input", { type: "checkbox" });
+          pub.checked = !!p.publicado;
+          pub.addEventListener("change", function () { p.publicado = pub.checked; save(p); repintar(); });
+          cuerpo.appendChild(el("label", { class: "switch", style: "margin-top:6px" }, [pub, el("span", { text: "Mostrar en la tienda pública" })]));
+          if (p.publicado) {
+            cuerpo.appendChild(campoHoja("rec-desc", "Descripción para el cliente", p.descripcionPublica, { placeholder: "Ej: Tulipán artesanal de limpiapipas",
+              oninput: function (e) { p.descripcionPublica = e.target.value; save(p); } }));
+          }
         }
-
-        lineBox.appendChild(el("div", { class: "row measures" }, [
-          measure("Alto (" + side + ")", "h"),
-          measure("Ancho (" + side + ")", "w"),
-          measure("Piezas", "pieces")
+      } else if (paso === 2) {
+        cuerpo.appendChild(el("p", { class: "lead", text: "Crea cada pétalo como lo armas. Si la flor tiene pétalos de distinto tamaño, agrega otro." }));
+        R.petalos.forEach(function (g, i) {
+          var sec = el("section", { class: "receta-bloque" });
+          sec.appendChild(el("div", { class: "fila-nombre" }, [
+            el("input", { type: "text", value: g.nombre || "", "aria-label": "Nombre del pétalo", placeholder: "Pétalo",
+              oninput: function (e) { g.nombre = e.target.value; guardarR(); } }),
+            el("button", { type: "button", class: "quitar", "aria-label": "Quitar " + (g.nombre || "pétalo"), text: "✕",
+              onclick: function () { R.petalos.splice(i, 1); guardarR(); repintar(); } })
+          ]));
+          sec.appendChild(el("div", { class: "hoja-fila" }, [
+            campoNum("¿Cuántos pétalos tiene la flor?", g.cant, function (v) { g.cant = v; guardarR(); }),
+            campoNum("Limpiapipas por pétalo", g.lpp, function (v) {
+              g.lpp = v;
+              if (g.colores.length === 1) g.colores[0].lp = v;
+              guardarR();
+            })
+          ]));
+          sec.appendChild(chipsTipo(g.tipo, function (t) { g.tipo = t; guardarR(); repintar(); }));
+          sec.appendChild(el("span", { class: "sub-etiqueta", text: "Colores de cada pétalo" }));
+          g.colores.forEach(function (c, j) {
+            var nom = g.colores.length > 1 ? NOMBRES_COLOR[j] : "Color";
+            var m = materialById(c.color);
+            sec.appendChild(el("div", { class: "color-receta" }, [
+              el("div", { class: "fila" }, [
+                el("span", { class: "punto-color", style: "width:22px;height:22px;background:" + colorDe(c.color) }),
+                el("span", { class: "nom", text: nom + " · " + (m ? m.name : "sin elegir") }),
+                el("label", { class: "lp" }, [el("span", { text: "limpiapipas" }),
+                  campoNum("", c.lp, function (v) { c.lp = v; guardarR(); }, { solo: true, aria: "Limpiapipas de " + nom.toLowerCase() + " por pétalo" })]),
+                g.colores.length > 1 ? el("button", { type: "button", class: "quitar", text: "✕", "aria-label": "Quitar " + nom.toLowerCase(),
+                  onclick: function () { g.colores.splice(j, 1); if (g.colores.length === 1) g.colores[0].lp = g.lpp; guardarR(); repintar(); } }) : null
+              ]),
+              muestras(g.tipo, c.color, function (id) { c.color = id; guardarR(); repintar(); }, "Color " + nom.toLowerCase())
+            ]));
+          });
+          var acciones = el("div", { class: "acciones-color" });
+          if (g.colores.length === 1) {
+            acciones.appendChild(el("button", { type: "button", class: "btn small punteado", text: "Hacer bicolor", onclick: function () {
+              var l = parseNum(g.lpp) || 1, a = Math.max(0.5, Math.round(l * 2 / 3 * 2) / 2);
+              g.colores = [{ lp: a, color: g.colores[0].color }, { lp: Math.max(0, Math.round((l - a) * 100) / 100), color: "" }];
+              guardarR(); repintar();
+            } }));
+          }
+          if (g.colores.length < 4) {
+            acciones.appendChild(el("button", { type: "button", class: "btn small punteado", text: "+ color", onclick: function () {
+              g.colores.push({ lp: 0, color: "" }); guardarR(); repintar();
+            } }));
+          }
+          sec.appendChild(acciones);
+          sec.appendChild(vivo("p", { class: "resumen-parte" }, function () {
+            var cant = parseNum(g.cant), lpp = parseNum(g.lpp);
+            var suma = g.colores.reduce(function (t, c) { return t + parseNum(c.lp); }, 0);
+            if (Math.abs(suma - lpp) > 0.001) return { text: "Los colores suman " + fmtQty(suma) + " de " + fmtQty(lpp) + " limpiapipas por pétalo", cls: "resumen-parte mal" };
+            var reparto = g.colores.map(function (c, j) {
+              var mm = materialById(c.color);
+              return fmtQty(cant * parseNum(c.lp)) + " " + (g.colores.length > 1 ? NOMBRES_COLOR[j].toLowerCase() : (mm ? mm.name.toLowerCase() : "sin color"));
+            }).join(" · ");
+            return { text: fmtQty(cant) + " pétalos × " + fmtQty(lpp) + " = " + fmtQty(cant * lpp) + " limpiapipas (" + reparto + ")", cls: "resumen-parte" };
+          }));
+          cuerpo.appendChild(sec);
+        });
+        cuerpo.appendChild(el("button", { type: "button", class: "btn wide punteado", text: "+ Pétalo", onclick: function () {
+          var base = R.petalos[R.petalos.length - 1];
+          R.petalos.push({ nombre: "Pétalo", cant: 5, lpp: 1, tipo: base ? base.tipo : "Limpiapipas",
+            colores: [{ lp: 1, color: base ? base.colores[0].color : "" }] });
+          guardarR(); repintar();
+        } }));
+      } else if (paso === 3) {
+        cuerpo.appendChild(el("p", { class: "lead", text: "Hojas, relleno, centro… lo que lleve la flor además de los pétalos. El color se elige en cada pedido; aquí va el habitual." }));
+        R.comps.forEach(function (k, i) {
+          var sec = el("section", { class: "receta-bloque" });
+          sec.appendChild(el("div", { class: "fila-nombre" }, [
+            el("input", { type: "text", value: k.nombre || "", "aria-label": "Nombre del complemento", placeholder: "Ej: Relleno",
+              oninput: function (e) { k.nombre = e.target.value; guardarR(); } }),
+            el("button", { type: "button", class: "quitar", "aria-label": "Quitar " + (k.nombre || "complemento"), text: "✕",
+              onclick: function () { R.comps.splice(i, 1); guardarR(); repintar(); } })
+          ]));
+          sec.appendChild(el("div", { class: "hoja-fila" }, [
+            campoNum("¿Cuántos lleva la flor?", k.cant, function (v) { k.cant = v; guardarR(); }),
+            campoNum(k.tipo === "Limpiapipas" ? "Limpiapipas por cada uno" : "Cuánto usa cada uno", k.uso, function (v) { k.uso = v; guardarR(); })
+          ]));
+          sec.appendChild(chipsTipo(k.tipo, function (t) { k.tipo = t; guardarR(); repintar(); }));
+          sec.appendChild(el("span", { class: "sub-etiqueta", text: "Color habitual" }));
+          sec.appendChild(muestras(k.tipo, k.color, function (id) { k.color = id; guardarR(); repintar(); }, "Color habitual de " + (k.nombre || "complemento")));
+          sec.appendChild(vivo("p", { class: "resumen-parte" }, function () {
+            var u = parseNum(k.cant) * parseNum(k.uso);
+            return fmtQty(k.cant) + " × " + fmtQty(k.uso) + " = " + fmtQty(u) + (k.tipo === "Limpiapipas" ? " limpiapipas" : " de " + String(k.tipo).toLowerCase()) +
+              " · " + money(costoParte(k.color, u, k.tipo));
+          }));
+          cuerpo.appendChild(sec);
+        });
+        cuerpo.appendChild(el("button", { type: "button", class: "btn wide punteado", text: "+ Complemento", onclick: function () {
+          R.comps.push({ nombre: "", cant: 1, uso: 1, tipo: "Limpiapipas", color: "" }); guardarR(); repintar();
+        } }));
+      } else if (paso === 4) {
+        cuerpo.appendChild(el("p", { class: "lead", text: "Escribe cuánto usa cada flor, en la medida del inventario (si la varilla mide 30 cm y usas 20, escribe 20)." }));
+        var ul = el("ul", { class: "otros-receta" });
+        (p.materials || []).forEach(function (line, idx) {
+          var m = materialById(line.materialId);
+          var area = m && isArea(m.unit);
+          ul.appendChild(el("li", {}, [
+            el("span", { class: "txt" }, [
+              el("strong", { text: m ? m.name || "Sin nombre" : "Material borrado" }),
+              vivo("span", {}, function () {
+                if (!m) return "";
+                if (area) return "medidas de área · " + money(lineCost(line).cost);
+                return "en inventario: " + fmtQty(medidaDe(m)) + " " + unidadMedidaDe(m) + " por unidad · " + money(lineCost(line).cost);
+              })
+            ]),
+            area || !m ? null : el("label", { class: "lp" }, [el("span", { text: "usa" }),
+              campoNum("", line.qty, function (v) { line.qty = v; save(p); refrescar(); }, { solo: true, aria: "Cuánto usa de " + (m.name || "material") }),
+              el("span", { text: unidadMedidaDe(m) })]),
+            el("button", { type: "button", class: "quitar", text: "✕", "aria-label": "Quitar " + (m ? m.name : "material"),
+              onclick: function () { p.materials.splice(idx, 1); save(p); repintar(); } })
+          ]));
+        });
+        if ((p.materials || []).length) cuerpo.appendChild(ul);
+        var usados = {};
+        (p.materials || []).forEach(function (l) { usados[l.materialId] = true; });
+        var agregables = state.materials.filter(function (m) {
+          var t = tipoDe(m);
+          return t !== "Limpiapipas" && t !== "Envoltura" && !usados[m.id];
+        }).sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); });
+        if (agregables.length) {
+          var chips = el("div", { class: "chips-filtro" });
+          agregables.forEach(function (m) {
+            chips.appendChild(el("button", { type: "button", class: "chip-filtro punteado", text: "+ " + (m.name || "Sin nombre"), onclick: function () {
+              if (!p.materials) p.materials = [];
+              p.materials.push({ materialId: m.id, qty: medidaDe(m), h: "", w: "", pieces: 1 });
+              save(p); repintar();
+            } }));
+          });
+          cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Agregar" }), chips]));
+        }
+        cuerpo.appendChild(el("p", { class: "nota-suave", text: "La envoltura no va en la receta: se elige en cada pedido, para todo el ramo." }));
+      } else {
+        var col = coloresLinea({ productId: p.id }) || { p1: "#E6DCCB", p2: "#E6DCCB" };
+        cuerpo.appendChild(el("div", { class: "vista-flor" }, [
+          svgEl(petalosSvg(col.p1, col.p2, 52)),
+          el("div", {}, [el("strong", { text: p.name || "Flor nueva" }),
+            el("span", { text: fmtQty(R.petalos.reduce(function (t, g) { return t + parseNum(g.cant); }, 0)) + " pétalos" +
+              (R.comps.length ? " · " + R.comps.map(function (k) { return (k.nombre || "complemento").toLowerCase(); }).join(", ") : "") })])
         ]));
-
-        lineBox.appendChild(el("div", { class: "row", style: "justify-content:space-between" }, [
-          detail, lineTotal
+        var lineas = el("ul", { class: "resumen-pago resumen-receta" });
+        R.petalos.forEach(function (g) {
+          var u = parseNum(g.cant) * parseNum(g.lpp), costo = 0;
+          g.colores.forEach(function (c) { costo += costoParte(c.color, parseNum(g.cant) * parseNum(c.lp), g.tipo); });
+          lineas.appendChild(el("li", {}, [el("span", { text: (g.nombre || "Pétalo") + ": " + fmtQty(u) + " limpiapipas (" + fmtQty(g.cant) + " × " + fmtQty(g.lpp) + ")" }),
+            el("strong", { text: money(costo) })]));
+        });
+        R.comps.forEach(function (k) {
+          var u = parseNum(k.cant) * parseNum(k.uso);
+          lineas.appendChild(el("li", {}, [el("span", { text: (k.nombre || "Complemento") + ": " + fmtQty(u) + " (" + fmtQty(k.cant) + " × " + fmtQty(k.uso) + ")" }),
+            el("strong", { text: money(costoParte(k.color, u, k.tipo)) })]));
+        });
+        (p.materials || []).forEach(function (line) {
+          var m = materialById(line.materialId);
+          if (!m) return;
+          lineas.appendChild(el("li", {}, [el("span", { text: (m.name || "Material") + (isArea(m.unit) ? "" : ": " + fmtQty(line.qty) + " " + unidadMedidaDe(m)) }),
+            el("strong", { text: money(lineCost(line).cost) })]));
+        });
+        cuerpo.appendChild(lineas);
+        var r = calc(p);
+        cuerpo.appendChild(el("div", { class: "total-pago" }, [el("span", { text: "Costo total" }), el("strong", { text: money(r.total) })]));
+        cuerpo.appendChild(el("ul", { class: "resumen-pago", style: "margin-top:8px" }, [
+          el("li", {}, [el("span", { text: "Precio de venta" }), el("strong", { text: money(r.neto) })]),
+          state.settings.taxEnabled ? el("li", {}, [el("span", { text: "Con impuesto" }), el("span", { text: money(r.final) })]) : null,
+          el("li", {}, [el("span", { text: "Ganancia" }), el("strong", { class: r.ganancia < 0 ? "neg" : "pos", text: money(r.ganancia) })])
         ]));
-        refreshLine();
+        cuerpo.appendChild(el("p", { class: "margen-receta " + claseMargen(r), text: r.neto > 0 ? "De cada venta te queda " + pct(r.margen) : "Falta el precio de venta" }));
+        cuerpo.appendChild(el("div", { class: "hoja-fila", style: "margin-top:14px" }, [
+          el("button", { class: "btn small", type: "button", text: "Duplicar flor", onclick: function () { cerrar(); duplicarProducto(p); } }),
+          el("button", { class: "btn small peligro", type: "button", text: "Eliminar flor", onclick: function () {
+            if (ui.confirming === p.id) {
+              state.products = state.products.filter(function (x) { return x.id !== p.id; });
+              marcarBorrado("productos", p.id);
+              ui.confirming = null; cerrar(); toast("Flor eliminada");
+            } else {
+              ui.confirming = p.id;
+              toast("Toca otra vez para eliminar");
+              setTimeout(function () { if (ui.confirming === p.id) ui.confirming = null; }, 3000);
+            }
+          } })
+        ]));
       }
 
-      matSec.appendChild(lineBox);
+      var pie = el("div", { class: "pie-receta" });
+      pie.appendChild(vivo("div", { class: "costo-vivo", "aria-live": "polite" }, function () {
+        var r = calc(p);
+        return "Costo " + money(r.total) + " · " + (r.neto <= 0 ? "falta el precio" : r.ganancia < 0 ? "pierdes " + money(-r.ganancia) : "te queda " + pct(r.margen));
+      }));
+      var botones = el("div", { class: "pie-hoja", style: "margin-top:8px" });
+      if (paso > 1) botones.appendChild(el("button", { class: "btn", type: "button", text: "Atrás", onclick: function () { ir(paso - 1); } }));
+      if (paso < 5) botones.appendChild(el("button", { class: "btn primary", type: "button", text: "Siguiente", onclick: function () { ir(paso + 1); } }));
+      else botones.appendChild(el("button", { class: "btn primary", type: "button", text: "Guardar flor", onclick: function () { cerrar(); toast("Flor guardada"); } }));
+      pie.appendChild(botones);
+      cuerpo.appendChild(pie);
+    }, function () {
+      /* una flor nueva que se cerró sin nombre ni precio no queda como "Sin nombre" */
+      if (nueva && !String(p.name || "").trim() && !parseNum(p.manualPrice)) {
+        state.products = state.products.filter(function (x) { return x.id !== p.id; });
+        marcarBorrado("productos", p.id);
+      }
+      render();
     });
-
-    matSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ " + rubro().insumo,
-      onclick: function () {
-        p.materials.push({ materialId: "", qty: 1, h: "", w: "", pieces: 1 });
-        save(p); render();
-        enfocarUltimaLinea(p.id);
-      } }));
-
-    /* crear el material sin salir del producto ni perder lo escrito */
-    matSec.appendChild(el("button", { class: "btn small", type: "button",
-      text: "+ " + rubro().insumo + " nuevo", style: "margin-left:6px",
-      onclick: function () { crearMaterialDesdeProducto(p); } }));
-    body.appendChild(matSec);
-
-    /* costos adicionales */
-    var costSec = el("div", { class: "sec" });
-    costSec.appendChild(el("header", {}, [
-      el("h4", { text: "Otros costos" }),
-      el("span", { class: "sub", text: "Fijos " + money(r.fijos) + " · Variables " + money(r.variables) })
-    ]));
-
-    p.costs.forEach(function (c, idx) {
-      var kindSel = el("select", { "aria-label": "Tipo de costo" });
-      [["variable", "Variable"], ["fijo", "Fijo"]].forEach(function (o) {
-        kindSel.appendChild(el("option", { value: o[0], text: o[1] }));
-      });
-      kindSel.value = c.kind;
-      kindSel.addEventListener("change", function () { c.kind = kindSel.value; save(p); render(); });
-
-      costSec.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "grow" }, [el("input", { type: "text", value: c.name, placeholder: "Ej: Mano de obra",
-          oninput: function (e) { c.name = e.target.value; save(p); } })]),
-        el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal", value: c.amount, "aria-label": "Monto",
-          oninput: function (e) { c.amount = e.target.value; save(p); refreshOutputs(); } })]),
-        el("div", { class: "kind" }, [kindSel]),
-        deleteButton("Quitar costo", function () { p.costs.splice(idx, 1); save(p); render(); })
-      ]));
-    });
-
-    costSec.appendChild(el("button", { class: "btn small", type: "button", text: "+ Costo",
-      onclick: function () { p.costs.push({ id: uid(), name: "", amount: "", kind: "variable" }); save(p); render(); } }));
-    body.appendChild(costSec);
-
-    /* precio */
-    var priceSec = el("div", { class: "sec" });
-    priceSec.appendChild(el("header", {}, [el("h4", { text: "Precio de venta" })]));
-    priceSec.appendChild(el("p", { class: "note",
-      text: "Precio neto que cobras, sin impuesto. La ganancia y el margen se calculan solos." }));
-
-    priceSec.appendChild(el("div", { class: "campo-precio" }, [
-      el("span", { class: "simbolo", text: cfg().symbol }),
-      el("input", { class: "num", type: "text", inputmode: "decimal",
-        value: p.manualPrice, placeholder: "0", "aria-label": "Precio neto",
-        oninput: function (e) { p.manualPrice = e.target.value; save(p); refreshOutputs(); } })
-    ]));
-    body.appendChild(priceSec);
-
-    /* publicación en la tienda */
-    var pubCheck = el("input", { type: "checkbox" });
-    pubCheck.checked = !!p.publicado;
-    pubCheck.addEventListener("change", function () { p.publicado = pubCheck.checked; save(p); render(); });
-
-    var pubSec = el("div", { class: "sec" }, [
-      el("header", {}, [el("h4", { text: "Tienda pública" })]),
-      el("label", { class: "switch" }, [pubCheck, el("span", { text: "Mostrar en el catálogo público" })])
-    ]);
-    if (p.publicado) {
-      pubSec.appendChild(el("div", { class: "sec", style: "margin-top:10px" }, [
-        el("label", { class: "field", text: "Descripción para el cliente" }),
-        el("input", { type: "text", value: p.descripcionPublica || "", placeholder: "Ej: Tulipán artesanal de limpiapipas",
-          oninput: function (e) { p.descripcionPublica = e.target.value; save(p); } })
-      ]));
-      pubSec.appendChild(el("p", { class: "note",
-        text: "Se publica como " + money(r.final) + " y se ofrece por encargo: el cliente pide " +
-          "la cantidad que quiera y tú la preparas. Tus costos y márgenes no salen a la tienda." }));
-    }
-    if (moduloActivo("tienda")) body.appendChild(pubSec);
-
-    /* resultado */
-    body.appendChild(resultTable(p));
-
-    /* duplicar y eliminar */
-    body.appendChild(el("div", { class: "sec" }, [
-      el("button", { class: "btn small", type: "button", text: "Duplicar producto",
-        style: "margin-right:6px", onclick: function () { duplicarProducto(p); } }),
-      el("button", { class: "btn small peligro", type: "button", text: "Eliminar producto",
-        onclick: function () {
-          if (ui.confirming === p.id) {
-            state.products = state.products.filter(function (x) { return x.id !== p.id; });
-            marcarBorrado("productos", p.id);
-            ui.confirming = null; render(); toast("Producto eliminado");
-          } else {
-            ui.confirming = p.id;
-            toast("Toca otra vez para eliminar");
-            setTimeout(function () { if (ui.confirming === p.id) ui.confirming = null; }, 3000);
-          }
-        } })
-    ]));
-
-    card.appendChild(body);
-    return card;
   }
 
   function resultRow(label, value, cls) {
@@ -3150,10 +3145,12 @@
 
   function addProduct() {
     var p = { id: uid(), name: "", type: "producto", materials: [], costs: [],
-      pricingMode: "manual", manualPrice: "", stock: "" };
+      pricingMode: "manual", manualPrice: "", stock: "",
+      receta: { petalos: [{ nombre: "Pétalo", cant: 5, lpp: 1, tipo: "Limpiapipas", colores: [{ lp: 1, color: "" }] }],
+        comps: [{ nombre: "Hojas", cant: 2, uso: 1, tipo: "Limpiapipas", color: "" }] } };
     state.products.push(p);
-    ui.open[p.id] = true;
     save(p); render();
+    abrirReceta(p, true);
   }
 
   /* ---------------- render: materiales ---------------- */
@@ -3164,286 +3161,67 @@
     return t > 0 ? Math.max(0, t - parseNum(m.stock)) : 0;
   }
 
-  /* ---------------- categorías de materiales ----------------
-     Quien trabaja con limpiapipas no tiene doce materiales: tiene uno en
-     doce colores. Las categorías se derivan de los propios materiales, así
-     que no hay un catálogo aparte que mantener ni categorías huérfanas. */
-
-  var SIN_CATEGORIA = "Sin categoría";
-
-  function categoriaDe(m) {
-    var c = (m && m.categoria ? String(m.categoria) : "").trim();
-    return c || SIN_CATEGORIA;
-  }
-
-  function categoriasUsadas() {
-    var vistas = {};
-    state.materials.forEach(function (m) {
-      var c = (m.categoria || "").trim();
-      if (c) vistas[c] = true;
-    });
-    return Object.keys(vistas).sort(function (a, b) { return norm(a).localeCompare(norm(b)); });
-  }
-
-  /* agrupa una lista ya filtrada y ordenada; "Sin categoría" siempre al final */
-  function agruparPorCategoria(materiales) {
-    var mapa = {}, orden = [];
-    materiales.forEach(function (m) {
-      var c = categoriaDe(m);
-      if (!mapa[c]) { mapa[c] = []; orden.push(c); }
-      mapa[c].push(m);
-    });
-    orden.sort(function (a, b) {
-      if (a === SIN_CATEGORIA) return 1;
-      if (b === SIN_CATEGORIA) return -1;
-      return norm(a).localeCompare(norm(b));
-    });
-    return orden.map(function (c) {
-      var items = mapa[c];
-      var valor = 0, bajos = 0;
-      items.forEach(function (m) {
-        valor += parseNum(m.stock) * stockUnitValue(m);
-        if (falta(m) > 0) bajos++;
-      });
-      return { nombre: c, items: items, valor: valor, bajos: bajos };
-    });
-  }
-
-  function claveCategoria(nombre) { return "cat:" + nombre; }
-
-  /* desplegable con lo ya usado y la opción de crear una al vuelo */
-  function selectorCategoria(m) {
-    var sel = el("select", { "aria-label": "Categoría" });
-    sel.appendChild(el("option", { value: "", text: SIN_CATEGORIA }));
-    categoriasUsadas().forEach(function (c) {
-      sel.appendChild(el("option", { value: c, text: c }));
-    });
-    sel.appendChild(el("option", { value: "__nueva__", text: "+ Crear categoría…" }));
-    sel.value = (m.categoria || "").trim();
-
-    sel.addEventListener("change", function () {
-      if (sel.value !== "__nueva__") {
-        m.categoria = sel.value;
-        ui.ultimaCategoria = m.categoria;
-        if (m.categoria) ui.open[claveCategoria(m.categoria)] = true;
-        save(m); render();
-        return;
-      }
-      sel.value = (m.categoria || "").trim();   /* hasta que se confirme */
-      crearCategoria(m);
-    });
-    return sel;
-  }
-
-  function crearCategoria(m) {
-    abrirVentana("Nueva categoría", function (cuerpo, sheet, cerrar) {
-      var campo = el("input", { type: "text", placeholder: "Ej: Limpiapipas", "aria-label": "Nombre de la categoría" });
-      cuerpo.appendChild(el("label", { class: "field", text: "Nombre" }));
-      cuerpo.appendChild(campo);
-      cuerpo.appendChild(el("p", { class: "note",
-        text: "Agrupa " + rubro().insumoPlural + " que son lo mismo en distintas variantes: colores, tamaños, sabores." }));
-
-      function guardar() {
-        var nombre = campo.value.trim();
-        if (!nombre) { toast("Ponle un nombre"); campo.focus(); return; }
-        if (nombre === SIN_CATEGORIA) { toast("Ese nombre está reservado"); campo.focus(); return; }
-        m.categoria = nombre;
-        ui.ultimaCategoria = nombre;
-        ui.open[claveCategoria(nombre)] = true;
-        save(m); render(); cerrar();
-        toast("Categoría “" + nombre + "” creada");
-      }
-
-      campo.addEventListener("keydown", function (e) { if (e.key === "Enter") guardar(); });
-      sheet.appendChild(el("div", { class: "actions" }, [
-        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
-        el("button", { class: "btn primary", type: "button", text: "Crear", onclick: guardar })
-      ]));
-    });
-  }
-
-  /* renombrar, fusionar o eliminar una categoría desde su cabecera */
-  function editarCategoria(g) {
-    abrirVentana("Categoría " + g.nombre, function (cuerpo, sheet, cerrar) {
-      var campo = el("input", { type: "text", value: g.nombre, "aria-label": "Nombre de la categoría" });
-      cuerpo.appendChild(el("label", { class: "field", text: "Nombre" }));
-      cuerpo.appendChild(campo);
-      cuerpo.appendChild(el("p", { class: "note",
-        text: "Agrupa " + g.items.length + " " + (g.items.length === 1 ? rubro().insumo.toLowerCase() : rubro().insumoPlural) + "." }));
-
-      var aviso = el("p", { class: "note", style: "min-height:18px" });
-      cuerpo.appendChild(aviso);
-
-      /* si el nombre nuevo ya existe, renombrar es fusionar: hay que decirlo */
-      function revisar() {
-        var nuevo = campo.value.trim();
-        var choca = nuevo && norm(nuevo) !== norm(g.nombre) &&
-          categoriasUsadas().some(function (c) { return norm(c) === norm(nuevo); });
-        aviso.className = "note" + (choca ? " aviso" : "");
-        aviso.textContent = choca
-          ? "Ya existe “" + nuevo + "”: se juntarán en una sola categoría."
-          : "";
-      }
-      campo.addEventListener("input", revisar);
-      revisar();
-
-      function renombrar() {
-        var nuevo = campo.value.trim();
-        if (!nuevo) { toast("Ponle un nombre"); campo.focus(); return; }
-        if (nuevo === SIN_CATEGORIA) { toast("Ese nombre está reservado"); campo.focus(); return; }
-        if (nuevo === g.nombre) { cerrar(); return; }
-
-        g.items.forEach(function (m) { m.categoria = nuevo; save(m); });
-        /* la categoría no debe cerrarse sola por haberla renombrado */
-        if (ui.open[claveCategoria(g.nombre)]) ui.open[claveCategoria(nuevo)] = true;
-        delete ui.open[claveCategoria(g.nombre)];
-        ui.ultimaCategoria = nuevo;
-        render(); cerrar();
-        toast("Ahora se llama “" + nuevo + "”");
-      }
-
-      function eliminar() {
-        var cuantos = g.items.length;
-        var mensaje = cuantos
-          ? "Se eliminará la categoría y " + cuantos + " " +
-            (cuantos === 1 ? rubro().insumo.toLowerCase() + " quedará" : rubro().insumoPlural + " quedarán") +
-            " sin categoría. No se borra ninguno."
-          : "Se eliminará la categoría.";
-        if (!window.confirm(mensaje)) return;
-
-        g.items.forEach(function (m) { m.categoria = ""; save(m); });
-        delete ui.open[claveCategoria(g.nombre)];
-        if (ui.ultimaCategoria === g.nombre) ui.ultimaCategoria = "";
-        render(); cerrar();
-        toast(cuantos ? cuantos + " sin categoría" : "Categoría eliminada");
-      }
-
-      campo.addEventListener("keydown", function (e) { if (e.key === "Enter") renombrar(); });
-
-      cuerpo.appendChild(el("button", { class: "btn small peligro wide", type: "button",
-        style: "margin-top:4px", text: "Eliminar categoría", onclick: eliminar }));
-
-      sheet.appendChild(el("div", { class: "actions" }, [
-        el("button", { class: "btn", type: "button", text: "Cancelar", onclick: cerrar }),
-        el("button", { class: "btn primary", type: "button", text: "Guardar", onclick: renombrar })
-      ]));
-    });
-  }
-
-  /* botones con los colores de una categoría; muestra el stock y atenúa lo agotado */
-  function selectorColor(categoria, actual, alElegir) {
-    var fila = el("div", { class: "chips-filtro colores" });
-    var opciones = state.materials.filter(function (m) { return categoriaDe(m) === categoria; })
-      .sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); });
-    if (!categoria || !opciones.length) {
-      fila.appendChild(el("p", { class: "note", style: "margin:0",
-        text: categoria ? "No hay materiales en “" + categoria + "”." : "Elige primero el tipo de limpiapipas." }));
-      return fila;
-    }
-    opciones.forEach(function (m) {
-      var stock = parseNum(m.stock);
-      var b = el("button", { class: "chip-filtro chip-mat" + (stock <= 0 ? " agotado" : ""), type: "button",
-        "aria-pressed": actual === m.id ? "true" : "false",
-        "aria-label": (m.name || "Sin nombre") + ", quedan " + fmtQty(stock),
-        onclick: function () { alElegir(m.id); } }, [
-        el("span", { class: "nom", text: m.name || "Sin nombre" }),
-        el("small", { text: fmtQty(stock) })
-      ]);
-      fila.appendChild(b);
-    });
-    return fila;
-  }
-
-  function selectorCategoriaSimple(actual, alCambiar) {
-    var sel = el("select", { "aria-label": "Tipo de limpiapipas" });
-    sel.appendChild(el("option", { value: "", text: "Elegir tipo…" }));
-    categoriasUsadas().forEach(function (c) { sel.appendChild(el("option", { value: c, text: c })); });
-    sel.value = actual || "";
-    sel.addEventListener("change", function () { alCambiar(sel.value); });
-    return sel;
-  }
-
-  /* receta de la flor: cuántos pétalos y hojas, de qué tipo de limpiapipas */
-  function seccionFlor(p) {
-    if (!p.flor) p.flor = {};
-    var f = p.flor;
-    var sec = el("div", { class: "sec" });
-    sec.appendChild(el("header", {}, [el("h4", { text: "Pétalos y hojas" })]));
-    sec.appendChild(el("p", { class: "note", style: "margin:0 0 8px",
-      text: "Lo que lleva color a elección del cliente. Barra, cinta y lo demás van en Otros materiales." }));
-
-    function num(label, clave) {
-      return el("div", { class: "grow" }, [
-        el("label", { class: "field", text: label }),
-        el("input", { class: "num", type: "text", inputmode: "decimal", value: f[clave] || "", placeholder: "0",
-          "aria-label": label,
-          oninput: function (e) { f[clave] = e.target.value; save(p); refreshOutputs(); } })
-      ]);
-    }
-
-    sec.appendChild(el("label", { class: "field", text: "Tipo de limpiapipas de los pétalos" }));
-    sec.appendChild(selectorCategoriaSimple(f.catPetalos, function (c) {
-      f.catPetalos = c; f.colorDefecto = ""; save(p); render();
-    }));
-    sec.appendChild(el("div", { class: "row measures", style: "margin-top:8px" }, [
-      num("Pétalos (un color)", "petalosUno"),
-      num("Bicolor: primario", "petalosPrim"),
-      num("Bicolor: secundario", "petalosSec")
-    ]));
-    if (f.catPetalos) {
-      sec.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color de referencia (para el costo)" }));
-      sec.appendChild(selectorColor(f.catPetalos, f.colorDefecto, function (id) { f.colorDefecto = id; save(p); render(); }));
-    }
-
-    sec.appendChild(el("label", { class: "field", style: "margin-top:12px", text: "Tipo de limpiapipas de las hojas" }));
-    sec.appendChild(selectorCategoriaSimple(f.catHojas, function (c) {
-      f.catHojas = c; f.colorHojas = ""; save(p); render();
-    }));
-    sec.appendChild(el("div", { class: "row measures", style: "margin-top:8px" }, [num("Hojas por flor", "hojas")]));
-    if (f.catHojas) {
-      sec.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color de hojas habitual" }));
-      sec.appendChild(selectorColor(f.catHojas, f.colorHojas, function (id) { f.colorHojas = id; save(p); render(); }));
-    }
-    return sec;
-  }
-
-  /* en el pedido: un color o bicolor, primario, secundario y hojas */
-  function coloresDePedido(o, it, p) {
-    var f = florDe(p), e = eleccionDe(p, it);
+  /* en el pedido: un color por cada color de cada pétalo y por cada complemento */
+  function bloquesColores(o, it, p, alCambiar) {
+    var r = recetaDe(p), col = coloresItem(p, it), q = parseNum(it.qty);
     var caja = el("div", { class: "colores-pedido" });
-    var cambiar = function (clave, valor) { it[clave] = valor; save(o); render(); };
-
-    var tienePetalos = f.petalosUno > 0 || admiteBicolor(p);
-    if (!tienePetalos && f.hojas <= 0) {
-      caja.appendChild(el("p", { class: "note", style: "margin:0",
-        text: "Esta flor no tiene pétalos ni hojas configurados en su receta." }));
+    if (!r.petalos.length && !r.comps.length) {
+      caja.appendChild(el("p", { class: "note", style: "margin:0", text: "Esta flor no tiene pétalos ni complementos en su receta." }));
       return caja;
     }
-
-    if (tienePetalos) {
-      if (admiteBicolor(p)) {
-        var seg = el("div", { class: "seg tiny" });
-        [["uno", "Un color · " + fmtQty(f.petalosUno) + " pétalos"],
-         ["dos", "Bicolor · " + fmtQty(f.petalosPrim) + " + " + fmtQty(f.petalosSec)]].forEach(function (op) {
-          seg.appendChild(el("button", { type: "button", text: op[1], "aria-pressed": e.modo === op[0],
-            onclick: function () { cambiar("modo", op[0]); } }));
-        });
-        caja.appendChild(seg);
-      }
-      caja.appendChild(el("label", { class: "field", style: "margin-top:8px",
-        text: e.modo === "dos" ? "Color primario" : "Color de los pétalos" }));
-      caja.appendChild(selectorColor(f.catPetalos, e.primario, function (id) { cambiar("primario", id); }));
-      if (e.modo === "dos") {
-        caja.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color secundario" }));
-        caja.appendChild(selectorColor(f.catPetalos, e.secundario, function (id) { cambiar("secundario", id); }));
-      }
+    /* lo que queda de cada material después de los otros pedidos por hacer */
+    var otros = usoPendiente(o.id);
+    function disponible(m) { return parseNum(m.stock) - (otros[m.id] || 0); }
+    function fijar(fn) {
+      var c = coloresItem(p, it);
+      it.pet = c.pet; it.comp = c.comp;
+      delete it.modo; delete it.primario; delete it.secundario; delete it.hojasColor;
+      fn();
+      alCambiar();
     }
-    if (f.hojas > 0) {
-      caja.appendChild(el("label", { class: "field", style: "margin-top:8px", text: "Color de las hojas" }));
-      caja.appendChild(selectorColor(f.catHojas, e.hojas, function (id) { cambiar("hojasColor", id); }));
-    }
-    caja.appendChild(el("p", { class: "note", style: "margin:8px 0 0", text: describirColores(p, it) }));
+    caja.appendChild(el("span", { class: "sub-etiqueta", text: "Colores de esta flor" }));
+    r.petalos.forEach(function (g, i) {
+      if (g.cant <= 0) return;
+      g.colores.forEach(function (c, j) {
+        if (c.lp <= 0) return;
+        var m = materialById(col.pet[i][j]);
+        caja.appendChild(el("section", { class: "slot-color" }, [
+          el("div", { class: "fila" }, [
+            el("strong", { text: (g.nombre || "Pétalo") + (g.colores.length > 1 ? " · " + NOMBRES_COLOR[j] : "") }),
+            el("span", { class: "elegido", text: m ? m.name : "sin elegir" })
+          ]),
+          el("span", { class: "det", text: fmtQty(c.lp) + " por pétalo · " + fmtQty(q * g.cant * c.lp) + " en total" }),
+          muestras(g.tipo, col.pet[i][j], function (id) { fijar(function () { it.pet[i][j] = id; }); },
+            (g.nombre || "Pétalo") + " " + (g.colores.length > 1 ? NOMBRES_COLOR[j].toLowerCase() : ""), disponible)
+        ]));
+      });
+    });
+    r.comps.forEach(function (k, i) {
+      if (k.cant <= 0) return;
+      var m = materialById(col.comp[i]);
+      caja.appendChild(el("section", { class: "slot-color" }, [
+        el("div", { class: "fila" }, [
+          el("strong", { text: k.nombre || "Complemento" }),
+          el("span", { class: "elegido", text: m ? m.name : "sin elegir" })
+        ]),
+        el("span", { class: "det", text: fmtQty(k.cant) + " × " + fmtQty(k.uso) + " · " + fmtQty(q * k.cant * k.uso) + " en total" }),
+        muestras(k.tipo, col.comp[i], function (id) { fijar(function () { it.comp[i] = id; }); }, k.nombre || "Complemento", disponible)
+      ]));
+    });
     return caja;
+  }
+
+  /* lo que piden los pedidos por hacer, por material, en unidades de stock (con envoltura) */
+  function usoPendiente(excepto) {
+    var items = [], uso;
+    pendingOrders().forEach(function (o) { if (o.id !== excepto) items = items.concat(o.items || []); });
+    uso = aggregateUse(items);
+    pendingOrders().forEach(function (o) {
+      if (o.id === excepto) return;
+      var env = envolturaDe(o);
+      if (env) uso[env.material.id] = (uso[env.material.id] || 0) + env.uso;
+    });
+    return uso;
   }
 
   /* ---------------- pagos y abonos ----------------
@@ -3534,399 +3312,9 @@
     return sec;
   }
 
-  /* ---------------- elegir material con botones ----------------
-     Un desplegable nativo con cuarenta colores abre un menú que tapa la
-     pantalla. Aquí la elección ocurre dentro del propio recuadro: primero
-     la categoría, después el color. */
-
-  var MINIMO_POR_CATEGORIA = 8;
-
   function botonChip(texto, activo, onclick) {
     return el("button", { class: "chip-filtro", type: "button",
       "aria-pressed": activo ? "true" : "false", text: texto, onclick: onclick });
-  }
-
-  /* el nombre manda; el precio acompaña, para no leer dos veces lo mismo */
-  function botonMaterial(m, activo, onclick) {
-    return el("button", { class: "chip-filtro chip-mat", type: "button",
-      "aria-pressed": activo ? "true" : "false",
-      "aria-label": etiquetaMaterial(m), onclick: onclick }, [
-      el("span", { class: "nom", text: m.name || "Sin nombre" }),
-      el("small", { text: money(materialCost(m)) + "/" + m.unit })
-    ]);
-  }
-
-  function etiquetaMaterial(m) {
-    return (m.name || "Sin nombre") + " (" + money(materialCost(m)) + "/" + m.unit + ")";
-  }
-
-  /* devuelve el bloque de selección para una línea de material de un producto */
-  function selectorMaterial(p, line, alElegir) {
-    var caja = el("div", { class: "selector-mat" });
-    var elegido = materialById(line.materialId);
-
-    /* qué categoría se está mirando; por defecto, la del material ya elegido */
-    var claveVista = "sel:" + p.id + ":" + (line.materialId || "nuevo");
-    if (ui.verCategoria[claveVista] === undefined) {
-      ui.verCategoria[claveVista] = elegido ? categoriaDe(elegido) : null;
-    }
-
-    var grupos = agruparPorCategoria(state.materials.slice().sort(function (a, b) {
-      return norm(a.name).localeCompare(norm(b.name));
-    }));
-    /* con pocos materiales, pedir dos toques sería peor que uno */
-    var directo = grupos.length <= 1 || state.materials.length < MINIMO_POR_CATEGORIA;
-
-    function pintar() {
-      caja.innerHTML = "";
-
-      if (elegido && !ui.cambiando[claveVista]) {
-        caja.appendChild(el("div", { class: "mat-elegido" }, [
-          el("span", { class: "nombre", text: etiquetaMaterial(elegido) }),
-          el("button", { class: "btn small", type: "button", text: "Cambiar",
-            onclick: function () { ui.cambiando[claveVista] = true; pintar(); } })
-        ]));
-        return;
-      }
-
-      var vista = ui.verCategoria[claveVista];
-
-      if (!directo) {
-        var filaCat = el("div", { class: "chips-filtro" });
-        grupos.forEach(function (g) {
-          filaCat.appendChild(botonChip(g.nombre + " · " + g.items.length, vista === g.nombre, function () {
-            ui.verCategoria[claveVista] = vista === g.nombre ? null : g.nombre;
-            pintar();
-          }));
-        });
-        caja.appendChild(filaCat);
-        if (!vista) {
-          caja.appendChild(el("p", { class: "note", style: "margin:6px 2px 0",
-            text: "Elige una categoría para ver sus " + rubro().insumoPlural + "." }));
-          return;
-        }
-      }
-
-      var items = directo
-        ? state.materials.slice().sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); })
-        : (grupos.filter(function (g) { return g.nombre === vista; })[0] || { items: [] }).items;
-
-      var filaMat = el("div", { class: "chips-filtro", style: "margin-top:6px" });
-      items.forEach(function (m) {
-        filaMat.appendChild(botonMaterial(m, line.materialId === m.id, function () {
-          line.materialId = m.id;
-          ui.cambiando[claveVista] = false;
-          alElegir();
-        }));
-      });
-      caja.appendChild(filaMat);
-    }
-
-    pintar();
-    return caja;
-  }
-
-  /* vista de materiales dentro de Inventario: catálogo y existencias juntos */
-  function pintarMateriales(root) {
-    root.appendChild(el("p", { class: "note", style: "margin:0 2px 12px",
-      text: "Esta lista se reutiliza en todos los productos. Escribe el costo por unidad, o el precio de compra y las unidades que trae para que se calcule solo." }));
-
-    if (!state.materials.length) {
-      root.appendChild(el("div", { class: "empty" }, [
-        el("p", { text: "Sin " + rubro().insumoPlural + " todavía. Agrégalos con su unidad y costo, o con el precio de compra y cuántas unidades trae." }),
-        el("button", { class: "btn primary", type: "button", text: "Agregar " + rubro().insumo.toLowerCase(), onclick: addMaterial })
-      ]));
-      return;
-    }
-
-    var t = inventoryTotals();
-    var strip = el("dl", { class: "strip" });
-    [["Valor en inventario", money(t.valor), ""],
-     ["Bajo el inicial", String(t.bajos) + (t.bajos === 1 ? " ítem" : " ítems"), t.bajos ? "loss" : ""],
-     ["Reponer cuesta", money(t.reposicion), "cost"]].forEach(function (c) {
-      strip.appendChild(el("div", {}, [
-        el("dt", { text: c[0] }),
-        el("dd", { text: c[1], style: c[2] === "loss" ? "color:var(--danger)" : c[2] === "cost" ? "color:var(--cost)" : "" })
-      ]));
-    });
-    root.appendChild(strip);
-
-    var listaMat = el("div");
-
-    var opsMat = {
-      texto: function (m) { return m.name || ""; },
-      filtros: [
-        { id: "bajos", label: "Bajo el mínimo",
-          test: function (m) { return stockTarget(m) > 0 && parseNum(m.stock) < stockTarget(m); },
-          contar: function () { return inventoryTotals().bajos; } },
-        { id: "sinstock", label: "Sin existencia",
-          test: function (m) { return parseNum(m.stock) <= 0; },
-          contar: function () { return state.materials.filter(function (m) { return parseNum(m.stock) <= 0; }).length; } },
-        { id: "sincosto", label: "Sin costo",
-          test: function (m) { return materialCost(m) <= 0; },
-          contar: function () { return state.materials.filter(function (m) { return materialCost(m) <= 0; }).length; } }
-      ],
-      ordenes: [
-        { id: "nombre", label: "nombre", comparar: function (a, b) {
-          return norm(a.name).localeCompare(norm(b.name)); } },
-        { id: "critico", label: "lo más crítico", comparar: function (a, b) {
-          return falta(b) - falta(a); } },
-        { id: "valor", label: "valor en inventario", comparar: function (a, b) {
-          return parseNum(b.stock) * stockUnitValue(b) - parseNum(a.stock) * stockUnitValue(a); } }
-      ]
-    };
-
-    agregar(root, barraBusqueda({
-      lista: "materiales",
-      placeholder: "Buscar " + rubro().insumo.toLowerCase() + "…",
-      total: state.materials.length,
-      filtros: opsMat.filtros,
-      ordenes: opsMat.ordenes,
-      repintar: function () { render(); }
-    }));
-    root.appendChild(listaMat);
-
-    var visiblesMat = aplicarFiltro("materiales", state.materials.slice(), opsMat);
-    if (!visiblesMat.length) {
-      listaMat.appendChild(sinResultados("materiales", function () { render(); }));
-    }
-
-    var grupos = agruparPorCategoria(visiblesMat);
-    var hayBusqueda = !!(filtro("materiales").q || filtro("materiales").tag);
-    var destinos = {};   /* dónde va cada ficha: dentro de su categoría */
-
-    grupos.forEach(function (g) {
-      var clave = claveCategoria(g.nombre);
-      /* con una sola categoría no tiene sentido obligar a abrirla;
-         buscando, se abre sola o el buscador no serviría de nada */
-      var abierta = hayBusqueda || grupos.length === 1 || !!ui.open[clave];
-
-      var resumen = g.items.length + (g.items.length === 1 ? " ítem" : " ítems") + " · " + money(g.valor);
-      var cabecera = el("div", { class: "cat-head" + (abierta ? " open" : ""), role: "button",
-        tabindex: "0", "aria-expanded": abierta ? "true" : "false",
-        onclick: function () { ui.open[clave] = !abierta; render(); } }, [
-        el("span", { class: "caret", text: "▸" }),
-        el("h4", { text: g.nombre }),
-        g.bajos ? el("span", { class: "chip neg", text: g.bajos + " bajo" }) : null,
-        el("span", { class: "cat-resumen", text: resumen }),
-        /* "Sin categoría" no es una categoría: es la ausencia de una */
-        g.nombre === SIN_CATEGORIA ? null : el("button", { class: "editar", type: "button",
-          title: "Editar categoría", "aria-label": "Editar la categoría " + g.nombre, text: "✎",
-          onclick: function (e) { e.stopPropagation(); editarCategoria(g); } })
-      ]);
-      cabecera.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ui.open[clave] = !abierta; render(); }
-      });
-
-      var cuerpo = el("div", { class: "cat-body" });
-      cuerpo.hidden = !abierta;
-      listaMat.appendChild(el("div", { class: "cat" }, [cabecera, cuerpo]));
-      g.items.forEach(function (m) { destinos[m.id] = cuerpo; });
-    });
-
-    visiblesMat.forEach(function (m) {
-      var idx = state.materials.indexOf(m);
-      var abiertaFicha = !!ui.open[m.id];
-      var card = el("div", { class: "mat-card" + (abiertaFicha ? "" : " plegada") });
-
-      /* fila de una línea: nombre, existencia y costo; se abre al tocarla */
-      var fila = el("div", { class: "mat-head" + (abiertaFicha ? " open" : ""), role: "button",
-        tabindex: "0", "aria-expanded": abiertaFicha ? "true" : "false",
-        onclick: function () { ui.open[m.id] = !abiertaFicha; render(); } }, [
-        el("span", { class: "caret", text: "▸" }),
-        el("span", { class: "mat-nombre", text: m.name || "Sin nombre" }),
-        el("span", { class: "mat-datos" + (falta(m) > 0 ? " low" : ""),
-          text: conUnidad(parseNum(m.stock), stockUnit(m)) + " · " + money(materialCost(m)) })
-      ]);
-      fila.addEventListener("keydown", function (e) {
-        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); ui.open[m.id] = !abiertaFicha; render(); }
-      });
-      card.appendChild(fila);
-
-      var detalle = el("div", { class: "mat-detalle" });
-      detalle.hidden = !abiertaFicha;
-
-      var unitSel = el("select", { "aria-label": "Unidad" });
-      UNITS.forEach(function (u) { unitSel.appendChild(el("option", { value: u, text: u })); });
-      if (UNITS.indexOf(m.unit) === -1) unitSel.appendChild(el("option", { value: m.unit, text: m.unit }));
-      unitSel.value = m.unit;
-      unitSel.addEventListener("change", function () { m.unit = unitSel.value; save(m); render(); });
-
-      var readout = el("div", { class: "unit-cost" }, [
-        el("span", { "data-unitlabel": m.id, text: "Costo por " + m.unit }),
-        el("b", { "data-unitcost": m.id, text: money(materialCost(m)) })
-      ]);
-
-      function refresh() {
-        var node = card.querySelector("[data-unitcost]");
-        if (node) node.textContent = money(materialCost(m));
-        var lbl = card.querySelector("[data-unitlabel]");
-        if (lbl) {
-          lbl.textContent = "Costo por " + m.unit +
-            (hasSheet(m) ? " · pliego de " + sheetArea(m).toLocaleString("es-CL", { maximumFractionDigits: 2 }) + " " + m.unit : "");
-        }
-      }
-
-      detalle.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "grow" }, [el("input", { type: "text", value: m.name, placeholder: "Ej: Papel couché 300g",
-          "aria-label": "Nombre del material",
-          oninput: function (e) { m.name = e.target.value; save(m); } })]),
-        deleteButton("Eliminar material", function () {
-          var usados = 0;
-          state.products.forEach(function (p) {
-            var antes = p.materials.length;
-            p.materials = p.materials.filter(function (l) { return l.materialId !== m.id; });
-            if (p.materials.length !== antes) save(p);   /* el producto también cambió */
-            usados += antes - p.materials.length;
-          });
-          state.materials.splice(idx, 1);
-          marcarBorrado("materiales", m.id);
-          render();
-          toast(usados ? "Material eliminado y quitado de " + usados + " línea(s)" : "Material eliminado");
-        })
-      ]));
-
-      detalle.appendChild(el("div", { class: "row" }, [
-        el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidad de uso" })]),
-        el("div", { class: "unit" }, [unitSel])
-      ]));
-
-      detalle.appendChild(el("label", { class: "field", style: "margin-top:10px", text: "Categoría" }));
-      detalle.appendChild(selectorCategoria(m));
-
-      var seg = el("div", { class: "seg tiny" });
-      [["directo", "Costo por unidad"], ["compra", "Calcular desde compra"]].forEach(function (o) {
-        seg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.mode || "directo") === o[0],
-          onclick: function () { m.mode = o[0]; save(m); render(); } }));
-      });
-      detalle.appendChild(seg);
-
-      if (m.mode === "compra") {
-        detalle.appendChild(el("div", { class: "row" }, [
-          el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Precio pagado" })]),
-          el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
-            value: m.buyPrice, placeholder: "0", "aria-label": "Precio de compra",
-            oninput: function (e) { var antes = materialCost(m); m.buyPrice = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
-        ]));
-
-        if (isArea(m.unit)) {
-          var side = sideUnit(m.unit);
-          detalle.appendChild(el("div", { class: "row measures" }, [
-            el("div", { class: "grow" }, [
-              el("label", { class: "field", text: "Alto pliego (" + side + ")" }),
-              el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetH, placeholder: "0",
-                oninput: function (e) { m.sheetH = e.target.value; save(m); refresh(); } })
-            ]),
-            el("div", { class: "grow" }, [
-              el("label", { class: "field", text: "Ancho pliego (" + side + ")" }),
-              el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetW, placeholder: "0",
-                oninput: function (e) { m.sheetW = e.target.value; save(m); refresh(); } })
-            ]),
-            el("div", { class: "grow" }, [
-              el("label", { class: "field", text: "Pliegos" }),
-              el("input", { class: "num", type: "text", inputmode: "decimal", value: m.sheetQty, placeholder: "1",
-                oninput: function (e) { m.sheetQty = e.target.value; save(m); refresh(); } })
-            ])
-          ]));
-        } else {
-          detalle.appendChild(el("div", { class: "row" }, [
-            el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Unidades que trae" })]),
-            el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
-              value: m.buyQty, placeholder: "0", "aria-label": "Cantidad comprada",
-              oninput: function (e) { var antes = materialCost(m); m.buyQty = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
-          ]));
-        }
-      } else {
-        detalle.appendChild(el("div", { class: "row" }, [
-          el("div", { class: "grow" }, [el("label", { class: "field", style: "margin:0", text: "Costo por " + m.unit })]),
-          el("div", { class: "amt" }, [el("input", { class: "num", type: "text", inputmode: "decimal",
-            value: m.cost, placeholder: "0", "aria-label": "Costo unitario",
-            oninput: function (e) { var antes = materialCost(m); m.cost = e.target.value; save(m); refresh(); anotarCosto(m, antes); } })])
-        ]));
-      }
-
-      detalle.appendChild(readout);
-      if (tipoDeMaterial(m) && costoPPP(m) != null) {
-        detalle.appendChild(el("p", { class: "note aviso", text: "Este costo sale del PPP de " + tipoDeMaterial(m) +
-          " en Compras: " + moneyPPP(datosPPP().tipos[tipoDeMaterial(m)].ppp) + " por unidad. Lo que escribas aquí no se usa mientras tenga compras." }));
-      }
-      refresh();
-
-      if (hasSheet(m)) {
-        detalle.appendChild(el("label", { class: "field", style: "margin:12px 0 0", text: "Cómo se cobra en los productos" }));
-        var segCobro = el("div", { class: "seg tiny", style: "margin-top:4px" });
-        [["area", "Solo el área usada"], ["pliego", "Pliego completo"]].forEach(function (o) {
-          segCobro.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.areaMode || "area") === o[0],
-            onclick: function () { m.areaMode = o[0]; save(m); render(); } }));
-        });
-        detalle.appendChild(segCobro);
-        detalle.appendChild(el("p", { class: "note", text: m.areaMode === "pliego"
-          ? "Cobra pliegos enteros: el recorte que sobra se cuenta como pérdida."
-          : "Cobra solo la superficie que ocupas; el resto del pliego queda disponible." }));
-      }
-
-      /* existencias del material, antes en su propia pestaña */
-      var unidad = stockUnit(m);
-      var estado = el("div", { class: "unit-cost" });
-      function refreshEstado() {
-        var stock = parseNum(m.stock), target = stockTarget(m);
-        var bajo = target > 0 && stock < target;
-        estado.innerHTML = "";
-        estado.className = "unit-cost" + (bajo ? " low" : "");
-        if (bajo) {
-          var rc = restockCost(m, target - stock);
-          estado.appendChild(el("span", { text: rc.packs
-            ? "Faltan " + conUnidad(target - stock, unidad) + " · comprar " + rc.packs + (rc.packs === 1 ? " paquete" : " paquetes")
-            : "Faltan " + conUnidad(target - stock, unidad) }));
-          estado.appendChild(el("b", { text: money(rc.cost) }));
-        } else {
-          estado.appendChild(el("span", { text: "Valor de estas existencias" }));
-          estado.appendChild(el("b", { text: money(stock * stockUnitValue(m)) }));
-        }
-      }
-
-      detalle.appendChild(el("div", { class: "row measures", style: "margin-top:12px" }, [
-        el("div", { class: "grow" }, [
-          el("label", { class: "field", text: "Stock actual (" + unidad + ")" }),
-          el("input", { class: "num", type: "text", inputmode: "decimal", value: m.stock, placeholder: "0",
-            oninput: function (e) { m.stock = e.target.value; save(m); refreshEstado(); } })
-        ]),
-        el("div", { class: "grow" }, [
-          el("label", { class: "field", text: "Stock inicial" }),
-          el("input", { class: "num", type: "text", inputmode: "decimal", value: stockTarget(m) || "", placeholder: "0",
-            oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(m); refreshEstado(); } })
-        ])
-      ]));
-      detalle.appendChild(estado);
-      refreshEstado();
-
-      var variacion = variacionCosto(m);
-      if (variacion) {
-        detalle.appendChild(el("p", { class: "note" + (variacion.pct > 0 ? " aviso" : ""),
-          style: "margin-top:8px", text: textoVariacion(variacion) }));
-      }
-
-      detalle.appendChild(el("button", { class: "btn small", type: "button", text: "Duplicar",
-        style: "margin-top:10px", onclick: function () { duplicarMaterial(m); } }));
-
-      card.appendChild(detalle);
-      (destinos[m.id] || listaMat).appendChild(card);
-    });
-
-    root.appendChild(el("button", { class: "btn primary wide", type: "button", text: "+ Agregar " + rubro().insumo.toLowerCase(),
-      style: "margin-top:10px", onclick: addMaterial }));
-  }
-
-  function addMaterial() {
-    var nuevo = { id: uid(), name: "", unit: "unidad", mode: "directo", cost: "",
-      buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area",
-      stock: "", stockMin: "", categoria: ui.ultimaCategoria || "" };
-    state.materials.push(nuevo);
-    ui.open[nuevo.id] = true;   /* nace abierto: hay que escribir en él */
-    if (nuevo.categoria) ui.open[claveCategoria(nuevo.categoria)] = true;
-    save(nuevo); render();
-    var ficha = document.querySelector('.mat-card .mat-detalle:not([hidden]) input[type=text]');
-    if (ficha) { ficha.focus(); ficha.scrollIntoView({ block: "center" }); }
   }
 
   /* ---------------- render: pedidos ---------------- */
@@ -3983,10 +3371,14 @@
   function coloresLinea(it) {
     var p = productById(it.productId);
     if (!p) return null;
-    var e = eleccionDe(p, it);
-    var p1 = colorDe(e.primario);
-    return { p1: p1, p2: e.modo === "dos" && e.secundario ? colorDe(e.secundario) : p1,
-      hoja: e.hojas ? colorDe(e.hojas) : "#4E9F3D" };
+    var r = recetaDe(p), col = coloresItem(p, it);
+    var planos = [];
+    col.pet.forEach(function (g) { g.forEach(function (id) { planos.push(id); }); });
+    var p1 = colorDe(planos[0]);
+    var ih = -1;
+    r.comps.forEach(function (c, i) { if (ih < 0 && /hoja/i.test(c.nombre)) ih = i; });
+    return { p1: p1, p2: planos[1] ? colorDe(planos[1]) : p1,
+      hoja: ih > -1 && col.comp[ih] ? colorDe(col.comp[ih]) : "#4E9F3D" };
   }
 
   function coloresPedido(o) {
@@ -4510,30 +3902,39 @@
 
     var it = o.items[linea], p = productById(it.productId), q = parseNum(it.qty);
     var c = coloresLinea(it) || coloresPedido({});
+    var titulo = el("strong");
+    function textoTitulo() {
+      var q2 = parseNum(it.qty);
+      titulo.textContent = p ? nombreFlor(p, q2) + " · " + money((parseNum(it.price) || calc(p).final) * q2) : "Elige la flor";
+    }
+    textoTitulo();
     cuerpo.appendChild(el("div", { class: "vista-flor" }, [
       svgEl(petalosSvg(c.p1, c.p2, 52)),
-      el("div", {}, [
-        el("strong", { text: p ? nombreFlor(p, q) + " · " + money((parseNum(it.price) || calc(p).final) * q) : "Elige la flor" }),
-        el("span", { "aria-live": "polite", text: p ? describirColores(p, it) : "" })
-      ])
+      el("div", {}, [titulo, el("span", { "aria-live": "polite", text: p ? describirColores(p, it) : "" })])
     ]));
 
     var flores = el("div", { class: "chips-filtro", role: "group", "aria-label": "Flor" });
     state.products.forEach(function (p2) {
       flores.appendChild(el("button", { type: "button", class: "chip-filtro", "aria-pressed": it.productId === p2.id,
         text: (p2.name || "Sin nombre") + " · " + money(calc(p2).final),
-        onclick: function () { it.productId = p2.id; it.price = Math.round(calc(p2).final); save(o); render(); } }));
+        onclick: function () {
+          if (it.productId !== p2.id) {
+            it.productId = p2.id;
+            /* otra flor, otra receta: los colores vuelven a los habituales */
+            delete it.pet; delete it.comp; delete it.modo; delete it.primario; delete it.secundario; delete it.hojasColor;
+          }
+          it.price = Math.round(calc(p2).final); save(o); render();
+        } }));
     });
-    cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Flor y cantidad" }), flores,
-      el("div", { class: "stepper" }, [
-        el("button", { class: "icon-btn", type: "button", "aria-label": "Una menos", text: "−",
-          onclick: function () { it.qty = Math.max(1, parseNum(it.qty) - 1); save(o); render(); } }),
-        el("output", { "aria-live": "polite", text: fmtQty(q) }),
-        el("button", { class: "icon-btn", type: "button", "aria-label": "Una más", text: "+",
-          onclick: function () { it.qty = parseNum(it.qty) + 1; save(o); render(); } })
-      ])]));
+    cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Flor" }), flores]));
+    cuerpo.appendChild(el("div", { class: "fila-cantidad" }, [
+      el("label", { for: "ped-qty", text: "¿Cuántas?" }),
+      el("input", { id: "ped-qty", type: "text", inputmode: "numeric", class: "num", value: fmtQty(q), autocomplete: "off",
+        oninput: function (e) { it.qty = Math.max(0, parseNum(e.target.value)); save(o); textoTitulo(); },
+        onchange: function () { if (!(parseNum(it.qty) > 0)) { it.qty = 1; save(o); } renderSeguro(); } })
+    ]));
 
-    if (p) cuerpo.appendChild(coloresDePedido(o, it, p));
+    if (p) cuerpo.appendChild(bloquesColores(o, it, p, function () { save(o); render(); }));
     if (o.items.length > 1) {
       cuerpo.appendChild(el("button", { class: "btn peligro wide", type: "button", text: "Quitar esta flor",
         style: "margin-top:10px", onclick: function () { o.items.splice(linea, 1); save(o); elegir(Math.max(0, linea - 1)); } }));
@@ -4555,7 +3956,45 @@
     cuerpo.appendChild(campoHoja("ped-dir", "Dirección o comuna", o.comuna,
       { placeholder: "Ej: Ñuñoa, o el punto de encuentro", oninput: function (e) { o.comuna = e.target.value; save(o); } }));
     cuerpo.appendChild(campoHoja("ped-notas", "Notas", o.notas,
-      { placeholder: "Dedicatoria, envoltorio, detalles", oninput: function (e) { o.notas = e.target.value; save(o); } }));
+      { placeholder: "Dedicatoria, tarjeta, detalles", oninput: function (e) { o.notas = e.target.value; save(o); } }));
+    cuerpo.appendChild(seccionEnvoltura(o));
+  }
+
+  /* la envoltura va para todo el ramo: se descuenta del stock, no se cobra aparte */
+  function seccionEnvoltura(o) {
+    var opciones = state.materials.filter(function (m) { return tipoDe(m) === "Envoltura"; })
+      .sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); });
+    var env = o.envoltura && materialById(o.envoltura.materialId) ? o.envoltura : null;
+    var grupo = el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Envoltura del ramo" }),
+      el("p", { class: "note", style: "margin:0 0 6px", text: "Se descuenta del stock al entregar. No se cobra aparte." })]);
+    var chips = el("div", { class: "chips-filtro", role: "group", "aria-label": "Envoltura" });
+    chips.appendChild(el("button", { type: "button", class: "chip-filtro", "aria-pressed": !env, text: "Sin envoltura",
+      onclick: function () { o.envoltura = null; save(o); render(); } }));
+    opciones.forEach(function (m) {
+      chips.appendChild(el("button", { type: "button", class: "chip-filtro chip-mat", "aria-pressed": !!env && env.materialId === m.id,
+        onclick: function () { o.envoltura = { materialId: m.id, cant: env ? env.cant || 1 : 1 }; save(o); render(); } }, [
+        el("span", { class: "punto-color", style: "width:18px;height:18px;background:" + colorDe(m.id, true) }),
+        el("span", { class: "nom", text: m.name || "Sin nombre" }),
+        el("small", { text: fmtQty(parseNum(m.stock)) })
+      ]));
+    });
+    grupo.appendChild(chips);
+    if (!opciones.length) grupo.appendChild(el("p", { class: "note", text: "Agrega papel o celofán en el Taller, con el tipo Envoltura." }));
+    if (env) {
+      var m = materialById(env.materialId), u = unidadMedidaDe(m);
+      grupo.appendChild(el("div", { class: "fila-cantidad", style: "margin-top:8px" }, [
+        el("label", { for: "ped-env", text: "¿Cuántos" + (u && u !== "u" ? " " + (PLURALES[u] || u + "s") : "") + "?" }),
+        el("input", { id: "ped-env", type: "text", inputmode: "decimal", class: "num", value: fmtQty(env.cant), autocomplete: "off",
+          oninput: function (e) { env.cant = parseNum(e.target.value); save(o); } })
+      ]));
+    }
+    return grupo;
+  }
+
+  function textoEnvoltura(o) {
+    var env = envolturaDe(o);
+    if (!env) return "Sin envoltura";
+    return "Envoltura: " + (env.material.name || "sin nombre") + " ×" + fmtQty(env.cant) + " · cuesta " + money(env.costo) + " (no se cobra)";
   }
 
   function pasoPago(cuerpo, o, cerrar) {
@@ -4570,6 +4009,7 @@
     });
     cuerpo.appendChild(lineas);
     cuerpo.appendChild(el("div", { class: "total-pago" }, [el("span", { text: "Total" }), el("strong", { text: money(t.ingreso) })]));
+    cuerpo.appendChild(el("p", { class: "note", style: "margin:6px 0 0", text: textoEnvoltura(o) }));
     cuerpo.appendChild(seccionPagos(o));
 
     if (o.estado === "entregado") {
@@ -4668,10 +4108,17 @@
               text: queda < -1e-9 ? "Te faltan " + fmtQty(-queda) : "Quedarán " + fmtQty(queda) })
           ]),
           el("button", { class: "icon-btn", type: "button", text: "−", "aria-label": "Una menos de " + nombre.toLowerCase(),
-            onclick: function () { ajuste[k] = Math.max(0, ajuste[k] - 1); h.repintar(); } }),
-          el("output", { "aria-live": "polite", text: fmtQty(ajuste[k]) }),
+            onclick: function () { ajuste[k] = Math.max(0, Math.round((ajuste[k] - 1) * 100) / 100); h.repintar(); } }),
+          el("input", { type: "text", inputmode: "decimal", class: "num cant-usada", value: fmtQty(ajuste[k]),
+            "aria-label": "Cantidad usada de " + nombre.toLowerCase(),
+            oninput: function (e) {
+              ajuste[k] = Math.max(0, parseNum(e.target.value));
+              var q2 = parseNum(m.stock) - ajuste[k], txt = e.target.closest("li").querySelector(".queda");
+              txt.className = "queda" + (q2 < -1e-9 ? " falta" : "");
+              txt.textContent = q2 < -1e-9 ? "Te faltan " + fmtQty(-q2) : "Quedarán " + fmtQty(q2);
+            } }),
           el("button", { class: "icon-btn", type: "button", text: "+", "aria-label": "Una más de " + nombre.toLowerCase(),
-            onclick: function () { ajuste[k] = ajuste[k] + 1; h.repintar(); } })
+            onclick: function () { ajuste[k] = Math.round((ajuste[k] + 1) * 100) / 100; h.repintar(); } })
         ]));
       });
       if (orden.length) cuerpo.appendChild(ul);
@@ -4699,7 +4146,475 @@
     abrirPedido(o, true);
   }
 
-  /* ---------------- render: inventario ---------------- */
+  /* ---------------- render: Taller ----------------
+     Arriba, lo que falta para los pedidos; después el muestrario por tipo con
+     su PPP, y al final el historial de compras. Cada material se abre en una
+     hoja: stock escrito, lo que piden los pedidos, editar y comprar. */
+
+  var PALETA = ["#F28DB2", "#D7263D", "#F08A24", "#F6C431", "#D4AF37", "#7BBF5A", "#2F6B3A", "#7EC8E3", "#2F5DA8",
+    "#B79CED", "#6B3FA0", "#FFFFFF", "#2B2A26", "#7A5230", "#C0C0C0", "#E8D8B8", "#F4A28C", "#30B5B0"];
+
+  function medioDe(c) { return c.medio === "efectivo" ? "efectivo" : "transferencia"; }
+
+  function textoMedida(m) {
+    return fmtQty(medidaDe(m)) + " " + (unidadMedidaDe(m) || "u") + " por unidad";
+  }
+
+  function renderInventario() {
+    var root = document.getElementById("tab-inventario");
+    root.innerHTML = "";
+    root.appendChild(el("div", { class: "taller-cabecera" }, [
+      el("h2", { text: "Taller" }),
+      llevaMateriales() ? el("button", { class: "btn primary", type: "button", text: "+ Compra", onclick: function () { abrirCompra(null, { tipo: ui.filtroTaller || "" }); } }) : null
+    ]));
+
+    if (llevaMateriales()) pintarTaller(root);
+
+    if (llevaFabricados()) {
+      root.appendChild(el("h3", { class: "etiqueta", text: "Fabricados" }));
+      pintarFabricados(root);
+    }
+  }
+
+  function pintarTaller(root) {
+    var uso = usoPendiente(null);
+    var faltan = state.materials.filter(function (m) { return (uso[m.id] || 0) - parseNum(m.stock) > 1e-9; });
+    if (faltan.length) {
+      var costo = 0;
+      var chips = el("div", { class: "chips-falta" });
+      faltan.forEach(function (m) {
+        var f = uso[m.id] - parseNum(m.stock);
+        costo += f * stockUnitValue(m);
+        chips.appendChild(el("button", { type: "button", class: "chip-falta", onclick: function () { abrirCompra(null, { materialId: m.id }); } }, [
+          el("span", { class: "punto-color", style: "background:" + colorDe(m.id, true) }),
+          el("span", { text: (m.name || "Sin nombre") + " · faltan " + fmtQty(Math.ceil(f * 100) / 100) })
+        ]));
+      });
+      root.appendChild(el("section", { class: "falta-pedidos", "aria-labelledby": "falta-t" }, [
+        el("div", { class: "fila" }, [el("h3", { id: "falta-t", text: "Falta para los pedidos" }), el("span", { text: "≈ " + money(costo) })]),
+        chips
+      ]));
+    }
+
+    var tipos = tiposTodos();
+    if (ui.filtroTaller && tipos.indexOf(ui.filtroTaller) < 0) ui.filtroTaller = "";
+    var filtros = el("div", { class: "chips-filtro filtros-taller", role: "group", "aria-label": "Filtrar por tipo" });
+    filtros.appendChild(botonChip("Todos", !ui.filtroTaller, function () { ui.filtroTaller = ""; render(); }));
+    tipos.forEach(function (t) { filtros.appendChild(botonChip(t, ui.filtroTaller === t, function () { ui.filtroTaller = t; render(); })); });
+    filtros.appendChild(el("button", { type: "button", class: "chip-filtro punteado", text: "+ Tipo", onclick: function () { abrirNuevoTipo(); } }));
+    root.appendChild(filtros);
+
+    if (!state.materials.length) {
+      root.appendChild(el("div", { class: "empty" }, [
+        el("p", { text: "Aún no hay materiales. Registra tu primera compra o agrega un material a un tipo." }),
+        el("button", { class: "btn primary", type: "button", text: "+ Compra", onclick: function () { abrirCompra(null, {}); } })
+      ]));
+    }
+
+    var d = datosPPP();
+    (ui.filtroTaller ? [ui.filtroTaller] : tipos).forEach(function (t) {
+      var mats = state.materials.filter(function (m) { return tipoDe(m) === t; })
+        .sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); });
+      var ppp = d.tipos[t] && d.tipos[t].ppp > 0 ? moneyPPP(d.tipos[t].ppp) : "sin compras";
+      var grupo = el("section", { class: "muestrario" }, [
+        el("div", { class: "fila" }, [
+          el("h3", { text: t }),
+          el("span", { class: "chip ppp", text: "PPP " + ppp }),
+          el("button", { type: "button", class: "btn small punteado", text: "+ Material", "aria-label": "Agregar material a " + t,
+            onclick: function () { abrirNuevoMaterial(t); } })
+        ])
+      ]);
+      var grid = el("div", { class: "muestrario-grid" });
+      mats.forEach(function (m) {
+        var need = uso[m.id] || 0, stock = parseNum(m.stock), corto = need - stock > 1e-9;
+        grid.appendChild(el("button", { type: "button", class: "mat-muestra" + (corto ? " corto" : ""),
+          "aria-label": (m.name || "Sin nombre") + ", " + fmtQty(stock) + " en stock" + (corto ? ", faltan " + fmtQty(need - stock) + " para los pedidos" : ""),
+          onclick: function () { abrirMaterial(m); } }, [
+          el("span", { class: "madeja-grande", style: "background-color:" + colorDe(m.id, true) }, [el("span", { text: fmtQty(stock) })]),
+          el("span", { class: "nom", text: m.name || "Sin nombre" }),
+          el("span", { class: "estado", text: corto ? "faltan " + fmtQty(Math.ceil((need - stock) * 100) / 100) : need ? "alcanza" : " " })
+        ]));
+      });
+      if (!mats.length) grid.appendChild(el("p", { class: "note", style: "grid-column:1/-1;margin:0", text: "Sin materiales todavía." }));
+      grupo.appendChild(grid);
+      root.appendChild(grupo);
+    });
+
+    /* historial de compras: tocar una la abre para corregirla */
+    var compras = (state.compras || []).slice().sort(function (a, b) { return String(b.fecha || "").localeCompare(String(a.fecha || "")); });
+    if (!compras.length) {
+      if (state.materials.some(function (m) { return parseNum(m.stock) > 0; })) {
+        root.appendChild(el("div", { class: "empty" }, [
+          el("p", { text: "¿Ya tenías materiales? Cárgalos como una compra inicial a su costo de hoy para que entren al PPP." }),
+          el("button", { class: "btn", type: "button", text: "Cargar stock actual", onclick: cargarStockActual })
+        ]));
+      }
+      return;
+    }
+    root.appendChild(el("button", { type: "button", class: "btn wide ver-anteriores", "aria-expanded": !!ui.verHistorial,
+      text: (ui.verHistorial ? "Ocultar" : "Ver") + " historial de compras (" + compras.length + ")",
+      onclick: function () { ui.verHistorial = !ui.verHistorial; render(); } }));
+    if (!ui.verHistorial) return;
+    var lista = el("ul", { class: "historial-compras" });
+    var limite = ui.todasCompras ? compras.length : 40;
+    compras.slice(0, limite).forEach(function (c) {
+      var m = materialById(c.materialId);
+      var bolsas = parseNum(c.bolsas);
+      lista.appendChild(el("li", {}, [
+        el("button", { type: "button", class: "abrir", onclick: function () { abrirCompra(c); } }, [
+          el("span", { class: "punto-color", style: "width:22px;height:22px;background:" + colorDe(c.materialId, true) }),
+          el("span", { class: "txt" }, [
+            el("strong", { text: (m ? m.name || "Sin nombre" : "Material borrado") + " · " + fmtQty(bolsas) + (bolsas === 1 ? " bolsa" : " bolsas") + " × " + fmtQty(c.unidadesBolsa) + " u" }),
+            el("span", { text: [diaCorto(c.fecha || ""), c.inicial ? "stock inicial" : c.proveedor || "sin proveedor", c.inicial ? "" : medioDe(c), moneyPPP(unitarioCompra(c)) + " c/u"].filter(Boolean).join(" · ") })
+          ]),
+          el("strong", { class: "total", text: money(gastoCompra(c)) })
+        ]),
+        deleteButton("Quitar compra de " + (m ? m.name : "material"), function () { quitarCompra(c); })
+      ]));
+    });
+    root.appendChild(lista);
+    if (compras.length > limite) {
+      root.appendChild(el("button", { class: "btn wide ver-anteriores", type: "button", text: "Ver todas (" + compras.length + ")",
+        onclick: function () { ui.todasCompras = true; render(); } }));
+    }
+  }
+
+  function hayFaltantes() {
+    var uso = usoPendiente(null);
+    return state.materials.some(function (m) { return (uso[m.id] || 0) - parseNum(m.stock) > 1e-9; });
+  }
+
+  function quitarCompra(c) {
+    conCostos(function () {
+      aplicarStock(c, -1);
+      state.compras = state.compras.filter(function (x) { return x !== c; });
+    });
+    marcarBorrado("compras", c.id);
+    render();
+    toast("Compra quitada");
+  }
+
+  /* hoja de un material: su stock frente a lo que piden los pedidos */
+  function abrirMaterial(m) {
+    abrirHoja(m.name || "Material", function (cuerpo, cerrar, h) {
+      if (state.materials.indexOf(m) < 0) { cerrar(); return; }
+      var need = usoPendiente(null)[m.id] || 0;
+      var ppp = pppDeTipo(tipoDe(m));
+      cuerpo.appendChild(el("div", { class: "cabeza-material" }, [
+        el("span", { class: "madeja-grande chica", style: "background-color:" + colorDe(m.id, true) }),
+        el("span", { class: "txt" }, [el("span", { text: tipoDe(m) + " · " + textoMedida(m) }),
+          el("span", { text: ppp > 0 ? "PPP " + moneyPPP(ppp) : "Sin compras · costo " + moneyPPP(stockUnitValue(m)) })]),
+        el("button", { class: "btn small", type: "button", text: "Editar", onclick: function () { cerrar(); abrirEditarMaterial(m); } })
+      ]));
+      var estado = el("p", { class: "estado-material" });
+      function pintarEstado() {
+        var stock = parseNum(m.stock), corto = need - stock > 1e-9;
+        estado.className = "estado-material" + (corto ? " corto" : "");
+        estado.textContent = corto ? "Faltan " + fmtQty(need - stock) + " para los pedidos por hacer"
+          : need ? "Alcanza para los pedidos; sobran " + fmtQty(stock - need) : "Ningún pedido lo usa por ahora";
+      }
+      var campo = el("input", { type: "text", inputmode: "decimal", class: "num stock-grande", value: fmtQty(parseNum(m.stock)), "aria-label": "Stock",
+        oninput: function (e) { m.stock = Math.max(0, parseNum(e.target.value)); save(m); pintarEstado(); } });
+      function sumar(n) { m.stock = Math.max(0, Math.round((parseNum(m.stock) + n) * 100) / 100); campo.value = fmtQty(m.stock); save(m); pintarEstado(); }
+      cuerpo.appendChild(el("div", { class: "fila-stock" }, [
+        el("span", { class: "txt" }, [el("strong", { text: "En stock" }), el("span", { text: "Escribe lo que contaste" })]),
+        el("button", { class: "icon-btn", type: "button", text: "−", "aria-label": "Uno menos", onclick: function () { sumar(-1); } }),
+        campo,
+        el("button", { class: "icon-btn", type: "button", text: "+", "aria-label": "Uno más", onclick: function () { sumar(1); } })
+      ]));
+      cuerpo.appendChild(el("div", { class: "fila-dato" }, [el("span", { text: "Lo que piden los pedidos" }), el("strong", { text: fmtQty(need) })]));
+      pintarEstado();
+      cuerpo.appendChild(estado);
+      cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
+        el("button", { class: "btn primary", type: "button", text: "Registrar compra", onclick: function () { cerrar(); abrirCompra(null, { materialId: m.id }); } })
+      ]));
+    }, function () { render(); });
+  }
+
+  function paletaColores(actual, alElegir) {
+    var grid = el("div", { class: "paleta", role: "group", "aria-label": "Color" });
+    PALETA.forEach(function (hex, i) {
+      grid.appendChild(el("button", { type: "button", class: "muestra", "aria-pressed": String(actual || "").toUpperCase() === hex,
+        "aria-label": "Color " + (i + 1), "data-hex": hex, style: "background-color:" + hex, onclick: function () { alElegir(hex); } }));
+    });
+    return grid;
+  }
+
+  function abrirEditarMaterial(m) {
+    abrirHoja("Editar material", function (cuerpo, cerrar, h) {
+      if (state.materials.indexOf(m) < 0) { cerrar(); return; }
+      cuerpo.appendChild(campoHoja("ed-nombre", "Nombre", m.name, { oninput: function (e) { m.name = e.target.value; save(m); } }));
+      var tipos = el("div", { class: "chips-filtro", role: "group", "aria-label": "Tipo" });
+      tiposTodos().forEach(function (t) {
+        tipos.appendChild(botonChip(t, tipoDe(m) === t, function () { conCostos(function () { m.tipo = t; }); save(m); h.repintar(); }));
+      });
+      cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Tipo" }), tipos]));
+      cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Color" }),
+        paletaColores(colorDe(m.id, true), function (hex) { m.color = hex; save(m); h.repintar(); })]));
+      if (!isArea(m.unit)) {
+        cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Medida de cada unidad" }),
+          el("p", { class: "note", style: "margin:0 0 6px", text: "La receta usa esta medida: si la varilla mide 30 cm y usas 20, escribes 20 en la flor." }),
+          el("div", { class: "hoja-fila" }, [
+            el("input", { type: "text", inputmode: "decimal", class: "num", value: fmtQty(medidaDe(m)), "aria-label": "Medida",
+              oninput: function (e) { var v = parseNum(e.target.value); conCostos(function () { m.medida = v > 0 ? v : 1; }); save(m); } }),
+            el("input", { type: "text", value: unidadMedidaDe(m), "aria-label": "Unidad de medida", placeholder: "cm, m, pliego, u",
+              oninput: function (e) { m.unidadMedida = e.target.value.trim(); save(m); } })
+          ])]));
+      }
+      var mas = el("details", { class: "mas-opciones" }, [el("summary", { text: "Más opciones" })]);
+      if (ui.masOpciones) mas.open = true;
+      mas.addEventListener("toggle", function () { ui.masOpciones = mas.open; });
+      fichaAvanzada(m, mas, function () { h.repintar(); });
+      cuerpo.appendChild(mas);
+      cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
+        el("button", { class: "btn peligro", type: "button", text: "Eliminar", onclick: function () {
+          if (ui.confirming !== m.id) {
+            ui.confirming = m.id; toast("Toca otra vez para eliminar");
+            setTimeout(function () { if (ui.confirming === m.id) ui.confirming = null; }, 3000);
+            return;
+          }
+          ui.confirming = null;
+          var usados = 0;
+          state.products.forEach(function (p) {
+            var antes = (p.materials || []).length;
+            p.materials = (p.materials || []).filter(function (l) { return l.materialId !== m.id; });
+            if (p.materials.length !== antes) { usados += antes - p.materials.length; save(p); }
+          });
+          state.materials = state.materials.filter(function (x) { return x !== m; });
+          marcarBorrado("materiales", m.id);
+          cerrar(); toast(usados ? "Material eliminado y quitado de " + usados + " receta(s)" : "Material eliminado");
+        } }),
+        el("button", { class: "btn primary", type: "button", text: "Guardar cambios", onclick: function () { cerrar(); toast("Material guardado"); } })
+      ]));
+    }, function () { render(); });
+  }
+
+  /* lo de antes: unidad de uso, costo manual o por paquete, pliegos y stock mínimo */
+  function fichaAvanzada(m, caja, repintar) {
+    caja.appendChild(el("p", { class: "note", text: "Si el tipo de este material tiene compras, su costo sale del PPP y lo de aquí no se usa." }));
+    var unitSel = el("select", { "aria-label": "Unidad de uso" });
+    UNITS.forEach(function (u) { unitSel.appendChild(el("option", { value: u, text: u })); });
+    if (UNITS.indexOf(m.unit) === -1) unitSel.appendChild(el("option", { value: m.unit, text: m.unit }));
+    unitSel.value = m.unit || "unidad";
+    unitSel.addEventListener("change", function () { conCostos(function () { m.unit = unitSel.value; }); save(m); repintar(); });
+    caja.appendChild(el("label", { class: "field", text: "Unidad de uso" }));
+    caja.appendChild(unitSel);
+    var seg = el("div", { class: "seg tiny", style: "margin-top:10px" });
+    [["directo", "Costo por unidad"], ["compra", "Desde un paquete"]].forEach(function (o) {
+      seg.appendChild(el("button", { type: "button", text: o[1], "aria-pressed": (m.mode || "directo") === o[0],
+        onclick: function () { conCostos(function () { m.mode = o[0]; }); save(m); repintar(); } }));
+    });
+    caja.appendChild(seg);
+    function num(etiqueta, clave) {
+      return el("div", { class: "grow" }, [el("label", { class: "field", text: etiqueta }),
+        el("input", { class: "num", type: "text", inputmode: "decimal", value: m[clave] == null ? "" : m[clave], placeholder: "0",
+          oninput: function (e) { var antes = materialCost(m); m[clave] = e.target.value; save(m); anotarCosto(m, antes); } })]);
+    }
+    if (m.mode === "compra") {
+      caja.appendChild(el("div", { class: "row measures" }, [num("Precio pagado", "buyPrice"),
+        isArea(m.unit) ? num("Pliegos", "sheetQty") : num("Unidades que trae", "buyQty")]));
+      if (isArea(m.unit)) {
+        caja.appendChild(el("div", { class: "row measures" }, [num("Alto pliego (" + sideUnit(m.unit) + ")", "sheetH"), num("Ancho pliego (" + sideUnit(m.unit) + ")", "sheetW")]));
+      }
+    } else {
+      caja.appendChild(el("div", { class: "row measures" }, [num("Costo por " + (m.unit || "unidad"), "cost")]));
+    }
+    caja.appendChild(el("div", { class: "row measures" }, [
+      el("div", { class: "grow" }, [el("label", { class: "field", text: "Stock mínimo" }),
+        el("input", { class: "num", type: "text", inputmode: "decimal", value: stockTarget(m) || "", placeholder: "0",
+          oninput: function (e) { m.stockTarget = e.target.value; m.stockMin = e.target.value; save(m); } })])
+    ]));
+  }
+
+  function abrirNuevoMaterial(tipo) {
+    var nombre = "", color = PALETA[0], error = "";
+    abrirHoja("Nuevo en " + tipo, function (cuerpo, cerrar, h) {
+      cuerpo.appendChild(campoHoja("nm-nombre", "Nombre", nombre, { placeholder: "Ej: Dorado", oninput: function (e) { nombre = e.target.value; } }));
+      cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Color" }),
+        paletaColores(color, function (hex) { color = hex; h.repintar(); })]));
+      if (error) cuerpo.appendChild(el("p", { class: "error-hoja", role: "alert", text: error }));
+      cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
+        el("button", { class: "btn primary", type: "button", text: "Agregar al muestrario", onclick: function () {
+          if (!nombre.trim()) { error = "Escribe el nombre del material."; h.repintar(); return; }
+          var m = materialNuevo(nombre.trim(), tipo, color);
+          cerrar(); render(); toast(m.name + " agregado a " + tipo);
+        } })
+      ]));
+    });
+  }
+
+  function materialNuevo(nombre, tipo, color) {
+    var m = { id: uid(), name: nombre, tipo: tipo, color: color, unit: "unidad", mode: "directo", cost: "",
+      buyPrice: "", buyQty: "", sheetH: "", sheetW: "", sheetQty: "1", areaMode: "area", stock: 0, stockMin: "", categoria: "", medida: 1 };
+    state.materials.push(m);
+    save(m);
+    return m;
+  }
+
+  function crearTipo(t) {
+    t = String(t || "").trim();
+    if (!t) return "";
+    if (tiposCompra().indexOf(t) < 0) { tiposCompra().push(t); save(); }
+    return t;
+  }
+
+  function abrirNuevoTipo() {
+    var nombre = "", error = "";
+    abrirHoja("Nuevo tipo", function (cuerpo, cerrar, h) {
+      cuerpo.appendChild(el("p", { class: "lead", text: "Cada tipo tiene su propio PPP y su muestrario. Ej: Ojos móviles, Pegamento, Base." }));
+      cuerpo.appendChild(campoHoja("nt-nombre", "Nombre del tipo", nombre, { placeholder: "Ej: Ojos móviles", oninput: function (e) { nombre = e.target.value; } }));
+      if (error) cuerpo.appendChild(el("p", { class: "error-hoja", role: "alert", text: error }));
+      cuerpo.appendChild(el("div", { class: "pie-hoja" }, [
+        el("button", { class: "btn primary", type: "button", text: "Crear tipo", onclick: function () {
+          var t = nombre.trim();
+          if (!t) { error = "Escribe el nombre del tipo."; h.repintar(); return; }
+          if (tiposTodos().indexOf(t) > -1) { error = "Ese tipo ya existe."; h.repintar(); return; }
+          crearTipo(t);
+          ui.filtroTaller = t;
+          cerrar(); render();
+        } })
+      ]));
+    });
+  }
+
+  /* registrar o corregir una compra: suma al stock y entra al PPP de su tipo */
+  function abrirCompra(c, preset) {
+    preset = preset || {};
+    var mPre = materialById(c ? c.materialId : preset.materialId);
+    var ultima = (state.compras || []).slice().sort(function (a, b) { return String(b.fecha).localeCompare(String(a.fecha)); })[0];
+    var d = c ? { fecha: c.fecha || hoy(), proveedor: c.proveedor || "", materialId: c.materialId || "", bolsas: c.bolsas,
+        unidadesBolsa: c.unidadesBolsa, precioBolsa: c.precioBolsa, medio: medioDe(c) }
+      : { fecha: hoy(), proveedor: ultima && !ultima.inicial ? ultima.proveedor || "" : "", materialId: preset.materialId || "", bolsas: 1,
+        unidadesBolsa: "", precioBolsa: "", medio: "transferencia" };
+    var tipo = mPre ? tipoDe(mPre) : (c && c.tipo) || preset.tipo || tiposTodos()[0] || "Limpiapipas";
+    var nuevo = "", colorNuevo = PALETA[3], creandoTipo = false, tipoNuevo = "", error = "";
+    abrirHoja(c ? "Corregir compra" : "Registrar compra", function (cuerpo, cerrar, h) {
+      var resumen = el("div", { class: "resumen-compra", "aria-live": "polite" });
+      function pintarResumen() {
+        var u = parseNum(d.unidadesBolsa) * parseNum(d.bolsas), g = parseNum(d.precioBolsa) * parseNum(d.bolsas);
+        var base = datosPPP().tipos[tipo] || { unidades: 0, gasto: 0, ppp: 0 };
+        var u0 = base.unidades, g0 = base.gasto;
+        if (c) {
+          var mc = materialById(c.materialId), tc = mc ? tipoDe(mc) : c.tipo;
+          if (tc === tipo) { u0 -= unidadesCompra(c); g0 -= gastoCompra(c); }
+        }
+        var antes = u0 > 0 ? g0 / u0 : 0, despues = u0 + u > 0 ? (g0 + g) / (u0 + u) : 0;
+        resumen.innerHTML = "";
+        [["Total", fmtQty(u) + " u · " + money(g)], ["Precio por unidad", u > 0 ? moneyPPP(g / u) : "—"],
+         ["PPP de " + tipo, antes > 0 && Math.abs(despues - antes) > 0.004 ? moneyPPP(antes) + " → " + moneyPPP(despues) : despues > 0 ? moneyPPP(despues) : "—"]]
+          .forEach(function (f) { resumen.appendChild(el("div", {}, [el("span", { text: f[0] }), el("strong", { text: f[1] })])); });
+      }
+
+      var chipsTipos = el("div", { class: "chips-filtro", role: "group", "aria-label": "Tipo" });
+      tiposTodos().forEach(function (t) {
+        chipsTipos.appendChild(botonChip(t, tipo === t, function () {
+          if (tipo !== t) { tipo = t; var m = materialById(d.materialId); if (m && tipoDe(m) !== t) d.materialId = ""; }
+          creandoTipo = false; h.repintar();
+        }));
+      });
+      chipsTipos.appendChild(el("button", { type: "button", class: "chip-filtro punteado", text: "+ Tipo", onclick: function () { creandoTipo = true; h.repintar(); } }));
+      var grupoTipo = el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "Tipo" }), chipsTipos]);
+      if (creandoTipo) {
+        grupoTipo.appendChild(el("div", { class: "fila-crear" }, [
+          el("input", { type: "text", value: tipoNuevo, placeholder: "Ej: Ojos móviles", "aria-label": "Nombre del tipo nuevo",
+            oninput: function (e) { tipoNuevo = e.target.value; } }),
+          el("button", { class: "btn primary", type: "button", text: "Crear", onclick: function () {
+            var t = crearTipo(tipoNuevo);
+            if (!t) return;
+            tipo = t; d.materialId = ""; creandoTipo = false; tipoNuevo = ""; h.repintar();
+          } })
+        ]));
+      }
+      cuerpo.appendChild(grupoTipo);
+
+      var mats = state.materials.filter(function (m) { return tipoDe(m) === tipo; })
+        .sort(function (a, b) { return norm(a.name).localeCompare(norm(b.name)); });
+      var grupoMat = el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "¿Qué compraste?" })]);
+      if (mats.length) {
+        var grid = el("div", { class: "compra-mats" });
+        mats.forEach(function (m) {
+          grid.appendChild(el("button", { type: "button", class: "compra-mat", "aria-pressed": d.materialId === m.id, "aria-label": m.name || "Sin nombre",
+            onclick: function () { d.materialId = m.id; nuevo = ""; error = ""; h.repintar(); } }, [
+            el("span", { class: "muestra", style: "background-color:" + colorDe(m.id, true) }),
+            el("span", { class: "nom", text: m.name || "Sin nombre" })
+          ]));
+        });
+        grupoMat.appendChild(grid);
+      }
+      var avisoColor = el("div");
+      grupoMat.appendChild(el("input", { type: "text", value: nuevo, placeholder: "¿Otro? Escribe el nombre", "aria-label": "Material nuevo",
+        style: "margin-top:8px",
+        oninput: function (e) {
+          var antes = !!nuevo.trim();
+          nuevo = e.target.value;
+          if (nuevo.trim()) d.materialId = "";
+          if (antes !== !!nuevo.trim()) pintarColorNuevo();
+        } }));
+      function pintarColorNuevo() {
+        avisoColor.innerHTML = "";
+        if (!nuevo.trim()) return;
+        avisoColor.appendChild(el("span", { class: "sub-etiqueta", text: "Color del material nuevo" }));
+        avisoColor.appendChild(paletaColores(colorNuevo, function (hex) {
+          colorNuevo = hex;
+          Array.prototype.forEach.call(avisoColor.querySelectorAll(".muestra"), function (b) {
+            b.setAttribute("aria-pressed", b.getAttribute("data-hex") === hex ? "true" : "false");
+          });
+        }));
+      }
+      pintarColorNuevo();
+      grupoMat.appendChild(avisoColor);
+      cuerpo.appendChild(grupoMat);
+
+      function campo(id, etiqueta, clave, opts) {
+        opts = opts || {};
+        return campoHoja(id, etiqueta, d[clave] == null ? "" : String(d[clave]), { tipo: opts.tipo, inputmode: opts.inputmode, placeholder: opts.placeholder,
+          oninput: function (e) { d[clave] = e.target.value; error = ""; pintarResumen(); } });
+      }
+      cuerpo.appendChild(el("div", { class: "hoja-fila" }, [
+        campo("co-bolsas", "Bolsas", "bolsas", { inputmode: "numeric", placeholder: "1" }),
+        campo("co-unid", "Unidades por bolsa", "unidadesBolsa", { inputmode: "decimal", placeholder: "100" })
+      ]));
+      cuerpo.appendChild(el("div", { class: "hoja-fila" }, [
+        campo("co-precio", "Precio por bolsa (" + cfg().symbol + ")", "precioBolsa", { inputmode: "decimal", placeholder: "1800" }),
+        campo("co-fecha", "Fecha", "fecha", { tipo: "date" })
+      ]));
+      cuerpo.appendChild(campo("co-prov", "Proveedor", "proveedor", { placeholder: "Ej: Librería Ñuñoa" }));
+      var medios = el("div", { class: "seg", role: "group", "aria-label": "Cómo pagaste" });
+      METODOS_PAGO.forEach(function (mp) {
+        medios.appendChild(el("button", { type: "button", text: mp[1], "aria-pressed": d.medio === mp[0], onclick: function () { d.medio = mp[0]; h.repintar(); } }));
+      });
+      cuerpo.appendChild(el("fieldset", { class: "hoja-grupo" }, [el("legend", { text: "¿Cómo pagaste?" }), medios]));
+      pintarResumen();
+      cuerpo.appendChild(resumen);
+      if (error) cuerpo.appendChild(el("p", { class: "error-hoja", role: "alert", text: error }));
+
+      var pie = el("div", { class: "pie-hoja" });
+      if (c) pie.appendChild(el("button", { class: "btn peligro", type: "button", text: "Quitar", onclick: function () { cerrar(); quitarCompra(c); } }));
+      pie.appendChild(el("button", { class: "btn primary", type: "button", text: c ? "Guardar cambios" : "Guardar compra · suma al stock", onclick: function () {
+        if (!d.materialId && !nuevo.trim()) { error = "Elige qué compraste o escribe el nombre."; h.repintar(); return; }
+        if (!(parseNum(d.unidadesBolsa) > 0) || !(parseNum(d.precioBolsa) > 0) || !(parseNum(d.bolsas) > 0)) {
+          error = "Faltan las bolsas, las unidades por bolsa o el precio."; h.repintar(); return;
+        }
+        var id = d.materialId;
+        if (!id) id = materialNuevo(nuevo.trim(), tipo, colorNuevo).id;
+        var datos = { fecha: d.fecha || hoy(), proveedor: d.proveedor || "", tipo: tipo, materialId: id,
+          bolsas: parseNum(d.bolsas), unidadesBolsa: parseNum(d.unidadesBolsa), precioBolsa: parseNum(d.precioBolsa), medio: d.medio };
+        var m = materialById(id);
+        /* el material queda en el tipo de la compra */
+        if (m && tipoDe(m) !== tipo) { m.tipo = tipo; save(m); }
+        if (c) {
+          conCostos(function () { aplicarStock(c, -1); Object.assign(c, datos); aplicarStock(c, 1); });
+          save(c);
+        } else {
+          var nueva = Object.assign({ id: uid() }, datos);
+          conCostos(function () { state.compras.push(nueva); aplicarStock(nueva, 1); });
+          save(nueva);
+        }
+        cerrar(); render(); toast(c ? "Compra corregida" : "Compra guardada");
+      } }));
+      cuerpo.appendChild(pie);
+    });
+  }
 
   function vistasInventario() {
     var v = [];
@@ -4709,36 +4624,6 @@
   }
 
   function vistaValida(v) { return vistasInventario().indexOf(v) > -1; }
-
-  function renderInventario() {
-    var root = document.getElementById("tab-inventario");
-    root.innerHTML = "";
-    root.appendChild(el("h2", { text: "Taller" }));
-    root.appendChild(el("p", { class: "lead", text: "Lo que tienes frente a lo que usarán los pedidos por hacer, según la receta de cada flor." }));
-    if (llevaMateriales()) {
-      root.appendChild(tarjetaCompras(pendingOrders()));
-      agregar(root, fichasTaller());
-      root.appendChild(seccionCompras());
-    }
-    root.appendChild(el("h3", { class: "etiqueta", text: "Inventario" }));
-
-    var vistas = vistasInventario();
-    if (!vistaValida(ui.vista)) ui.vista = vistas[0];
-
-    /* con los dos módulos activos (modo mixto) se elige qué mirar */
-    if (vistas.length > 1) {
-      var seg = el("div", { class: "seg", style: "margin-bottom:12px" });
-      var etiquetas = { materiales: rubro().insumos, fabricados: "Fabricados" };
-      vistas.forEach(function (v) {
-        seg.appendChild(el("button", { type: "button", text: etiquetas[v], "aria-pressed": ui.vista === v,
-          onclick: function () { ui.vista = v; render(); } }));
-      });
-      root.appendChild(seg);
-    }
-
-    if (ui.vista === "fabricados") pintarFabricados(root);
-    else pintarMateriales(root);
-  }
 
   /* vista de productos terminados: lo que ya está hecho y listo para vender */
   function pintarFabricados(root) {
@@ -4926,23 +4811,76 @@
     gateOcupado(false);
   }
 
-  function entrarConGoogle() {
-    document.getElementById("gateAviso").textContent = "";
-    gateOcupado(true, "Conectando…");
-    fbInit().then(function () {
-      var prov = new window.firebase.auth.GoogleAuthProvider();
-      prov.setCustomParameters({ prompt: "select_account" });
-      return fb.auth.signInWithPopup(prov).catch(function (err) {
-        /* en móvil o con emergentes bloqueadas se entra por redirección */
-        var code = (err && err.code) || "";
-        if (code === "auth/popup-blocked" || code === "auth/operation-not-supported-in-this-environment") {
-          gateOcupado(true, "Redirigiendo…");
-          return fb.auth.signInWithRedirect(prov);
-        }
-        throw err;
-      });
-    }).catch(mostrarErrorAcceso);
+  /* navegadores dentro de otras apps (WhatsApp, Instagram, Facebook…):
+     Google no deja iniciar sesión en ellos */
+  function navegadorInterno() {
+    return /FBAN|FBAV|FB_IAB|Instagram|WhatsApp|Line\/|Messenger|TikTok/i.test(navigator.userAgent || "");
   }
+
+  function avisoAbrirFuera() {
+    var n = document.getElementById("gateAviso");
+    n.className = "aviso error";
+    n.textContent = "Google no deja entrar desde el navegador de esta app. Abre esta página en Safari o Chrome.";
+    var url = location.href.split("#")[0];
+    var copiar = el("button", { class: "btn small", type: "button", text: "Copiar enlace", onclick: function () {
+      var hecho = function () { copiar.textContent = "Enlace copiado"; };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(hecho, function () { window.prompt("Copia este enlace:", url); });
+      } else {
+        window.prompt("Copia este enlace:", url);
+      }
+    } });
+    n.appendChild(el("span", { style: "display:block;margin-top:10px" }, [copiar]));
+    gateOcupado(false);
+  }
+
+  var popupsBloqueados = 0;
+
+  /* Solo ventana emergente. La redirección falla en navegadores que separan
+     los datos por sitio (Safari en iPhone): al volver de Google, Firebase ya
+     no encuentra el estado y muestra "missing initial state". Y Safari solo
+     deja abrir la ventana en el mismo instante del toque, así que aquí no
+     puede haber una espera entre el toque y signInWithPopup. */
+  function entrarConGoogle() {
+    var aviso = document.getElementById("gateAviso");
+    aviso.className = "aviso";
+    aviso.textContent = "";
+    if (navegadorInterno()) { avisoAbrirFuera(); return; }
+
+    if (!fb.auth) {
+      /* Firebase aún carga: abrir la ventana después ya no contaría como toque */
+      gateOcupado(true, "Cargando…");
+      fbInit().then(function () {
+        gateOcupado(false);
+        aviso.textContent = "Listo. Toca otra vez Entrar con Google.";
+      }).catch(mostrarErrorAcceso);
+      return;
+    }
+
+    gateOcupado(true, "Conectando…");
+    var prov = new window.firebase.auth.GoogleAuthProvider();
+    prov.setCustomParameters({ prompt: "select_account" });
+    fb.auth.signInWithPopup(prov).then(function () { popupsBloqueados = 0; }).catch(function (err) {
+      var code = (err && err.code) || "";
+      if (code === "auth/popup-closed-by-user" || code === "auth/cancelled-popup-request") { gateOcupado(false); return; }
+      if (code === "auth/operation-not-supported-in-this-environment") { avisoAbrirFuera(); return; }
+      if (code === "auth/popup-blocked") {
+        popupsBloqueados++;
+        aviso.className = "aviso error";
+        aviso.textContent = popupsBloqueados < 2
+          ? "El navegador bloqueó la ventana de Google. Toca otra vez Entrar con Google."
+          : "La ventana de Google sigue bloqueada. En el iPhone, ve a Ajustes → Apps → Safari y desactiva «Bloquear ventanas»; en otros navegadores, permite las ventanas emergentes de este sitio.";
+        gateOcupado(false);
+        return;
+      }
+      mostrarErrorAcceso(err);
+      /* desde el ícono de inicio del iPhone, iOS no siempre deja volver de Google */
+      if (navigator.standalone) {
+        aviso.textContent += " Si desde el ícono no puedes entrar, abre la app en Safari.";
+      }
+    });
+  }
+
 
   /* ---------------- sesión ---------------- */
 
@@ -5530,7 +5468,7 @@
     var avisos = {
       pedidos: nAtrasados ? (nAtrasados === 1 ? "1 pedido atrasado" : nAtrasados + " pedidos atrasados") : "",
       productos: productosErosionados().length ? "hay precios por revisar" : "",
-      inventario: llevaMateriales() && (!shoppingFor(pendingItems()).ok || inventoryTotals().bajos) ? "falta material" : ""
+      inventario: llevaMateriales() && hayFaltantes() ? "falta material" : ""
     };
     Object.keys(avisos).forEach(function (tab) {
       var btn = document.querySelector('.tabs button[data-tab="' + tab + '"]');
